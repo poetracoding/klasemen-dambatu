@@ -1,4 +1,18 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // 0. Theme Toggle: Dark / Light Mode synchronization
+    if (typeof window.updateThemeUI === 'function') {
+        window.updateThemeUI(document.documentElement.classList.contains('dark'));
+    }
+
+    document.querySelectorAll('.theme-toggle-btn').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (typeof window.toggleTheme === 'function') {
+                window.toggleTheme();
+            }
+        });
+    });
+
     // 1. Mobile navigation toggle
     var navToggle = document.getElementById('navToggle');
     var mobileMenu = document.getElementById('mobileMenu');

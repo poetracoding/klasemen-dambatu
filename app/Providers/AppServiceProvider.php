@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Liga;
+use App\Services\TournamentService;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        View::composer('partials.running_text', function ($view) {
+            $liga = Liga::current();
+            $ticker = TournamentService::getTickerMatches($liga);
+            $view->with($ticker);
+        });
     }
 }

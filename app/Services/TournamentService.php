@@ -433,4 +433,73 @@ class TournamentService
         ];
         return $map[$s] ?? $s;
     }
+
+    public static function getTickerMatches(?Liga $liga = null): array
+    {
+        $liga = $liga ?? Liga::current();
+        if (!$liga || $liga->status === 'draft') {
+            return [
+                'tickerMatches' => collect(),
+                'tickerLabel' => 'Jadwal & Hasil Minggu Ini',
+                'tickerDateRange' => '',
+            ];
+        }
+
+        $now = now();
+        $startOfWeek = $now->copy()->startOfWeek()->toDateString();
+        $endOfWeek = $now->copy()->endOfWeek()->toDateString();
+
+        // 1. Coba ambil pertandingan dalam minggu aktif kalender ini
+        $matches = Pertandingan::where('liga_id', $liga->id)
+            ->whereBetween('tanggal', [$startOfWeek, $endOfWeek])
+            ->with(['homeTeam', 'awayTeam'])
+            ->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')
+            ->get();
+
+        $label = 'Jadwal & Hasil Pekan Ini';
+        $dateRangeStr = self::tgl($startOfWeek) . ' - ' . self::tgl($endOfWeek);
+
+        // 2. Jika tidak ada pertandingan di minggu kalender ini, cari pekan terdekat yang ada jadwal
+        if ($matches->isEmpty()) {
+            $nearestDate = Pertandingan::where('liga_id', $liga->id)
+                ->whereNotNull('tanggal')
+                ->where('tanggal', '>=', $now->toDateString())
+                ->min('tanggal');
+
+            if (!$nearestDate) {
+                $nearestDate = Pertandingan::where('liga_id', $liga->id)
+                    ->whereNotNull('tanggal')
+                    ->max('tanggal');
+            }
+
+            if ($nearestDate) {
+                $refCarbon = \Carbon\Carbon::parse($nearestDate);
+                $startWeekRef = $refCarbon->copy()->startOfWeek()->toDateString();
+                $endWeekRef = $refCarbon->copy()->endOfWeek()->toDateString();
+
+                $matches = Pertandingan::where('liga_id', $liga->id)
+                    ->whereBetween('tanggal', [$startWeekRef, $endWeekRef])
+                    ->with(['homeTeam', 'awayTeam'])
+                    ->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')
+                    ->get();
+
+                $dateRangeStr = self::tgl($startWeekRef) . ' - ' . self::tgl($endWeekRef);
+            }
+        }
+
+        // 3. Fallback jika tetap kosong
+        if ($matches->isEmpty()) {
+            $matches = Pertandingan::where('liga_id', $liga->id)
+                ->with(['homeTeam', 'awayTeam'])
+                ->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')
+                ->take(15)
+                ->get();
+        }
+
+        return [
+            'tickerMatches' => $matches,
+            'tickerLabel' => $label,
+            'tickerDateRange' => $dateRangeStr,
+        ];
+    }
 }

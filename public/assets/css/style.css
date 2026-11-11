@@ -95,4 +95,172 @@ body {
     border: 1px solid rgba(226, 232, 240, 0.8) !important;
 }
 
+/* Micro typography helpers for compact screens */
+.text-2xs {
+    font-size: 0.7rem !important;
+    line-height: 1rem !important;
+}
+.text-3xs {
+    font-size: 0.625rem !important;
+    line-height: 0.85rem !important;
+}
+
+/* Running Text Marquee Animation */
+@keyframes marqueeScroll {
+    0% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+.animate-marquee-scroll {
+    display: inline-flex;
+    width: max-content;
+    white-space: nowrap;
+    animation: marqueeScroll 45s linear infinite;
+    will-change: transform;
+}
+.animate-marquee-scroll:hover {
+    animation-play-state: paused;
+}
+
+/* ==========================================================================
+   Dark Mode Styles
+   ========================================================================== */
+html.dark {
+    color-scheme: dark;
+}
+html.dark body {
+    background-color: #020617 !important; /* slate-950 */
+    color: #f1f5f9 !important;
+}
+
+/* Cards & Surfaces */
+html.dark .bg-white {
+    background-color: #0f172a !important; /* slate-900 */
+}
+html.dark .bg-white\/95 {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+}
+html.dark .bg-white\/90 {
+    background-color: rgba(15, 23, 42, 0.90) !important;
+}
+html.dark .bg-white\/80 {
+    background-color: rgba(15, 23, 42, 0.80) !important;
+}
+html.dark .bg-white\/60 {
+    background-color: rgba(15, 23, 42, 0.60) !important;
+}
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/60,
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80 {
+    background-color: #1e293b !important; /* slate-800 */
+}
+html.dark .bg-slate-100 {
+    background-color: #334155 !important; /* slate-700 */
+}
+html.dark .bg-slate-100\/50,
+html.dark .bg-slate-100\/70 {
+    background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+/* Borders */
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/60,
+html.dark .border-slate-200\/80 {
+    border-color: #334155 !important; /* slate-700 */
+}
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #1e293b !important;
+}
+
+/* Typography */
+html.dark .text-slate-900 {
+    color: #f8fafc !important;
+}
+html.dark .text-slate-800 {
+    color: #f1f5f9 !important;
+}
+html.dark .text-slate-700 {
+    color: #e2e8f0 !important;
+}
+html.dark .text-slate-600 {
+    color: #cbd5e1 !important;
+}
+html.dark .text-slate-500 {
+    color: #94a3b8 !important;
+}
+html.dark .text-slate-400 {
+    color: #64748b !important;
+}
+
+/* Table Hover */
+html.dark tr.hover\:bg-slate-50\/60:hover {
+    background-color: rgba(30, 41, 59, 0.7) !important;
+}
+
+/* Form Inputs */
+html.dark input,
+html.dark select,
+html.dark textarea {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #64748b !important;
+}
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+}
+
+/* Modals */
+html.dark #editModal .bg-white,
+html.dark #slotModal .bg-white {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+}
+
+/* SweetAlert2 in Dark Mode */
+html.dark .swal2-modern-popup {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+html.dark .swal2-modern-popup .swal2-title {
+    color: #f8fafc !important;
+}
+html.dark .swal2-modern-popup .swal2-html-container {
+    color: #cbd5e1 !important;
+}
+html.dark .swal2-toast-modern {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+html.dark .swal2-toast-modern .swal2-title {
+    color: #f8fafc !important;
+}
+
+/* Scrollbar in Dark Mode */
+html.dark ::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+html.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+
 
