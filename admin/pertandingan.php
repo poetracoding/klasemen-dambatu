@@ -129,7 +129,7 @@ require __DIR__ . '/../includes/header.php';
                                 #<?= (int) $m['nomor_pertandingan'] ?>
                             </td>
                             <td class="py-3 px-3 whitespace-nowrap text-xs">
-                                <div class="font-semibold text-slate-800"><?= h(tgl($m['tanggal'])) ?></div>
+                                <div class="font-semibold text-slate-800"><?= $m['tanggal'] ? h(hari_id($m['tanggal']) . ', ' . tgl($m['tanggal'])) : '-' ?></div>
                                 <div class="text-slate-400 font-mono text-3xs"><?= h(jam($m['waktu'])) ?> &middot; <span class="text-indigo-600 font-bold"><?= h($m['lokasi'] ?: '-') ?></span></div>
                             </td>
                             <!-- Kolom Pertandingan -->

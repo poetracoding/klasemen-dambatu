@@ -110,4 +110,7 @@ function init_schema(PDO $pdo): void
     if (!in_array('jumlah_meja', $colsLiga, true)) {
         $pdo->exec("ALTER TABLE liga ADD COLUMN jumlah_meja INTEGER DEFAULT 2");
     }
+    if (!in_array('hari_pertandingan', $colsLiga, true)) {
+        $pdo->exec("ALTER TABLE liga ADD COLUMN hari_pertandingan TEXT DEFAULT '1,2,3,4,5,6,7'");
+    }
 }

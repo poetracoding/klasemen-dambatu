@@ -158,6 +158,19 @@ function buat_jadwal(array $o): int
     $jamMulai = ($o['jam'] ?? '') ?: '19:00';
     $tglMulai = ($o['mulai'] ?? '') ?: date('Y-m-d');
 
+    // Penentuan Hari Pertandingan (1=Senin, 7=Minggu)
+    $hariDipilih = !empty($o['hari']) && is_array($o['hari'])
+        ? array_values(array_filter(array_map('intval', $o['hari']), fn($x) => $x >= 1 && $x <= 7))
+        : (isset($o['hari']) && is_string($o['hari']) && trim($o['hari']) !== ''
+            ? array_values(array_filter(array_map('intval', explode(',', $o['hari'])), fn($x) => $x >= 1 && $x <= 7))
+            : [1, 2, 3, 4, 5, 6, 7]);
+
+    if (empty($hariDipilih)) {
+        $hariDipilih = [1, 2, 3, 4, 5, 6, 7];
+    }
+    sort($hariDipilih);
+    $hariPertandinganStr = implode(',', $hariDipilih);
+
     // Kumpulkan seluruh pasangan pertandingan sesuai ronde
     $matchList = [];
     foreach ($rounds as $rIndex => $pairs) {
@@ -170,18 +183,23 @@ function buat_jadwal(array $o): int
         }
     }
 
-    $dayIndex = 0;
+    $totalTim = count($teamIds);
+    $maxMatchesPerSlot = min($jumlahMeja, max(1, intdiv($totalTim, 2)));
+
+    // Pastikan tanggal mulai jatuh pada hari pertandingan yang dipilih
+    $currentDateTs = strtotime($tglMulai);
+    while (!in_array((int) date('N', $currentDateTs), $hariDipilih, true)) {
+        $currentDateTs = strtotime('+1 day', $currentDateTs);
+    }
+
     $matchesToday = 0;
     $slotIndex = 0;
     $no = 0;
 
-    $totalTim = count($teamIds);
-    $maxMatchesPerSlot = min($jumlahMeja, max(1, intdiv($totalTim, 2)));
-
     $pdo->beginTransaction();
     try {
         $pdo->prepare('DELETE FROM pertandingan WHERE id_liga=?')->execute([$l['id']]);
-        $pdo->prepare('UPDATE liga SET jumlah_meja=? WHERE id=?')->execute([$jumlahMeja, $l['id']]);
+        $pdo->prepare('UPDATE liga SET jumlah_meja=?, hari_pertandingan=? WHERE id=?')->execute([$jumlahMeja, $hariPertandinganStr, $l['id']]);
         $ins = $pdo->prepare('INSERT INTO pertandingan
             (id_liga, ronde, nomor_pertandingan, tanggal, waktu, lokasi, tim_home, tim_away, skor_home, skor_away, status)
             VALUES (?,?,?,?,?,?,?,?,0,0,\'belum_main\')');
@@ -210,7 +228,7 @@ function buat_jadwal(array $o): int
                 $matchList = array_values($matchList);
 
                 $no++;
-                $tanggal = date('Y-m-d', strtotime("$tglMulai +$dayIndex days"));
+                $tanggal = date('Y-m-d', $currentDateTs);
                 $waktu = date('H:i', strtotime($jamMulai) + $slotIndex * $durasi * 60);
 
                 // Gunakan meja yang sudah kosong (mulai dari Meja 1).
@@ -229,7 +247,11 @@ function buat_jadwal(array $o): int
             // Maju ke slot waktu berikutnya
             $slotIndex++;
             if ($matchesToday >= $perHari) {
-                $dayIndex++;
+                // Lompat ke hari pertandingan berikutnya yang diperbolehkan
+                do {
+                    $currentDateTs = strtotime('+1 day', $currentDateTs);
+                } while (!in_array((int) date('N', $currentDateTs), $hariDipilih, true));
+
                 $matchesToday = 0;
                 $slotIndex = 0;
             }
@@ -290,7 +312,7 @@ function tabel_pertandingan(array $rows, bool $tampilTanggal = true): void
         echo '<tr class="hover:bg-slate-50/70 transition-colors">';
         echo '<td class="py-3.5 px-4 text-center font-medium text-slate-400">' . (int) $m['nomor_pertandingan'] . '</td>';
         if ($tampilTanggal) {
-            echo '<td class="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">' . h(tgl($m['tanggal'])) . '</td>';
+            echo '<td class="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">' . ($m['tanggal'] ? h(hari_id($m['tanggal']) . ', ' . tgl($m['tanggal'])) : '-') . '</td>';
         }
         echo '<td class="py-3.5 px-4 text-slate-600 whitespace-nowrap font-mono text-xs">' . h(jam($m['waktu'])) . '</td>';
         echo '<td class="py-3.5 px-4 whitespace-nowrap"><a class="group inline-flex items-center gap-2 font-semibold text-slate-800 hover:text-indigo-600 transition-colors" href="' . h(url('pertandingan.php?id=' . $m['id'])) . '">';

@@ -10,7 +10,8 @@ PHP Native + SQLite (PDO) + Tailwind CSS. Tanpa Composer/Node.
 3. **Live Auto-Update HTML (Tanpa Refresh):** Penonton/pengguna publik mendapatkan pembaruan skor, hasil, dan klasemen secara live otomatis tanpa reload browser.
 4. **Percepat / Perlambat Jadwal:** Fitur geser waktu massal (misal: dipercepat 15/30 menit atau diperlambat) bila pertandingan di lapangan selesai lebih cepat atau molor.
 5. **Pembatalan Jadwal Aman:** Menu untuk membatalkan/menghapus jadwal yang digenerate dengan pengaman (tidak dapat dibatalkan jika sudah ada yang bertanding).
-6. **Responsif Mobile:** Antarmuka fleksibel dan nyaman diakses melalui smartphone maupun desktop.
+6. **Penentuan Hari Pertandingan:** Memilih hari-hari tertentu saat generate jadwal (misal hanya Sabtu & Minggu, hari kerja, atau kombinasi hari tertentu), hari di luar pilihan akan otomatis dilewati.
+7. **Responsif Mobile:** Antarmuka fleksibel dan nyaman diakses melalui smartphone maupun desktop.
 
 ## Menjalankan
 

@@ -29,23 +29,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $draft = $liga['status'] === 'draft';
 
     if ($aksi === 'generate') {
-        $o = [
-            'mulai'       => $_POST['mulai'] ?? '',
-            'per_hari'    => (int) ($_POST['per_hari'] ?? 0),
-            'jumlah_meja' => max(1, (int) ($_POST['jumlah_meja'] ?? 1)),
-            'jam'         => $_POST['jam'] ?? '',
-            'durasi'      => (int) ($_POST['durasi'] ?? 0),
-            'lokasi'      => trim($_POST['lokasi'] ?? ''),
-        ];
-        if (!$draft) {
-            flash('danger', 'Jadwal hanya dapat dibuat ulang saat liga masih berstatus draft.');
-        } elseif ($jumlahTim < 2) {
-            flash('danger', 'Minimal 2 tim untuk membuat jadwal.');
-        } elseif (!tanggal_valid($o['mulai']) || !jam_valid($o['jam']) || $o['per_hari'] < 1 || $o['per_hari'] > 50 || $o['durasi'] < 1 || $o['durasi'] > 600) {
-            flash('danger', 'Isian pengaturan jadwal tidak valid.');
+        $hariDipilih = $_POST['hari'] ?? [];
+        if (empty($hariDipilih)) {
+            flash('danger', 'Pilih minimal satu hari pertandingan.');
         } else {
-            $n = buat_jadwal($o);
-            flash('success', "Jadwal dibuat: $n pertandingan dengan {$o['jumlah_meja']} meja Dam Batu. Pertandingan berjalan simultan tanpa bentrok tim.");
+            $o = [
+                'mulai'       => $_POST['mulai'] ?? '',
+                'per_hari'    => (int) ($_POST['per_hari'] ?? 0),
+                'jumlah_meja' => max(1, (int) ($_POST['jumlah_meja'] ?? 1)),
+                'jam'         => $_POST['jam'] ?? '',
+                'durasi'      => (int) ($_POST['durasi'] ?? 0),
+                'lokasi'      => trim($_POST['lokasi'] ?? ''),
+                'hari'        => $hariDipilih,
+            ];
+            if (!$draft) {
+                flash('danger', 'Jadwal hanya dapat dibuat ulang saat liga masih berstatus draft.');
+            } elseif ($jumlahTim < 2) {
+                flash('danger', 'Minimal 2 tim untuk membuat jadwal.');
+            } elseif (!tanggal_valid($o['mulai']) || !jam_valid($o['jam']) || $o['per_hari'] < 1 || $o['per_hari'] > 50 || $o['durasi'] < 1 || $o['durasi'] > 600) {
+                flash('danger', 'Isian pengaturan jadwal tidak valid.');
+            } else {
+                $n = buat_jadwal($o);
+                flash('success', "Jadwal dibuat: $n pertandingan dengan {$o['jumlah_meja']} meja Dam Batu. Pertandingan dijadwalkan pada hari yang ditentukan secara berurutan tanpa bentrok tim.");
+            }
         }
     } elseif ($aksi === 'batal_jadwal') {
         // Syarat #1: tidak bisa membatalkan jadwal jika sudah ada yang bertanding
@@ -132,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $draft = $liga['status'] === 'draft';
 $defaultMeja = max(1, (int) ($liga['jumlah_meja'] ?? 2));
+$defaultHari = array_map('intval', explode(',', $liga['hari_pertandingan'] ?? '1,2,3,4,5,6,7'));
 $matches = ambil_pertandingan('1=1', [], 'p.tanggal, p.waktu, p.nomor_pertandingan');
 
 $judul = 'Jadwal';
@@ -220,6 +227,52 @@ require __DIR__ . '/../includes/header.php';
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Meja / Lokasi</label>
                     <input name="lokasi" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 text-slate-800 form-input-focus" maxlength="60" placeholder="Meja">
+                </div>
+            </div>
+
+            <!-- Penentuan Hari Pertandingan -->
+            <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800">
+                            <i class="bi bi-calendar-week text-indigo-500 mr-1"></i> Penentuan Hari Pertandingan
+                        </label>
+                        <p class="text-3xs text-slate-500">Pilih hari apa saja pertandingan boleh dilaksanakan. Hari yang tidak dicentang akan dilewati otomatis saat generate jadwal.</p>
+                    </div>
+                    <!-- Preset Shortcut Buttons -->
+                    <div class="flex flex-wrap items-center gap-1.5 text-3xs font-semibold">
+                        <button type="button" onclick="pilihHariPreset([1,2,3,4,5,6,7])" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 shadow-2xs transition-colors">Semua Hari</button>
+                        <button type="button" onclick="pilihHariPreset([1,2,3,4,5])" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 shadow-2xs transition-colors">Senin - Jumat</button>
+                        <button type="button" onclick="pilihHariPreset([5,6,7])" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 shadow-2xs transition-colors">Jumat - Minggu</button>
+                        <button type="button" onclick="pilihHariPreset([6,7])" class="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 shadow-2xs transition-colors">Sabtu &amp; Minggu</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                    <?php
+                    $listHariNama = [
+                        1 => 'Senin',
+                        2 => 'Selasa',
+                        3 => 'Rabu',
+                        4 => 'Kamis',
+                        5 => 'Jumat',
+                        6 => 'Sabtu',
+                        7 => 'Minggu',
+                    ];
+                    foreach ($listHariNama as $num => $nama):
+                        $checked = in_array($num, $defaultHari, true);
+                        $isWeekend = $num >= 6;
+                    ?>
+                        <label class="hari-pill flex items-center justify-between p-2.5 rounded-xl border cursor-pointer select-none transition-all <?= $checked ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-bold shadow-2xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' ?>">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" name="hari[]" value="<?= $num ?>" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300" <?= $checked ? 'checked' : '' ?> onchange="updateHariPill(this)">
+                                <span class="text-xs"><?= h($nama) ?></span>
+                            </div>
+                            <?php if ($isWeekend): ?>
+                                <span class="text-4xs px-1 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">Weekend</span>
+                            <?php endif; ?>
+                        </label>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
@@ -382,6 +435,11 @@ require __DIR__ . '/../includes/header.php';
                                 <?= h($m['nama_away']) ?>
                             </td>
                             <td class="py-3 px-4">
+                                <?php if ($m['tanggal']): ?>
+                                    <div class="text-3xs text-indigo-600 font-bold mb-1 flex items-center gap-1">
+                                        <i class="bi bi-calendar2-day"></i> <?= h(hari_id($m['tanggal'])) ?>
+                                    </div>
+                                <?php endif; ?>
                                 <input form="<?= $fid ?>" type="date" name="tanggal" class="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-1.5 px-2.5 text-slate-800 form-input-focus" value="<?= h($m['tanggal']) ?>">
                             </td>
                             <td class="py-3 px-4">
@@ -410,5 +468,25 @@ require __DIR__ . '/../includes/header.php';
         </div>
     </div>
 <?php endif; ?>
+
+<script>
+function updateHariPill(cb) {
+    var label = cb.closest('.hari-pill');
+    if (!label) return;
+    if (cb.checked) {
+        label.classList.add('bg-indigo-50', 'border-indigo-200', 'text-indigo-900', 'font-bold', 'shadow-2xs');
+        label.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
+    } else {
+        label.classList.remove('bg-indigo-50', 'border-indigo-200', 'text-indigo-900', 'font-bold', 'shadow-2xs');
+        label.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+    }
+}
+function pilihHariPreset(days) {
+    document.querySelectorAll('input[name="hari[]"]').forEach(function (cb) {
+        cb.checked = days.indexOf(parseInt(cb.value, 10)) !== -1;
+        updateHariPill(cb);
+    });
+}
+</script>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>
