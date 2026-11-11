@@ -26,7 +26,13 @@
         <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Kelola Jadwal Pertandingan</h1>
         <p class="text-sm text-slate-500 mt-1">Pembuatan jadwal round-robin, alokasi meja, dan penyesuaian waktu tanding.</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ route('jadwal.pdf') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs" title="Buka PDF untuk dicetak">
+            <i class="bi bi-printer"></i> Cetak PDF
+        </a>
+        <a href="{{ route('jadwal.pdf', ['download' => 1]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs" title="Unduh berkas PDF">
+            <i class="bi bi-file-earmark-arrow-down"></i> Unduh PDF
+        </a>
         <a href="{{ route('jadwal') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs">
             <i class="bi bi-box-arrow-up-right"></i> Lihat Jadwal Publik
         </a>
@@ -69,7 +75,7 @@
             @endif
         </div>
 
-        <form action="{{ route('admin.jadwal.generate') }}" method="POST" class="space-y-4" onsubmit="return confirm('{{ $matches->isNotEmpty() ? 'Jadwal yang ada saat ini akan diganti seluruhnya. Lanjutkan?' : 'Generate jadwal sekarang?' }}');">
+        <form action="{{ route('admin.jadwal.generate') }}" method="POST" class="space-y-4" data-confirm="{{ $matches->isNotEmpty() ? 'Jadwal yang ada saat ini akan diganti seluruhnya. Lanjutkan?' : 'Generate jadwal pertandingan sekarang?' }}" data-confirm-title="Generate Jadwal?" data-confirm-btn="Ya, Generate">
             @csrf
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div>
@@ -210,7 +216,7 @@
             <div class="flex flex-wrap items-center gap-2">
                 @if ($draft)
                     <!-- Tombol Publikasikan -->
-                    <form action="{{ route('admin.jadwal.publikasi') }}" method="POST" onsubmit="return confirm('Publikasikan jadwal? Tim tidak dapat ditambah/dihapus setelah ini.');">
+                    <form action="{{ route('admin.jadwal.publikasi') }}" method="POST" data-confirm="Publikasikan jadwal? Tim tidak dapat ditambah/dihapus setelah ini." data-confirm-title="Publikasikan Jadwal?" data-confirm-btn="Ya, Publikasikan">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs shadow-emerald-600/20 cursor-pointer">
                             <i class="bi bi-megaphone-fill"></i> Publikasikan Jadwal
@@ -218,7 +224,7 @@
                     </form>
 
                     <!-- Batalkan & Hapus Jadwal -->
-                    <form action="{{ route('admin.jadwal.batal') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN & MENGHAPUS SELURUH JADWAL yang digenerate? Jadwal akan dikosongkan kembali.');">
+                    <form action="{{ route('admin.jadwal.batal') }}" method="POST" class="form-delete" data-confirm="Apakah Anda yakin ingin MEMBATALKAN & MENGHAPUS SELURUH JADWAL yang digenerate? Jadwal akan dikosongkan kembali." data-confirm-title="Hapus Semua Jadwal?" data-confirm-btn="Ya, Hapus Semua">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer">
                             <i class="bi bi-trash3-fill"></i> Batalkan &amp; Hapus Jadwal
@@ -226,13 +232,13 @@
                     </form>
                 @else
                     @if ($sudahBertanding === 0)
-                        <form action="{{ route('admin.jadwal.batal_publikasi') }}" method="POST" onsubmit="return confirm('Batalkan publikasi dan kembali ke mode draft?');">
+                        <form action="{{ route('admin.jadwal.batal_publikasi') }}" method="POST" data-confirm="Batalkan publikasi dan kembali ke mode draft?" data-confirm-title="Batalkan Publikasi?" data-confirm-btn="Ya, Batalkan">
                             @csrf
                             <button type="submit" class="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer">
                                 <i class="bi bi-arrow-counterclockwise"></i> Batalkan Publikasi
                             </button>
                         </form>
-                        <form action="{{ route('admin.jadwal.batal') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS SEMUA JADWAL? Status liga akan kembali ke draft dan jadwal dikosongkan.');">
+                        <form action="{{ route('admin.jadwal.batal') }}" method="POST" class="form-delete" data-confirm="Apakah Anda yakin ingin MENGHAPUS SEMUA JADWAL? Status liga akan kembali ke draft dan jadwal dikosongkan." data-confirm-title="Hapus Semua Jadwal?" data-confirm-btn="Ya, Hapus Semua">
                             @csrf
                             <button type="submit" class="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer">
                                 <i class="bi bi-trash3-fill"></i> Batalkan &amp; Hapus Jadwal
@@ -259,7 +265,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('admin.jadwal.geser') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end" onsubmit="return confirm('Terapkan pergeseran waktu untuk pertandingan yang dipilih?');">
+            <form action="{{ route('admin.jadwal.geser') }}" method="POST" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end" data-confirm="Terapkan pergeseran waktu untuk pertandingan yang dipilih?" data-confirm-title="Geser Waktu Pertandingan?" data-confirm-btn="Ya, Terapkan">
                 @csrf
                 <div class="sm:col-span-5">
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Mulai Dari Pertandingan</label>

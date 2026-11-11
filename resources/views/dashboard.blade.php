@@ -227,20 +227,161 @@
                     <p class="text-xs text-slate-400 mt-0.5">Pedoman resmi pelaksanaan pertandingan Liga Dam Batu.</p>
                 </div>
             </div>
-            <a href="{{ asset('peraturan.png') }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-2xs w-fit">
-                <i class="bi bi-box-arrow-up-right"></i> Buka Gambar Penuh
-            </a>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openPeraturanModal()" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs cursor-pointer">
+                    <i class="bi bi-arrows-fullscreen"></i> Perbesar Gambar
+                </button>
+                <a href="{{ asset('peraturan.png') }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-2xs w-fit">
+                    <i class="bi bi-box-arrow-up-right"></i> Tab Baru
+                </a>
+            </div>
         </div>
 
         <!-- Banner Peraturan -->
-        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 group relative">
-            <a href="{{ asset('peraturan.png') }}" target="_blank" class="block w-full cursor-zoom-in relative">
+        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 group relative cursor-pointer" onclick="openPeraturanModal()">
+            <div class="block w-full cursor-zoom-in relative">
                 <img src="{{ asset('peraturan.png') }}" alt="Peraturan Liga Dam Batu" class="w-full max-h-[720px] object-contain mx-auto rounded-xl transition-transform duration-300 group-hover:scale-[1.008]" loading="lazy">
-                <div class="absolute bottom-3 right-3 bg-slate-900/85 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
-                    <i class="bi bi-arrows-fullscreen"></i> Klik untuk Perbesar
+                <div class="absolute bottom-3 right-3 bg-slate-900/85 backdrop-blur-md text-white text-xs font-medium px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 opacity-90 group-hover:opacity-100 transition-all">
+                    <i class="bi bi-arrows-fullscreen text-sm"></i>
+                    <span>Klik untuk Memperbesar</span>
                 </div>
-            </a>
+            </div>
         </div>
     </div>
+
+    <!-- Modal Lightbox Perbesar Gambar Peraturan -->
+    <div id="modalPeraturan" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex-col transition-all duration-300" role="dialog" aria-modal="true" aria-labelledby="modalPeraturanTitle">
+        <!-- Toolbar Atas -->
+        <div class="flex items-center justify-between px-4 sm:px-6 py-3 bg-slate-900/90 border-b border-slate-800 text-white z-10 flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-indigo-600/80 text-white flex items-center justify-center text-xs">
+                    <i class="bi bi-file-earmark-image"></i>
+                </span>
+                <div>
+                    <h3 id="modalPeraturanTitle" class="text-sm font-bold text-white tracking-tight">Peraturan &amp; Tata Tertib Pertandingan</h3>
+                    <p class="text-3xs text-slate-400 hidden sm:block">Gunakan tombol zoom atau klik gambar untuk memperbesar/memperkecil (Tekan ESC untuk keluar)</p>
+                </div>
+            </div>
+
+            <!-- Kontrol Zoom & Aksi -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <div class="inline-flex items-center bg-slate-800 rounded-xl p-0.5 border border-slate-700/80">
+                    <button type="button" onclick="zoomPeraturan(-0.25)" class="p-1.5 sm:px-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer" title="Perkecil">
+                        <i class="bi bi-zoom-out"></i>
+                    </button>
+                    <span id="zoomLevelText" class="px-2 text-xs font-mono font-semibold text-indigo-300 min-w-[50px] text-center select-none">100%</span>
+                    <button type="button" onclick="zoomPeraturan(0.25)" class="p-1.5 sm:px-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer" title="Perbesar">
+                        <i class="bi bi-zoom-in"></i>
+                    </button>
+                    <button type="button" onclick="resetZoomPeraturan()" class="p-1.5 sm:px-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg text-2xs font-semibold transition-colors cursor-pointer" title="Reset Zoom">
+                        Reset
+                    </button>
+                </div>
+
+                <a href="{{ asset('peraturan.png') }}" download="Peraturan-Liga-Dam-Batu.png" class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors" title="Unduh Gambar Asli">
+                    <i class="bi bi-download"></i>
+                    <span class="hidden sm:inline">Unduh</span>
+                </a>
+
+                <a href="{{ asset('peraturan.png') }}" target="_blank" class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors" title="Buka di Tab Baru">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+
+                <button type="button" onclick="closePeraturanModal()" class="p-2 sm:px-3 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer" title="Tutup Modal (ESC)">
+                    <i class="bi bi-x-lg"></i>
+                    <span class="hidden sm:inline">Tutup</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Area Gambar (Scrollable & Zoomable) -->
+        <div id="modalPeraturanBackdrop" class="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-center cursor-zoom-out select-none" onclick="handleBackdropClick(event)">
+            <div class="relative transition-transform duration-200 ease-out origin-center inline-block" id="imageWrapper">
+                <img id="modalPeraturanImg" src="{{ asset('peraturan.png') }}" alt="Peraturan & Tata Tertib Pertandingan Liga Dam Batu" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl cursor-zoom-in border border-slate-700/50" onclick="toggleZoomClick(event)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentZoom = 1.0;
+        const minZoom = 0.5;
+        const maxZoom = 3.0;
+
+        function updateZoomTransform() {
+            const wrapper = document.getElementById('imageWrapper');
+            const img = document.getElementById('modalPeraturanImg');
+            const text = document.getElementById('zoomLevelText');
+            if (wrapper) {
+                wrapper.style.transform = `scale(${currentZoom})`;
+            }
+            if (text) {
+                text.innerText = Math.round(currentZoom * 100) + '%';
+            }
+            if (img) {
+                if (currentZoom > 1.0) {
+                    img.classList.remove('cursor-zoom-in');
+                    img.classList.add('cursor-zoom-out');
+                } else {
+                    img.classList.remove('cursor-zoom-out');
+                    img.classList.add('cursor-zoom-in');
+                }
+            }
+        }
+
+        function zoomPeraturan(delta) {
+            currentZoom = Math.min(maxZoom, Math.max(minZoom, Math.round((currentZoom + delta) * 100) / 100));
+            updateZoomTransform();
+        }
+
+        function resetZoomPeraturan() {
+            currentZoom = 1.0;
+            updateZoomTransform();
+        }
+
+        function toggleZoomClick(e) {
+            e.stopPropagation();
+            if (currentZoom === 1.0) {
+                currentZoom = 1.75;
+            } else {
+                currentZoom = 1.0;
+            }
+            updateZoomTransform();
+        }
+
+        function openPeraturanModal() {
+            const modal = document.getElementById('modalPeraturan');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+                resetZoomPeraturan();
+            }
+        }
+
+        function closePeraturanModal() {
+            const modal = document.getElementById('modalPeraturan');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = '';
+                resetZoomPeraturan();
+            }
+        }
+
+        function handleBackdropClick(e) {
+            if (e.target.id === 'modalPeraturanBackdrop') {
+                closePeraturanModal();
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modalPeraturan');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closePeraturanModal();
+                }
+            }
+        });
+    </script>
 @endif
 @endsection

@@ -20,23 +20,31 @@
         <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Jadwal Harian</h1>
         <p class="text-sm text-slate-500 mt-1">Pantau pertandingan berdasarkan tanggal pelaksanaan.</p>
     </div>
-    <!-- Quick Date Navigation -->
-    <div class="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-xs">
-        <a class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $prevDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Sebelumnya">
-            <i class="bi bi-chevron-left text-sm"></i>
+    <!-- Quick Date Navigation & Print Actions -->
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ route('jadwal.pdf', array_filter(['tanggal' => $tanggalAktif, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs" title="Buka PDF untuk dicetak">
+            <i class="bi bi-printer"></i> Cetak PDF
         </a>
-        <div class="px-3 py-1 text-xs font-bold text-slate-800 flex items-center gap-1.5">
-            <i class="bi bi-calendar-event text-indigo-500"></i>
-            <span>{{ \App\Services\TournamentService::hariId($tanggalAktif) }}, {{ \App\Services\TournamentService::tglId($tanggalAktif) }}</span>
-        </div>
-        <a class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $nextDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Berikutnya">
-            <i class="bi bi-chevron-right text-sm"></i>
+        <a href="{{ route('jadwal.pdf', array_filter(['tanggal' => $tanggalAktif, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null, 'download' => 1])) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs" title="Unduh berkas PDF">
+            <i class="bi bi-file-earmark-arrow-down"></i> Unduh PDF
         </a>
-        @if ($tanggalAktif !== $today)
-            <a class="px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors ml-1" href="{{ route('jadwal.hari', array_filter(['tanggal' => $today, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}">
-                Hari Ini
+        <div class="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-xs">
+            <a class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $prevDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Sebelumnya">
+                <i class="bi bi-chevron-left text-sm"></i>
             </a>
-        @endif
+            <div class="px-3 py-1 text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="bi bi-calendar-event text-indigo-500"></i>
+                <span>{{ \App\Services\TournamentService::hariId($tanggalAktif) }}, {{ \App\Services\TournamentService::tglId($tanggalAktif) }}</span>
+            </div>
+            <a class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $nextDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Berikutnya">
+                <i class="bi bi-chevron-right text-sm"></i>
+            </a>
+            @if ($tanggalAktif !== $today)
+                <a class="px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors ml-1" href="{{ route('jadwal.hari', array_filter(['tanggal' => $today, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}">
+                    Hari Ini
+                </a>
+            @endif
+        </div>
     </div>
 </div>
 

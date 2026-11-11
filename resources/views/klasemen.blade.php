@@ -11,10 +11,13 @@
         <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Klasemen Liga</h1>
         <p class="text-sm text-slate-500 mt-1">Perolehan poin, rasio batu masuk/kebobolan, dan selisih skor seluruh tim.</p>
     </div>
-    <div class="flex items-center gap-2">
-        <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition-colors print:hidden">
-            <i class="bi bi-printer"></i> Cetak Klasemen
-        </button>
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ route('klasemen.pdf') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition-colors print:hidden" title="Buka PDF untuk dicetak">
+            <i class="bi bi-printer"></i> Cetak PDF
+        </a>
+        <a href="{{ route('klasemen.pdf', ['download' => 1]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs transition-colors print:hidden" title="Unduh berkas PDF">
+            <i class="bi bi-file-earmark-arrow-down"></i> Unduh PDF
+        </a>
         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 shadow-xs">
             <i class="bi bi-info-circle text-indigo-500"></i>
             <span>3 Poin Menang &middot; 0 Kalah</span>

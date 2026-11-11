@@ -181,9 +181,14 @@
             <h2 class="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 <i class="bi bi-list-ol text-indigo-500"></i> Top 5 Klasemen
             </h2>
-            <a href="{{ route('klasemen') }}" target="_blank" class="text-xs font-semibold text-indigo-600 hover:underline">
-                Buka Publik &rarr;
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('klasemen.pdf') }}" target="_blank" class="text-xs font-semibold text-slate-600 hover:text-indigo-600 flex items-center gap-1" title="Cetak PDF Klasemen">
+                    <i class="bi bi-printer"></i> PDF
+                </a>
+                <a href="{{ route('klasemen') }}" target="_blank" class="text-xs font-semibold text-indigo-600 hover:underline">
+                    Buka Publik &rarr;
+                </a>
+            </div>
         </div>
 
         @if (empty($klasemen))

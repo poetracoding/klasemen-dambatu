@@ -54,3 +54,45 @@ body {
     }
 }
 
+/* SweetAlert2 Modern Theme Enhancements */
+.swal2-modern-popup {
+    border-radius: 1.5rem !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    padding: 1.75rem !important;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+.swal2-modern-popup .swal2-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+}
+.swal2-modern-popup .swal2-html-container {
+    font-size: 0.875rem !important;
+    color: #475569 !important;
+    margin-top: 0.5rem !important;
+}
+.swal2-modern-confirm {
+    border-radius: 0.75rem !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    padding: 0.625rem 1.25rem !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease-in-out !important;
+}
+.swal2-modern-cancel {
+    border-radius: 0.75rem !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    padding: 0.625rem 1.25rem !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease-in-out !important;
+}
+.swal2-toast-modern {
+    border-radius: 1rem !important;
+    font-family: 'Inter', sans-serif !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+

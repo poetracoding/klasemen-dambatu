@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 2. Dismiss flash alert
+    // 2. Dismiss flash alert & SweetAlert2 Flash Notifications
     function bindAlertButtons() {
         document.querySelectorAll('.alert-close-btn').forEach(function (btn) {
             btn.onclick = function () {
@@ -26,11 +26,126 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     bindAlertButtons();
 
-    // 3. Confirmation for destructive forms / buttons: data-confirm="Message"
+    // Trigger SweetAlert2 for session notifications on page load
+    function triggerSweetAlertFlash() {
+        if (!window.Swal) return;
+
+        // Cek alert success
+        var successAlert = document.querySelector('.alert-box.bg-emerald-50, .alert-box.border-emerald-200');
+        if (successAlert) {
+            var msgEl = successAlert.querySelector('div:not(.flex)');
+            var msg = msgEl ? msgEl.innerText.trim() : successAlert.innerText.trim();
+            if (msg) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: msg,
+                    timer: 3500,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end',
+                    customClass: {
+                        popup: 'swal2-toast-modern'
+                    }
+                });
+            }
+        }
+
+        // Cek alert error/danger
+        var dangerAlert = document.querySelector('.alert-box.bg-rose-50, .alert-box.border-rose-200');
+        if (dangerAlert) {
+            var dMsgEl = dangerAlert.querySelector('div:not(.flex)');
+            var dMsg = dMsgEl ? dMsgEl.innerText.trim() : dangerAlert.innerText.trim();
+            if (dMsg) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Pemberitahuan',
+                    text: dMsg,
+                    confirmButtonColor: '#e11d48',
+                    confirmButtonText: 'Tutup',
+                    customClass: {
+                        popup: 'swal2-modern-popup',
+                        confirmButton: 'swal2-modern-confirm'
+                    }
+                });
+            }
+        }
+
+        // Cek alert warning
+        var warningAlert = document.querySelector('.alert-box.bg-amber-50, .alert-box.border-amber-200');
+        if (warningAlert) {
+            var wMsgEl = warningAlert.querySelector('div:not(.flex)');
+            var wMsg = wMsgEl ? wMsgEl.innerText.trim() : warningAlert.innerText.trim();
+            if (wMsg) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Peringatan',
+                    text: wMsg,
+                    confirmButtonColor: '#f59e0b',
+                    confirmButtonText: 'Mengerti',
+                    customClass: {
+                        popup: 'swal2-modern-popup',
+                        confirmButton: 'swal2-modern-confirm'
+                    }
+                });
+            }
+        }
+    }
+    triggerSweetAlertFlash();
+
+    // 3. Confirmation for all CRUD & Logout using SweetAlert2
     document.addEventListener('submit', function (e) {
-        var msg = e.target.getAttribute('data-confirm');
-        if (msg && !window.confirm(msg)) {
+        var form = e.target;
+        if (form.dataset.swalConfirmed === 'true') {
+            return;
+        }
+
+        var isLogout = form.classList.contains('form-logout') || (form.action && form.action.indexOf('/logout') !== -1);
+        var isDelete = form.classList.contains('form-delete') || !!form.querySelector('input[name="_method"][value="DELETE"]');
+        var msg = form.getAttribute('data-confirm');
+        var title = form.getAttribute('data-confirm-title');
+        var btnText = form.getAttribute('data-confirm-btn');
+
+        if (isLogout && !msg) {
+            title = 'Konfirmasi Keluar';
+            msg = 'Apakah Anda yakin ingin keluar dari panel admin?';
+            btnText = 'Ya, Keluar';
+        }
+
+        if (msg) {
             e.preventDefault();
+            var isDanger = isDelete || isLogout || form.hasAttribute('data-confirm-danger');
+
+            if (window.Swal) {
+                Swal.fire({
+                    title: title || (isDanger ? 'Konfirmasi Tindakan' : 'Konfirmasi'),
+                    text: msg,
+                    icon: isDanger ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: isDanger ? '#e11d48' : '#4f46e5',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: btnText || (isDanger ? 'Ya, Lanjutkan' : 'Ya, Setuju'),
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    focusCancel: isDanger,
+                    customClass: {
+                        popup: 'swal2-modern-popup',
+                        confirmButton: 'swal2-modern-confirm',
+                        cancelButton: 'swal2-modern-cancel'
+                    }
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        form.dataset.swalConfirmed = 'true';
+                        form.submit();
+                    }
+                });
+            } else {
+                if (window.confirm(msg)) {
+                    form.dataset.swalConfirmed = 'true';
+                    form.submit();
+                }
+            }
         }
     });
 

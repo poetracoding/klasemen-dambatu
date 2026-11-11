@@ -104,7 +104,7 @@
                                         </button>
 
                                         @if ($draft)
-                                            <form action="{{ route('admin.tim.destroy', $t->id) }}" method="POST" class="inline" onsubmit="return confirm('Yakin ingin menghapus tim {{ addslashes($t->nama_tim) }}?');">
+                                            <form action="{{ route('admin.tim.destroy', $t->id) }}" method="POST" class="inline form-delete" data-confirm="Yakin ingin menghapus tim {{ addslashes($t->nama_tim) }}? Data tim dan riwayat pertandingan terkait akan dihapus permanen." data-confirm-title="Hapus Tim?" data-confirm-btn="Ya, Hapus">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="inline-flex items-center p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" title="Hapus Tim">

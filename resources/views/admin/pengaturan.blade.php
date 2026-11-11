@@ -143,7 +143,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('admin.pengaturan.upload_db') }}" method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="return confirm('PERINGATAN: Seluruh data saat ini akan ditimpa dengan database yang diunggah. Apakah Anda yakin ingin melanjutkan?');">
+            <form action="{{ route('admin.pengaturan.upload_db') }}" method="POST" enctype="multipart/form-data" class="space-y-4 form-delete" data-confirm="PERINGATAN: Seluruh data saat ini akan ditimpa dengan database yang diunggah. Apakah Anda yakin ingin melanjutkan?" data-confirm-title="Pulihkan Database?" data-confirm-btn="Ya, Pulihkan Sekarang">
                 @csrf
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Pilih Berkas (.sqlite atau .json)</label>

@@ -33,6 +33,8 @@
     </script>
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom Styles -->
     <link href="{{ asset('assets/css/style.css') }}" rel="stylesheet">
     <script>window.BASE_URL = '{{ url('/') }}';</script>
@@ -80,7 +82,7 @@
                     <i class="bi bi-box-arrow-up-right"></i>
                     <span>Lihat Situs</span>
                 </a>
-                <form action="{{ route('logout') }}" method="POST" class="inline">
+                <form action="{{ route('logout') }}" method="POST" class="inline form-logout" data-confirm="Apakah Anda yakin ingin keluar dari panel admin?" data-confirm-title="Konfirmasi Keluar" data-confirm-btn="Ya, Keluar">
                     @csrf
                     <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-300 hover:text-white hover:bg-rose-900/40 border border-rose-800/40 transition-colors cursor-pointer">
                         <i class="bi bi-box-arrow-right"></i>
@@ -111,7 +113,7 @@
             <a class="text-xs text-slate-300 hover:text-white flex items-center gap-1" href="{{ route('home') }}">
                 <i class="bi bi-box-arrow-up-right"></i> Lihat Situs
             </a>
-            <form action="{{ route('logout') }}" method="POST" class="inline">
+            <form action="{{ route('logout') }}" method="POST" class="inline form-logout" data-confirm="Apakah Anda yakin ingin keluar dari panel admin?" data-confirm-title="Konfirmasi Keluar" data-confirm-btn="Ya, Keluar">
                 @csrf
                 <button type="submit" class="text-xs text-rose-300 hover:text-rose-200 flex items-center gap-1 cursor-pointer">
                     <i class="bi bi-box-arrow-right"></i> Keluar

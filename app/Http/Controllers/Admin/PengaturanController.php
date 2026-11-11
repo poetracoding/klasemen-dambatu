@@ -265,6 +265,8 @@ class PengaturanController extends Controller
                 throw new \Exception('Format berkas harus .json, .sqlite, atau .db.');
             }
 
+            \App\Services\TournamentService::sinkronStatusLiga($liga);
+
             DB::commit();
 
             // Atur auto-increment setelah transaksi selesai

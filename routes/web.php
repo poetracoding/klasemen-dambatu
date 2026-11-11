@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\PertandinganController;
 use App\Http\Controllers\Admin\TimController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PdfController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,6 +32,10 @@ Route::get('/klasemen.php', function (\Illuminate\Http\Request $request) {
 Route::get('/history', [HomeController::class, 'history'])->name('history');
 Route::get('/tim/{id}', [HomeController::class, 'timDetail'])->name('tim.detail');
 Route::get('/pertandingan/{id}', [HomeController::class, 'pertandinganDetail'])->name('pertandingan.detail');
+
+// Cetak & Download PDF (DomPDF)
+Route::get('/cetak/klasemen', [PdfController::class, 'klasemen'])->name('klasemen.pdf');
+Route::get('/cetak/jadwal', [PdfController::class, 'jadwal'])->name('jadwal.pdf');
 
 // Live HTML auto-update API endpoint (both paths supported)
 Route::get('/api/check-update', [ApiController::class, 'checkUpdate'])->name('api.check_update');
