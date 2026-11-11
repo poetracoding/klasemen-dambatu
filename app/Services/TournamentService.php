@@ -288,49 +288,38 @@ class TournamentService
 
         $list = array_values($rows);
 
-        usort($list, function ($a, $b) {
-            if ($a['pts'] !== $b['pts']) return $b['pts'] <=> $a['pts'];
-            if ($a['w'] !== $b['w']) return $b['w'] <=> $a['w'];
-            if ($a['sb'] !== $b['sb']) return $b['sb'] <=> $a['sb'];
-            if ($a['bm'] !== $b['bm']) return $b['bm'] <=> $a['bm'];
+        usort($list, function ($a, $b) use ($h2h) {
+            // 1. Poin Liga Tertinggi (PTS)
+            if ($a['pts'] !== $b['pts']) {
+                return $b['pts'] <=> $a['pts'];
+            }
+            // 2. Jumlah Kemenangan Terbanyak (W)
+            if ($a['w'] !== $b['w']) {
+                return $b['w'] <=> $a['w'];
+            }
+            // 3. Selisih Skor / Batu Terbesar (Δ / SB)
+            if ($a['sb'] !== $b['sb']) {
+                return $b['sb'] <=> $a['sb'];
+            }
+            // 4. Total Poin Masuk (+) / BM Terbanyak
+            if ($a['bm'] !== $b['bm']) {
+                return $b['bm'] <=> $a['bm'];
+            }
+            // 5. Head-to-Head (H2H) antar tim bersangkutan
+            $h2hA = $h2h[$a['id']][$b['id']] ?? 0;
+            $h2hB = $h2h[$b['id']][$a['id']] ?? 0;
+            if ($h2hA !== $h2hB) {
+                return $h2hB <=> $h2hA;
+            }
+            // 6. Nama Tim (Alfabetis)
             return strcasecmp($a['nama_tim'], $b['nama_tim']);
         });
 
-        $hasil = [];
-        $i = 0;
-        $n = count($list);
-        while ($i < $n) {
-            $j = $i;
-            while ($j + 1 < $n && $list[$j + 1]['pts'] === $list[$i]['pts'] && $list[$j + 1]['w'] === $list[$i]['w'] && $list[$j + 1]['sb'] === $list[$i]['sb']) {
-                $j++;
-            }
-            $grup = array_slice($list, $i, $j - $i + 1);
-            if (count($grup) > 1) {
-                $ids = array_column($grup, 'id');
-                foreach ($grup as &$g) {
-                    $g['h2h'] = 0;
-                    foreach ($ids as $o) {
-                        if ($o !== $g['id']) {
-                            $g['h2h'] += $h2h[$g['id']][$o] ?? 0;
-                        }
-                    }
-                }
-                unset($g);
-                usort($grup, function ($a, $b) {
-                    return $a['h2h'] !== $b['h2h'] ? $b['h2h'] <=> $a['h2h'] : strcasecmp($a['nama_tim'], $b['nama_tim']);
-                });
-            }
-            foreach ($grup as $g) {
-                $hasil[] = $g;
-            }
-            $i = $j + 1;
-        }
-
-        foreach ($hasil as $k => &$r) {
+        foreach ($list as $k => &$r) {
             $r['pos'] = $k + 1;
         }
 
-        return $hasil;
+        return $list;
     }
 
     public static function geserJadwal(Liga $liga, int $targetId, int $menit, string $cakupan): int

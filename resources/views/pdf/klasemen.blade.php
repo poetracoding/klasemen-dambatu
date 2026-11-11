@@ -242,12 +242,12 @@
 
     <!-- Keterangan Aturan -->
     <div class="rules-box">
-        <strong>Ketentuan Poin &amp; Urutan Peringkat:</strong>
+        <strong>Ketentuan Poin &amp; Penentuan Peringkat (Tiebreaker):</strong>
         Menang = 3 Poin, Kalah = 0 Poin. Peringkat diurutkan berdasarkan:
-        (1) Total Poin Tertinggi &rarr;
-        (2) Jumlah Kemenangan Terbanyak &rarr;
-        (3) Selisih Batu Tertinggi (&Delta;) &rarr;
-        (4) Total Batu Masuk Terbanyak (BM) &rarr;
+        (1) Poin Liga Tertinggi (PTS) &rarr;
+        (2) Jumlah Kemenangan Terbanyak (W) &rarr;
+        (3) Selisih Skor Terbesar (&Delta;) &rarr;
+        (4) Total Poin Masuk (+) Terbanyak &rarr;
         (5) Hasil Pertemuan Langsung (Head-to-Head).
     </div>
 

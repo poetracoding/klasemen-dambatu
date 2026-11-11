@@ -113,40 +113,41 @@
     </div>
 
     <!-- Explanations Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600">
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
-            <div class="font-bold text-slate-900 mb-2 flex items-center gap-1.5 text-sm">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-600 dark:text-slate-400">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-1.5 text-sm">
                 <i class="bi bi-info-circle text-indigo-500"></i> Sistem Penilaian
             </div>
-            <ul class="space-y-1.5 text-slate-500">
-                <li>&bull; <strong class="text-slate-700">Menang (W):</strong> Memperoleh 3 Poin Liga.</li>
-                <li>&bull; <strong class="text-slate-700">Kalah (L):</strong> Memperoleh 0 Poin Liga.</li>
+            <ul class="space-y-1.5 text-slate-500 dark:text-slate-400">
+                <li>&bull; <strong class="text-slate-700 dark:text-slate-200">Menang (W):</strong> Memperoleh 3 Poin Liga.</li>
+                <li>&bull; <strong class="text-slate-700 dark:text-slate-200">Kalah (L):</strong> Memperoleh 0 Poin Liga.</li>
                 <li>&bull; Pertandingan wajib ada pemenang (tidak ada hasil seri).</li>
             </ul>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
-            <div class="font-bold text-slate-900 mb-2 flex items-center gap-1.5 text-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-1.5 text-sm">
                 <i class="bi bi-calculator text-indigo-500"></i> Keterangan Kolom
             </div>
-            <ul class="space-y-1.5 text-slate-500">
-                <li>&bull; <strong class="text-slate-700">MP:</strong> Matches Played (Total laga dimainkan)</li>
-                <li>&bull; <strong class="text-slate-700">+ :</strong> Poin Masuk (Total poin dikumpulkan tim)</li>
-                <li>&bull; <strong class="text-slate-700">- :</strong> Poin Keluar (Total kebobolan oleh lawan)</li>
-                <li>&bull; <strong class="text-slate-700">Δ :</strong> Selisih Skor (Poin Masuk dikurangi Keluar)</li>
-                <li>&bull; <strong class="text-slate-700">PTS:</strong> Total Poin Liga klasemen</li>
+            <ul class="space-y-1.5 text-slate-500 dark:text-slate-400">
+                <li>&bull; <strong class="text-slate-700 dark:text-slate-200">MP:</strong> Matches Played (Total laga dimainkan)</li>
+                <li>&bull; <strong class="text-slate-700 dark:text-slate-200">+ :</strong> Poin Masuk (Total poin dikumpulkan tim)</li>
+                <li>&bull; <strong class="text-slate-700 dark:text-slate-200">- :</strong> Poin Keluar (Total kebobolan oleh lawan)</li>
+                <li>&bull; <strong class="text-slate-700 dark:text-slate-200">&Delta; :</strong> Selisih Skor (Poin Masuk dikurangi Keluar)</li>
+                <li>&bull; <strong class="text-slate-700 dark:text-slate-200">PTS:</strong> Total Poin Liga klasemen</li>
             </ul>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs">
-            <div class="font-bold text-slate-900 mb-2 flex items-center gap-1.5 text-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div class="font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-1.5 text-sm">
                 <i class="bi bi-sort-numeric-down text-indigo-500"></i> Penentuan Peringkat (Tiebreaker)
             </div>
-            <ol class="space-y-1.5 text-slate-500 list-decimal list-inside">
+            <ol class="space-y-1.5 text-slate-500 dark:text-slate-400 list-decimal list-inside">
                 <li>Poin Liga Tertinggi (PTS)</li>
-                <li>Head-to-head (H2H) antar tim bersangkutan</li>
-                <li>Selisih Skor (Δ) terbesar</li>
-                <li>Total Poin Masuk (+) terbanyak</li>
+                <li>Jumlah Kemenangan Terbanyak (W)</li>
+                <li>Selisih Skor (&Delta;) Terbesar</li>
+                <li>Total Poin Masuk (+) Terbanyak</li>
+                <li>Hasil Pertemuan Langsung (Head-to-Head)</li>
             </ol>
         </div>
     </div>
