@@ -115,12 +115,14 @@ class PengaturanController extends Controller
                 $liga->update([
                     'nama_liga' => $data['liga']['nama_liga'] ?? $liga->nama_liga,
                     'musim' => $data['liga']['musim'] ?? $liga->musim,
-                    'tanggal_mulai' => $data['liga']['tanggal_mulai'] ?? null,
-                    'tanggal_selesai' => $data['liga']['tanggal_selesai'] ?? null,
+                    'tanggal_mulai' => $this->normalizeDate($data['liga']['tanggal_mulai'] ?? null),
+                    'tanggal_selesai' => $this->normalizeDate($data['liga']['tanggal_selesai'] ?? null),
                     'status' => $data['liga']['status'] ?? 'draft',
                     'jumlah_meja' => $data['liga']['jumlah_meja'] ?? 2,
                     'hari_pertandingan' => $data['liga']['hari_pertandingan'] ?? '1,2,3,4,5,6,7',
-                    'tanggal_libur' => $data['liga']['tanggal_libur'] ?? null,
+                    'tanggal_libur' => isset($data['liga']['tanggal_libur']) && is_array($data['liga']['tanggal_libur'])
+                        ? implode(',', $data['liga']['tanggal_libur'])
+                        : ($data['liga']['tanggal_libur'] ?? null),
                 ]);
 
                 DB::table('pertandingans')->where('liga_id', $liga->id)->delete();
@@ -158,8 +160,8 @@ class PengaturanController extends Controller
                             'liga_id' => $liga->id,
                             'ronde' => $p['ronde'] ?? 1,
                             'nomor_pertandingan' => $p['nomor_pertandingan'] ?? 1,
-                            'tanggal' => $p['tanggal'] ?: null,
-                            'waktu' => $p['waktu'] ?: null,
+                            'tanggal' => $this->normalizeDate($p['tanggal'] ?? null),
+                            'waktu' => $this->normalizeTime($p['waktu'] ?? null),
                             'lokasi' => $p['lokasi'] ?: null,
                             'tim_home' => (int) $p['tim_home'],
                             'tim_away' => (int) $p['tim_away'],
@@ -189,8 +191,8 @@ class PengaturanController extends Controller
                 $liga->update([
                     'nama_liga' => $ligaRow['nama_liga'] ?? $liga->nama_liga,
                     'musim' => $ligaRow['musim'] ?? $liga->musim,
-                    'tanggal_mulai' => $ligaRow['tanggal_mulai'] ?: null,
-                    'tanggal_selesai' => $ligaRow['tanggal_selesai'] ?: null,
+                    'tanggal_mulai' => $this->normalizeDate($ligaRow['tanggal_mulai'] ?? null),
+                    'tanggal_selesai' => $this->normalizeDate($ligaRow['tanggal_selesai'] ?? null),
                     'status' => $ligaRow['status'] ?? 'draft',
                     'jumlah_meja' => $ligaRow['jumlah_meja'] ?? 2,
                     'hari_pertandingan' => $ligaRow['hari_pertandingan'] ?? '1,2,3,4,5,6,7',
@@ -241,8 +243,8 @@ class PengaturanController extends Controller
                         'liga_id' => $liga->id,
                         'ronde' => $p['ronde'] ?? 1,
                         'nomor_pertandingan' => $p['nomor_pertandingan'] ?? 1,
-                        'tanggal' => $p['tanggal'] ?: null,
-                        'waktu' => $p['waktu'] ?: null,
+                        'tanggal' => $this->normalizeDate($p['tanggal'] ?? null),
+                        'waktu' => $this->normalizeTime($p['waktu'] ?? null),
                         'lokasi' => $p['lokasi'] ?: null,
                         'tim_home' => (int) $p['tim_home'],
                         'tim_away' => (int) $p['tim_away'],
@@ -283,6 +285,42 @@ class PengaturanController extends Controller
             return back()->with('danger', 'Gagal memulihkan database: ' . $e->getMessage());
         } finally {
             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
+    }
+
+    private function normalizeDate($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $val = trim((string) $value);
+        if (preg_match('/^(\d{4}-\d{2}-\d{2})/', $val, $matches)) {
+            return $matches[1];
+        }
+
+        try {
+            return \Carbon\Carbon::parse($val)->format('Y-m-d');
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    private function normalizeTime($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $val = trim((string) $value);
+        if (preg_match('/^(\d{2}:\d{2}(?::\d{2})?)/', $val, $matches)) {
+            return strlen($matches[1]) === 5 ? $matches[1] . ':00' : $matches[1];
+        }
+
+        try {
+            return \Carbon\Carbon::parse($val)->format('H:i:s');
+        } catch (Throwable $e) {
+            return null;
         }
     }
 }

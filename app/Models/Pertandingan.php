@@ -25,7 +25,7 @@ class Pertandingan extends Model
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
+        'tanggal' => 'date:Y-m-d',
         'ronde' => 'integer',
         'nomor_pertandingan' => 'integer',
         'skor_home' => 'integer',
