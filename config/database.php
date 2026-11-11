@@ -113,4 +113,7 @@ function init_schema(PDO $pdo): void
     if (!in_array('hari_pertandingan', $colsLiga, true)) {
         $pdo->exec("ALTER TABLE liga ADD COLUMN hari_pertandingan TEXT DEFAULT '1,2,3,4,5,6,7'");
     }
+    if (!in_array('tanggal_libur', $colsLiga, true)) {
+        $pdo->exec("ALTER TABLE liga ADD COLUMN tanggal_libur TEXT DEFAULT ''");
+    }
 }

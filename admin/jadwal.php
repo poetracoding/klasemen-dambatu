@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'durasi'      => (int) ($_POST['durasi'] ?? 0),
                 'lokasi'      => trim($_POST['lokasi'] ?? ''),
                 'hari'        => $hariDipilih,
+                'libur'       => $_POST['libur'] ?? [],
             ];
             if (!$draft) {
                 flash('danger', 'Jadwal hanya dapat dibuat ulang saat liga masih berstatus draft.');
@@ -139,6 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $draft = $liga['status'] === 'draft';
 $defaultMeja = max(1, (int) ($liga['jumlah_meja'] ?? 2));
 $defaultHari = array_map('intval', explode(',', $liga['hari_pertandingan'] ?? '1,2,3,4,5,6,7'));
+$defaultLibur = array_values(array_filter(explode(',', $liga['tanggal_libur'] ?? '')));
 $matches = ambil_pertandingan('1=1', [], 'p.tanggal, p.waktu, p.nomor_pertandingan');
 
 $judul = 'Jadwal';
@@ -273,6 +275,45 @@ require __DIR__ . '/../includes/header.php';
                             <?php endif; ?>
                         </label>
                     <?php endforeach; ?>
+                </div>
+            </div>
+
+            <!-- Skenario 1: Tanggal Libur Khusus (Dilewati) -->
+            <div class="p-4 rounded-2xl bg-rose-50/50 border border-rose-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                        <label class="block text-xs font-bold text-rose-950 flex items-center gap-1.5">
+                            <i class="bi bi-calendar-x text-rose-500 text-sm"></i>
+                            <span>Tanggal Libur Khusus (Dilewati / Blackout Dates)</span>
+                            <span class="text-4xs uppercase bg-rose-200 text-rose-800 px-1.5 py-0.5 rounded font-bold">Skenario 1</span>
+                        </label>
+                        <p class="text-3xs text-rose-700/80 mt-0.5">Pertandingan tidak akan dijadwalkan pada tanggal-tanggal ini (misal hari besar, pemilu, venue tutup) dan otomatis dialihkan ke jadwal berikutnya.</p>
+                    </div>
+                </div>
+
+                <!-- Input Picker & Button Tambah -->
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <input type="date" id="inputTanggalLibur" class="text-xs rounded-xl border border-rose-200 bg-white py-1.5 px-3 text-slate-800 form-input-focus shadow-2xs">
+                    <button type="button" onclick="tambahTanggalLibur()" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-100 hover:bg-rose-200 border border-rose-200 transition-colors shadow-2xs">
+                        <i class="bi bi-plus-circle-fill"></i> Tambah Hari Libur
+                    </button>
+                    <span class="text-3xs text-slate-400 italic">Pilih tanggal lalu klik Tambah</span>
+                </div>
+
+                <!-- List Tanggal Libur Yang Terpilih -->
+                <div id="containerLibur" class="flex flex-wrap items-center gap-2 min-h-8">
+                    <?php if (empty($defaultLibur)): ?>
+                        <span id="emptyLiburNotice" class="text-3xs text-slate-400 italic">Belum ada tanggal libur khusus yang ditambahkan (opsional).</span>
+                    <?php else: ?>
+                        <?php foreach ($defaultLibur as $dl): ?>
+                            <span class="libur-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white text-rose-700 text-xs font-semibold border border-rose-200 shadow-2xs">
+                                <i class="bi bi-calendar-x text-rose-500 text-xs"></i>
+                                <span><?= h(hari_id($dl) . ', ' . tgl($dl)) ?></span>
+                                <input type="hidden" name="libur[]" value="<?= h($dl) ?>">
+                                <button type="button" onclick="hapusTanggalLibur(this)" class="text-slate-400 hover:text-rose-600 transition-colors ml-1 font-bold text-sm" title="Hapus tanggal libur">&times;</button>
+                            </span>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -486,6 +527,44 @@ function pilihHariPreset(days) {
         cb.checked = days.indexOf(parseInt(cb.value, 10)) !== -1;
         updateHariPill(cb);
     });
+}
+function tambahTanggalLibur() {
+    var input = document.getElementById('inputTanggalLibur');
+    var val = input.value;
+    if (!val) {
+        alert('Silakan pilih tanggal terlebih dahulu.');
+        return;
+    }
+    var existing = document.querySelectorAll('input[name="libur[]"]');
+    for (var i = 0; i < existing.length; i++) {
+        if (existing[i].value === val) {
+            alert('Tanggal tersebut sudah ada di daftar libur.');
+            return;
+        }
+    }
+    var container = document.getElementById('containerLibur');
+    var emptyNotice = document.getElementById('emptyLiburNotice');
+    if (emptyNotice) emptyNotice.remove();
+
+    var dateObj = new Date(val + 'T00:00:00');
+    var days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    var dayName = days[dateObj.getDay()];
+    var parts = val.split('-');
+    var tglFmt = parts[2] + '-' + parts[1] + '-' + parts[0];
+
+    var badge = document.createElement('span');
+    badge.className = 'libur-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white text-rose-700 text-xs font-semibold border border-rose-200 shadow-2xs';
+    badge.innerHTML = '<i class="bi bi-calendar-x text-rose-500 text-xs"></i><span>' + dayName + ', ' + tglFmt + '</span><input type="hidden" name="libur[]" value="' + val + '"><button type="button" onclick="hapusTanggalLibur(this)" class="text-slate-400 hover:text-rose-600 transition-colors ml-1 font-bold text-sm" title="Hapus tanggal libur">&times;</button>';
+    container.appendChild(badge);
+    input.value = '';
+}
+function hapusTanggalLibur(btn) {
+    var badge = btn.closest('.libur-badge');
+    if (badge) badge.remove();
+    var container = document.getElementById('containerLibur');
+    if (container.querySelectorAll('.libur-badge').length === 0) {
+        container.innerHTML = '<span id="emptyLiburNotice" class="text-3xs text-slate-400 italic">Belum ada tanggal libur khusus yang ditambahkan (opsional).</span>';
+    }
 }
 </script>
 

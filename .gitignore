@@ -1,0 +1,17 @@
+# SQLite database files and backups
+database/*.sqlite
+database/*.sqlite*
+database/*.bak
+*.sqlite
+*.sqlite*
+*.bak
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log
+

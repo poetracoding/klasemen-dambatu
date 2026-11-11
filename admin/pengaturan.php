@@ -25,6 +25,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($aksi === 'upload_db') {
+        if (empty($_FILES['db_file']) || $_FILES['db_file']['error'] !== UPLOAD_ERR_OK) {
+            flash('danger', 'Pilih berkas database SQLite (.sqlite) yang valid untuk diunggah.');
+        } else {
+            $tmpFile = $_FILES['db_file']['tmp_name'];
+            $fileSize = $_FILES['db_file']['size'];
+
+            if ($fileSize < 100 || $fileSize > (50 * 1024 * 1024)) {
+                flash('danger', 'Ukuran berkas tidak valid (maksimal 50MB).');
+            } else {
+                $fp = @fopen($tmpFile, 'rb');
+                $header = $fp ? fread($fp, 16) : '';
+                if ($fp) fclose($fp);
+
+                if (strpos($header, 'SQLite format 3') !== 0) {
+                    flash('danger', 'Berkas yang diunggah bukan format database SQLite 3 yang valid.');
+                } else {
+                    try {
+                        $testPdo = new PDO('sqlite:' . $tmpFile);
+                        $testPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                        $tables = $testPdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN);
+                        $requiredTables = ['liga', 'tim', 'pertandingan', 'admin'];
+                        $missing = array_diff($requiredTables, $tables);
+
+                        if (!empty($missing)) {
+                            flash('danger', 'Database tidak kompatibel dengan Liga Dam Batu. Tabel kurang: ' . implode(', ', $missing));
+                        } else {
+                            // Backup database saat ini sebelum ditimpa
+                            $bakFile = dirname(DB_FILE) . '/backup_sebelum_restore_' . date('Ymd_His') . '.sqlite.bak';
+                            @copy(DB_FILE, $bakFile);
+
+                            unset($pdo);
+
+                            // Timpa DB_FILE dengan file baru
+                            if (!move_uploaded_file($tmpFile, DB_FILE)) {
+                                copy($tmpFile, DB_FILE);
+                                @unlink($tmpFile);
+                            }
+
+                            // Re-init schema agar kolom migrasi baru tetap konsisten
+                            $freshPdo = new PDO('sqlite:' . DB_FILE, null, null, [
+                                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                            ]);
+                            init_schema($freshPdo);
+
+                            flash('success', 'Database SQLite berhasil diunggah dan dipulihkan! Cadangan otomatis database sebelumnya tersimpan dengan aman.');
+                        }
+                    } catch (Throwable $e) {
+                        flash('danger', 'Gagal memproses database: ' . $e->getMessage());
+                    }
+                }
+            }
+        }
+        redirect('admin/pengaturan.php');
+    }
+
     if ($aksi === 'liga') {
         $nama = trim($_POST['nama_liga'] ?? '');
         $musim = trim($_POST['musim'] ?? '');
@@ -158,26 +215,63 @@ require __DIR__ . '/../includes/header.php';
             </form>
         </div>
 
-        <!-- Backup Database -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
-            <div class="flex items-center gap-2.5 pb-4 mb-4 border-b border-slate-100">
+        <!-- Database SQLite: Backup & Upload / Restore -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+            <div class="flex items-center gap-2.5 pb-4 border-b border-slate-100">
                 <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                    <i class="bi bi-database-down"></i>
+                    <i class="bi bi-database-gear"></i>
                 </span>
-                <h2 class="text-base font-bold text-slate-900">Cadangkan Database (Backup)</h2>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Database SQLite: Backup &amp; Restore</h2>
+                    <p class="text-3xs text-slate-400">Unduh cadangan data turnamen atau pulihkan berkas database SQLite (.sqlite).</p>
+                </div>
             </div>
 
-            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                Unduh salinan berkas database SQLite yang konsisten (menggunakan SQLite VACUUM snapshot). Aman diunduh kapan saja tanpa mengganggu aplikasi yang sedang berjalan.
-            </p>
+            <!-- Bagian 1: Download Backup -->
+            <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+                <div class="flex items-center justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-2">
+                        <i class="bi bi-download text-emerald-600 text-base"></i>
+                        <h3 class="text-xs font-bold text-slate-800">1. Unduh Cadangan (Backup)</h3>
+                    </div>
+                </div>
+                <p class="text-3xs text-slate-500 mb-3 leading-relaxed">
+                    Unduh snapshot konsisten database saat ini (menggunakan SQLite VACUUM snapshot). Aman diunduh kapan saja tanpa mengganggu pertandingan.
+                </p>
+                <form method="post">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="aksi" value="backup">
+                    <button class="inline-flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-semibold text-slate-800 bg-white hover:bg-slate-100 transition-colors border border-slate-300 shadow-2xs">
+                        <i class="bi bi-download"></i> Unduh File Backup (.sqlite)
+                    </button>
+                </form>
+            </div>
 
-            <form method="post">
-                <?= csrf_field() ?>
-                <input type="hidden" name="aksi" value="backup">
-                <button class="inline-flex items-center gap-2 py-2.5 px-5 rounded-xl text-sm font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200">
-                    <i class="bi bi-download"></i> Unduh File Backup (.sqlite)
-                </button>
-            </form>
+            <!-- Bagian 2: Upload & Restore Database -->
+            <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80">
+                <div class="flex items-center justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-2">
+                        <i class="bi bi-upload text-amber-600 text-base"></i>
+                        <h3 class="text-xs font-bold text-amber-950">2. Unggah &amp; Pulihkan Database (Upload / Restore)</h3>
+                    </div>
+                </div>
+                <p class="text-3xs text-amber-900/80 mb-3 leading-relaxed">
+                    Unggah berkas database SQLite (.sqlite) dari komputer atau server lain. Data turnamen saat ini akan digantikan oleh data yang diunggah (cadangan otomatis akan dibuat sebagai arsip pengaman).
+                </p>
+
+                <form method="post" enctype="multipart/form-data" class="space-y-3" data-confirm="PERINGATAN: Mengunggah database baru akan menimpa seluruh data turnamen saat ini. Cadangan database lama akan otomatis disimpan di folder database/. Lanjutkan?">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="aksi" value="upload_db">
+
+                    <div>
+                        <input type="file" name="db_file" accept=".sqlite,.db" required class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200 cursor-pointer border border-amber-200 rounded-xl bg-white p-1 shadow-2xs">
+                    </div>
+
+                    <button class="inline-flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-2xs shadow-amber-600/20">
+                        <i class="bi bi-cloud-arrow-up-fill"></i> Unggah &amp; Pulihkan Database
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

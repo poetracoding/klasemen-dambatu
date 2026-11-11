@@ -171,6 +171,21 @@ function buat_jadwal(array $o): int
     sort($hariDipilih);
     $hariPertandinganStr = implode(',', $hariDipilih);
 
+    // Tanggal Libur Khusus (Skenario 1: Blackout Dates)
+    $tanggalLibur = [];
+    if (!empty($o['libur'])) {
+        $rawLibur = is_array($o['libur']) ? $o['libur'] : explode(',', (string) $o['libur']);
+        foreach ($rawLibur as $d) {
+            $d = trim($d);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                $tanggalLibur[] = $d;
+            }
+        }
+    }
+    $tanggalLibur = array_values(array_unique($tanggalLibur));
+    sort($tanggalLibur);
+    $tanggalLiburStr = implode(',', $tanggalLibur);
+
     // Kumpulkan seluruh pasangan pertandingan sesuai ronde
     $matchList = [];
     foreach ($rounds as $rIndex => $pairs) {
@@ -186,9 +201,16 @@ function buat_jadwal(array $o): int
     $totalTim = count($teamIds);
     $maxMatchesPerSlot = min($jumlahMeja, max(1, intdiv($totalTim, 2)));
 
-    // Pastikan tanggal mulai jatuh pada hari pertandingan yang dipilih
+    // Helper cek apakah tanggal diizinkan (hari cocok & bukan libur khusus)
+    $isDateAllowed = function (int $ts) use ($hariDipilih, $tanggalLibur): bool {
+        $dow = (int) date('N', $ts);
+        $ymd = date('Y-m-d', $ts);
+        return in_array($dow, $hariDipilih, true) && !in_array($ymd, $tanggalLibur, true);
+    };
+
+    // Pastikan tanggal mulai jatuh pada hari yang diizinkan dan bukan hari libur
     $currentDateTs = strtotime($tglMulai);
-    while (!in_array((int) date('N', $currentDateTs), $hariDipilih, true)) {
+    while (!$isDateAllowed($currentDateTs)) {
         $currentDateTs = strtotime('+1 day', $currentDateTs);
     }
 
@@ -199,7 +221,8 @@ function buat_jadwal(array $o): int
     $pdo->beginTransaction();
     try {
         $pdo->prepare('DELETE FROM pertandingan WHERE id_liga=?')->execute([$l['id']]);
-        $pdo->prepare('UPDATE liga SET jumlah_meja=?, hari_pertandingan=? WHERE id=?')->execute([$jumlahMeja, $hariPertandinganStr, $l['id']]);
+        $pdo->prepare('UPDATE liga SET jumlah_meja=?, hari_pertandingan=?, tanggal_libur=? WHERE id=?')
+            ->execute([$jumlahMeja, $hariPertandinganStr, $tanggalLiburStr, $l['id']]);
         $ins = $pdo->prepare('INSERT INTO pertandingan
             (id_liga, ronde, nomor_pertandingan, tanggal, waktu, lokasi, tim_home, tim_away, skor_home, skor_away, status)
             VALUES (?,?,?,?,?,?,?,?,0,0,\'belum_main\')');
@@ -247,10 +270,10 @@ function buat_jadwal(array $o): int
             // Maju ke slot waktu berikutnya
             $slotIndex++;
             if ($matchesToday >= $perHari) {
-                // Lompat ke hari pertandingan berikutnya yang diperbolehkan
+                // Lompat ke hari pertandingan berikutnya yang diperbolehkan & bukan hari libur
                 do {
                     $currentDateTs = strtotime('+1 day', $currentDateTs);
-                } while (!in_array((int) date('N', $currentDateTs), $hariDipilih, true));
+                } while (!$isDateAllowed($currentDateTs));
 
                 $matchesToday = 0;
                 $slotIndex = 0;
