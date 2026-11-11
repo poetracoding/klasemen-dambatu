@@ -73,7 +73,15 @@
                 updateThemeUI(isDark);
             }
 
-            window.toggleTheme = function () {
+            var _themeToggleLocked = false;
+            window.toggleTheme = function (e) {
+                if (e && e.preventDefault) e.preventDefault();
+                if (_themeToggleLocked) return;
+                _themeToggleLocked = true;
+                setTimeout(function () {
+                    _themeToggleLocked = false;
+                }, 200);
+
                 var isDark = document.documentElement.classList.contains('dark');
                 applyTheme(isDark ? 'light' : 'dark');
             };
