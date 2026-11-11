@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id" class="h-full bg-slate-50 dark:bg-slate-950">
+<html lang="id" class="h-full bg-slate-100 dark:bg-slate-950">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -107,7 +107,7 @@
     <link href="{{ asset('assets/css/style.css') }}?v={{ filemtime(public_path('assets/css/style.css')) }}" rel="stylesheet">
     <script>window.BASE_URL = '{{ url('/') }}';</script>
 </head>
-<body class="min-h-full flex flex-col text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-950 antialiased font-sans transition-colors duration-200" data-area="public">
+<body class="min-h-full flex flex-col text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-950 antialiased font-sans transition-colors duration-200" data-area="public">
 
 <!-- Public Navigation -->
 <nav class="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">

@@ -27,13 +27,13 @@
         <p class="text-sm text-slate-500 mt-1">Pembuatan jadwal round-robin, alokasi meja, dan penyesuaian waktu tanding.</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-        <a href="{{ route('jadwal.pdf') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs" title="Buka PDF untuk dicetak">
+        <a href="{{ route('jadwal.pdf') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-xs" title="Buka PDF untuk dicetak">
             <i class="bi bi-printer"></i> Cetak PDF
         </a>
         <a href="{{ route('jadwal.pdf', ['download' => 1]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs" title="Unduh berkas PDF">
             <i class="bi bi-file-earmark-arrow-down"></i> Unduh PDF
         </a>
-        <a href="{{ route('jadwal') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs">
+        <a href="{{ route('jadwal') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-xs">
             <i class="bi bi-box-arrow-up-right"></i> Lihat Jadwal Publik
         </a>
     </div>

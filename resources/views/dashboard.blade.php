@@ -30,7 +30,7 @@
         </p>
     </div>
     <div class="flex items-center gap-2">
-        <a href="{{ route('jadwal') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-xs">
+        <a href="{{ route('jadwal') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-xs">
             <i class="bi bi-calendar3"></i> Jadwal Lengkap
         </a>
         <a href="{{ route('klasemen') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs shadow-indigo-600/20">
@@ -206,7 +206,7 @@
                 </table>
             </div>
             <div class="text-center pt-1">
-                <a href="{{ route('klasemen') }}" class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                <a href="{{ route('klasemen') }}" class="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 dark:hover:bg-indigo-900/80 transition-colors">
                     Lihat Klasemen Lengkap
                 </a>
             </div>
@@ -231,7 +231,7 @@
                 <button type="button" onclick="openPeraturanModal()" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs cursor-pointer">
                     <i class="bi bi-arrows-fullscreen"></i> Perbesar Gambar
                 </button>
-                <a href="{{ asset('peraturan.png') }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-2xs w-fit">
+                <a href="{{ asset('peraturan.png') }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-2xs w-fit">
                     <i class="bi bi-box-arrow-up-right"></i> Tab Baru
                 </a>
             </div>

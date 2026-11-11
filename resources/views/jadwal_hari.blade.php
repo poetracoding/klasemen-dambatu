@@ -22,21 +22,21 @@
     </div>
     <!-- Quick Date Navigation & Print Actions -->
     <div class="flex flex-wrap items-center gap-2">
-        <a href="{{ route('jadwal.pdf', array_filter(['tanggal' => $tanggalAktif, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs" title="Buka PDF untuk dicetak">
+        <a href="{{ route('jadwal.pdf', array_filter(['tanggal' => $tanggalAktif, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-xs" title="Buka PDF untuk dicetak">
             <i class="bi bi-printer"></i> Cetak PDF
         </a>
         <a href="{{ route('jadwal.pdf', array_filter(['tanggal' => $tanggalAktif, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null, 'download' => 1])) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs" title="Unduh berkas PDF">
             <i class="bi bi-file-earmark-arrow-down"></i> Unduh PDF
         </a>
-        <div class="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-xs">
-            <a class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $prevDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Sebelumnya">
+        <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs">
+            <a class="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $prevDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Sebelumnya">
                 <i class="bi bi-chevron-left text-sm"></i>
             </a>
-            <div class="px-3 py-1 text-xs font-bold text-slate-800 flex items-center gap-1.5">
+            <div class="px-3 py-1 text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                 <i class="bi bi-calendar-event text-indigo-500"></i>
                 <span>{{ \App\Services\TournamentService::hariId($tanggalAktif) }}, {{ \App\Services\TournamentService::tglId($tanggalAktif) }}</span>
             </div>
-            <a class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $nextDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Berikutnya">
+            <a class="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors" href="{{ route('jadwal.hari', array_filter(['tanggal' => $nextDate, 'tim' => $selectedTim ?: null, 'status' => $selectedStatus ?: null])) }}" title="Hari Berikutnya">
                 <i class="bi bi-chevron-right text-sm"></i>
             </a>
             @if ($tanggalAktif !== $today)

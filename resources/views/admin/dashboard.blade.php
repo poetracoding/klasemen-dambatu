@@ -20,7 +20,7 @@
         <p class="text-sm text-slate-500 mt-1">Ringkasan status, jadwal, dan progres jalannya liga.</p>
     </div>
     <div class="flex items-center gap-2">
-        <a href="{{ route('admin.jadwal.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs">
+        <a href="{{ route('admin.jadwal.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-xs">
             <i class="bi bi-calendar3 text-indigo-500"></i> Kelola Jadwal
         </a>
         <a href="{{ route('admin.pertandingan.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs shadow-indigo-600/20">

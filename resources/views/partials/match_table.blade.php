@@ -34,7 +34,7 @@
                             $pemenangName = $m->pemenang->nama_tim ?? null;
                             $tglStr = $m->tanggal ? \Carbon\Carbon::parse($m->tanggal)->format('Y-m-d') : null;
                         @endphp
-                        <tr class="hover:bg-slate-50/70 transition-colors">
+                        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/80 transition-colors">
                             <td class="py-3.5 px-4 text-center font-medium text-slate-400">
                                 {{ $m->nomor_pertandingan }}
                             </td>
@@ -47,7 +47,7 @@
                                 {{ \App\Services\TournamentService::jamId($m->waktu) }}
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap">
-                                <a class="group inline-flex items-center gap-2 font-semibold text-slate-800 hover:text-indigo-600 transition-colors" href="{{ route('pertandingan.detail', $m->id) }}">
+                                <a class="group inline-flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" href="{{ route('pertandingan.detail', $m->id) }}">
                                     <!-- Home Team -->
                                     <span class="{{ $m->status === 'selesai' && $m->pemenang_id == $m->tim_home ? 'text-indigo-600 font-extrabold' : '' }}">
                                         {{ $homeName }}

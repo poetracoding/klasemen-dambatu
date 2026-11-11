@@ -17,7 +17,7 @@
         <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">History Pertandingan</h1>
         <p class="text-sm text-slate-500 mt-1">Daftar seluruh pertandingan yang telah selesai beserta rincian pemenang (Total: {{ $totalCount }} laga).</p>
     </div>
-    <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-xs print:hidden cursor-pointer">
+    <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-xs print:hidden cursor-pointer">
         <i class="bi bi-printer"></i> Cetak History
     </button>
 </div>
