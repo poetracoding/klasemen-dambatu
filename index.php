@@ -221,4 +221,34 @@ require __DIR__ . '/includes/header.php';
     </div>
 </div>
 
+<!-- Section Peraturan Pertandingan -->
+<?php if (file_exists(__DIR__ . '/peraturan.png')): ?>
+    <div class="mt-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shadow-2xs">
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                </span>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 tracking-tight">Peraturan &amp; Tata Tertib Pertandingan</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Pedoman resmi pelaksanaan pertandingan Liga Dam Batu.</p>
+                </div>
+            </div>
+            <a href="<?= h(url('peraturan.png')) ?>" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 transition-colors shadow-2xs w-fit">
+                <i class="bi bi-box-arrow-up-right"></i> Buka Gambar Penuh
+            </a>
+        </div>
+
+        <!-- Banner Peraturan -->
+        <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 group relative">
+            <a href="<?= h(url('peraturan.png')) ?>" target="_blank" class="block w-full cursor-zoom-in relative">
+                <img src="<?= h(url('peraturan.png')) ?>" alt="Peraturan Liga Dam Batu" class="w-full max-h-[720px] object-contain mx-auto rounded-xl transition-transform duration-300 group-hover:scale-[1.008]" loading="lazy">
+                <div class="absolute bottom-3 right-3 bg-slate-900/85 backdrop-blur-md text-white text-xs font-medium px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                    <i class="bi bi-arrows-fullscreen"></i> Klik untuk Perbesar
+                </div>
+            </a>
+        </div>
+    </div>
+<?php endif; ?>
+
 <?php require __DIR__ . '/includes/footer.php'; ?>
