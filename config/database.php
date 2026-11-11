@@ -1,119 +1,184 @@
 <?php
-// Konfigurasi database SQLite (PDO) + pembuatan skema otomatis.
-define('BASE_PATH', dirname(__DIR__));
-define('DB_FILE', BASE_PATH . '/database/liga.sqlite');
-date_default_timezone_set('Asia/Jakarta');
 
-// URL dasar aplikasi (hanya folder admin/ yang berada di sub-folder)
-$__dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
-if (basename($__dir) === 'admin') {
-    $__dir = str_replace('\\', '/', dirname($__dir));
-}
-define('BASE_URL', rtrim($__dir === '/' || $__dir === '.' ? '' : $__dir, '/'));
+use Illuminate\Support\Str;
+use Pdo\Mysql;
 
-function db(): PDO
-{
-    static $pdo = null;
-    if ($pdo) {
-        return $pdo;
-    }
-    $dir = dirname(DB_FILE);
-    if (!is_dir($dir)) {
-        mkdir($dir, 0775, true);
-    }
-    $pdo = new PDO('sqlite:' . DB_FILE);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    $pdo->exec('PRAGMA foreign_keys = ON');
-    init_schema($pdo);
-    return $pdo;
-}
+return [
 
-function init_schema(PDO $pdo): void
-{
-    $pdo->exec("
-    CREATE TABLE IF NOT EXISTS liga (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nama_liga TEXT NOT NULL,
-        musim TEXT,
-        tanggal_mulai DATE,
-        tanggal_selesai DATE,
-        status TEXT DEFAULT 'draft',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS tim (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_liga INTEGER NOT NULL,
-        nama_tim TEXT NOT NULL,
-        pemain1 TEXT NOT NULL,
-        pemain2 TEXT NOT NULL,
-        status INTEGER DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_liga) REFERENCES liga(id)
-    );
-    CREATE TABLE IF NOT EXISTS pertandingan (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_liga INTEGER NOT NULL,
-        ronde INTEGER,
-        nomor_pertandingan INTEGER,
-        tanggal DATE,
-        waktu TIME,
-        lokasi TEXT,
-        tim_home INTEGER NOT NULL,
-        tim_away INTEGER NOT NULL,
-        skor_home INTEGER DEFAULT NULL,
-        skor_away INTEGER DEFAULT NULL,
-        pemenang_id INTEGER,
-        status TEXT DEFAULT 'belum_main',
-        catatan TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_liga) REFERENCES liga(id),
-        FOREIGN KEY (tim_home) REFERENCES tim(id),
-        FOREIGN KEY (tim_away) REFERENCES tim(id),
-        FOREIGN KEY (pemenang_id) REFERENCES tim(id),
-        UNIQUE (id_liga, tim_home, tim_away),
-        CHECK (tim_home <> tim_away)
-    );
-    CREATE TABLE IF NOT EXISTS admin (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        nama TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    ");
+    /*
+    |--------------------------------------------------------------------------
+    | Default Database Connection Name
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify which of the database connections below you wish
+    | to use as your default connection for database operations. This is
+    | the connection which will be utilized unless another connection
+    | is explicitly specified when you execute a query / statement.
+    |
+    */
 
-    if (!(int) $pdo->query('SELECT COUNT(*) FROM liga')->fetchColumn()) {
-        $pdo->prepare('INSERT INTO liga (nama_liga, musim, status) VALUES (?,?,?)')
-            ->execute(['LIGA DAM BATU', date('Y'), 'draft']);
-    }
-    if (!(int) $pdo->query('SELECT COUNT(*) FROM admin')->fetchColumn()) {
-        // Akun awal: admin / admin123  (WAJIB diganti di menu Pengaturan)
-        $pdo->prepare('INSERT INTO admin (username, password, nama) VALUES (?,?,?)')
-            ->execute(['admin', password_hash('admin123', PASSWORD_DEFAULT), 'Administrator']);
-    }
+    'default' => env('DB_CONNECTION', 'sqlite'),
 
-    // Auto-migration kolom baru
-    $cols = $pdo->query("PRAGMA table_info(pertandingan)")->fetchAll(PDO::FETCH_COLUMN, 1);
-    if (!in_array('skor_home', $cols, true)) {
-        $pdo->exec("ALTER TABLE pertandingan ADD COLUMN skor_home INTEGER DEFAULT 0");
-    }
-    if (!in_array('skor_away', $cols, true)) {
-        $pdo->exec("ALTER TABLE pertandingan ADD COLUMN skor_away INTEGER DEFAULT 0");
-    }
-    if (!in_array('updated_at', $cols, true)) {
-        $pdo->exec("ALTER TABLE pertandingan ADD COLUMN updated_at DATETIME DEFAULT NULL");
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Database Connections
+    |--------------------------------------------------------------------------
+    |
+    | Below are all of the database connections defined for your application.
+    | An example configuration is provided for each database system which
+    | is supported by Laravel. You're free to add / remove connections.
+    |
+    */
 
-    $colsLiga = $pdo->query("PRAGMA table_info(liga)")->fetchAll(PDO::FETCH_COLUMN, 1);
-    if (!in_array('jumlah_meja', $colsLiga, true)) {
-        $pdo->exec("ALTER TABLE liga ADD COLUMN jumlah_meja INTEGER DEFAULT 2");
-    }
-    if (!in_array('hari_pertandingan', $colsLiga, true)) {
-        $pdo->exec("ALTER TABLE liga ADD COLUMN hari_pertandingan TEXT DEFAULT '1,2,3,4,5,6,7'");
-    }
-    if (!in_array('tanggal_libur', $colsLiga, true)) {
-        $pdo->exec("ALTER TABLE liga ADD COLUMN tanggal_libur TEXT DEFAULT ''");
-    }
-}
+    'connections' => [
+
+        'sqlite' => [
+            'driver' => 'sqlite',
+            'url' => env('DB_URL'),
+            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'prefix' => '',
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+            'busy_timeout' => null,
+            'journal_mode' => null,
+            'synchronous' => null,
+            'transaction_mode' => 'DEFERRED',
+        ],
+
+        'mysql' => [
+            'driver' => 'mysql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        'mariadb' => [
+            'driver' => 'mariadb',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        'pgsql' => [
+            'driver' => 'pgsql',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '5432'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+        ],
+
+        'sqlsrv' => [
+            'driver' => 'sqlsrv',
+            'url' => env('DB_URL'),
+            'host' => env('DB_HOST', 'localhost'),
+            'port' => env('DB_PORT', '1433'),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            // 'encrypt' => env('DB_ENCRYPT', 'yes'),
+            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+        ],
+
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Migration Repository Table
+    |--------------------------------------------------------------------------
+    |
+    | This table keeps track of all the migrations that have already run for
+    | your application. Using this information, we can determine which of
+    | the migrations on disk haven't actually been run on the database.
+    |
+    */
+
+    'migrations' => [
+        'table' => 'migrations',
+        'update_date_on_publish' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Redis Databases
+    |--------------------------------------------------------------------------
+    |
+    | Redis is an open source, fast, and advanced key-value store that also
+    | provides a richer body of commands than a typical key-value system
+    | such as Memcached. You may define your connection settings here.
+    |
+    */
+
+    'redis' => [
+
+        'client' => env('REDIS_CLIENT', 'phpredis'),
+
+        'options' => [
+            'cluster' => env('REDIS_CLUSTER', 'redis'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'persistent' => env('REDIS_PERSISTENT', false),
+        ],
+
+        'default' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_DB', '0'),
+            'max_retries' => env('REDIS_MAX_RETRIES', 3),
+            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
+            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+        ],
+
+        'cache' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_CACHE_DB', '1'),
+            'max_retries' => env('REDIS_MAX_RETRIES', 3),
+            'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
+            'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
+            'backoff_cap' => env('REDIS_BACKOFF_CAP', 1000),
+        ],
+
+    ],
+
+];

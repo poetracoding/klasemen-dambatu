@@ -1,49 +1,59 @@
-# LIGA DAM BATU
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-Aplikasi manajemen liga permainan Dam Batu (Single Round Robin, 2 pemain per tim).
-PHP Native + SQLite (PDO) + Tailwind CSS. Tanpa Composer/Node.
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+</p>
 
-## Fitur Utama
+## About Laravel
 
-1. **Multi-Meja Dam Batu (Simultan):** Mendukung lebih dari 1 meja/papan dam batu sehingga beberapa pertandingan berjalan serentak tanpa antri, dengan algoritma anti-bentrok (tim yang sama tidak akan bermain di jam yang sama).
-2. **Poin / Skor Pertandingan:** Mencatat skor poin (seperti gol sepak bola), menghitung otomatis Poin Masuk (`+`), Poin Keluar (`-`), dan Selisih Poin (`Δ`) di klasemen.
-3. **Live Auto-Update HTML (Tanpa Refresh):** Penonton/pengguna publik mendapatkan pembaruan skor, hasil, dan klasemen secara live otomatis tanpa reload browser.
-4. **Percepat / Perlambat Jadwal:** Fitur geser waktu massal (misal: dipercepat 15/30 menit atau diperlambat) bila pertandingan di lapangan selesai lebih cepat atau molor.
-5. **Pembatalan Jadwal Aman:** Menu untuk membatalkan/menghapus jadwal yang digenerate dengan pengaman (tidak dapat dibatalkan jika sudah ada yang bertanding).
-6. **Penentuan Hari Pertandingan:** Memilih hari-hari tertentu saat generate jadwal (misal hanya Sabtu & Minggu, hari kerja, atau kombinasi hari tertentu), hari di luar pilihan akan otomatis dilewati.
-7. **Responsif Mobile:** Antarmuka fleksibel dan nyaman diakses melalui smartphone maupun desktop.
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-## Menjalankan
+- [Simple, fast routing engine](https://laravel.com/docs/routing).
+- [Powerful dependency injection container](https://laravel.com/docs/container).
+- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+- [Robust background job processing](https://laravel.com/docs/queues).
+- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Syarat: PHP 8.0+ dengan ekstensi `pdo_sqlite`.
+Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-```bash
-cd liga-dam-batu
-php -S localhost:8000
-```
+## Learning Laravel
 
-Buka http://localhost:8000. Database `database/liga.sqlite` dibuat otomatis saat pertama diakses.
-Di Apache/Nginx, arahkan document root ke folder ini (folder `database/`, `config/`, `includes/` sudah diberi `.htaccess` deny; pada Nginx blokir manual).
+Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
 
-## Login admin
+If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-- URL: `/login.php`
-- Username: `admin`, password awal: `admin123` — **segera ganti** di Admin → Pengaturan.
+## Laravel Sponsors
 
-## Alur penggunaan
+We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-1. Admin → **Tim & Pemain**: tambah tim (tepat 2 pemain).
-2. Admin → **Jadwal**: Generate Jadwal (tanggal mulai, jumlah pertandingan/hari, jam, durasi, lokasi), atur ulang tanggal/jam/lokasi bila perlu, lalu **Publikasikan**.
-3. Admin → **Input Hasil**: pilih status & pemenang. Klasemen, history, dan status liga ikut diperbarui otomatis.
-4. Semua pertandingan selesai → liga berstatus *Selesai* dan juara tampil di halaman publik.
+### Premium Partners
 
-## Aturan penting
+- **[Vehikl](https://vehikl.com)**
+- **[Tighten Co.](https://tighten.co)**
+- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+- **[64 Robots](https://64robots.com)**
+- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
+- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
+- **[Redberry](https://redberry.international/laravel-development)**
+- **[Active Logic](https://activelogic.com)**
 
-- Jadwal hanya bisa digenerate ulang saat liga masih **draft**; tim hanya bisa ditambah/dihapus saat draft.
-- Mendukung jumlah tim ganjil (bye) maupun genap. Total pertandingan = N(N-1)/2.
-- Klasemen: poin (menang 3, kalah 0) → jumlah menang → pertemuan langsung → nama tim.
-  Penentuan posisi manual oleh admin (opsional di PRD) belum ada.
+## Contributing
 
-## Backup
+Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
-Admin → Pengaturan → Unduh Backup (salinan SQLite konsisten), atau salin `database/liga.sqlite`.
+## Code of Conduct
+
+In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+
+## Security Vulnerabilities
+
+If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+
+## License
+
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
