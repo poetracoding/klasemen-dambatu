@@ -41,10 +41,10 @@
         (function () {
             function getPreferredTheme() {
                 try {
-                    var saved = localStorage.getItem('theme');
+                    var saved = localStorage.getItem('theme_v2');
                     if (saved === 'dark' || saved === 'light') return saved;
                 } catch (e) {}
-                return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+                return 'light'; // Default ke Light Mode
             }
 
             function updateThemeUI(isDark) {
@@ -68,6 +68,7 @@
                     document.documentElement.classList.remove('dark');
                 }
                 try {
+                    localStorage.setItem('theme_v2', isDark ? 'dark' : 'light');
                     localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 } catch (e) {}
                 updateThemeUI(isDark);
