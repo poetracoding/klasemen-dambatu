@@ -65,11 +65,18 @@ class PdfController extends Controller
         $matches = $query->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')->get();
         $jadwalPerRonde = $matches->groupBy('ronde');
 
-        $pdf = Pdf::loadView('pdf.jadwal', compact('liga', 'matches', 'jadwalPerRonde', 'request'))
+        // Kelompokkan per tanggal pertandingan (2 hari per halaman)
+        $matchesByDate = $matches->groupBy(function ($item) {
+            return $item->tanggal ? \Carbon\Carbon::parse($item->tanggal)->format('Y-m-d') : 'TBD';
+        });
+        $pages = $matchesByDate->chunk(2);
+
+        $pdf = Pdf::loadView('pdf.jadwal', compact('liga', 'matches', 'jadwalPerRonde', 'matchesByDate', 'pages', 'request'))
             ->setPaper('a4', 'landscape')
             ->setOption([
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,
+                'isPhpEnabled' => true,
                 'defaultFont' => 'Helvetica',
             ]);
 
