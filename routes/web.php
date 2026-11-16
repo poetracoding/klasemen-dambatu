@@ -36,6 +36,7 @@ Route::get('/pertandingan/{id}', [HomeController::class, 'pertandinganDetail'])-
 // Cetak & Download PDF (DomPDF)
 Route::get('/cetak/klasemen', [PdfController::class, 'klasemen'])->name('klasemen.pdf');
 Route::get('/cetak/jadwal', [PdfController::class, 'jadwal'])->name('jadwal.pdf');
+Route::get('/cetak/tim', [PdfController::class, 'tim'])->name('tim.pdf');
 
 // Live HTML auto-update API endpoint (both paths supported)
 Route::get('/api/check-update', [ApiController::class, 'checkUpdate'])->name('api.check_update');

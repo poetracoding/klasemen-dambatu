@@ -88,5 +88,33 @@ class PdfController extends Controller
 
         return $pdf->stream($filename);
     }
+
+    public function tim(Request $request)
+    {
+        $liga = Liga::current();
+        $tims = Tim::where('liga_id', $liga->id)
+            ->orderBy('id')
+            ->get();
+
+        $totalTim = $tims->count();
+        $totalPemain = $totalTim * 2;
+
+        $pdf = Pdf::loadView('pdf.tim', compact('liga', 'tims', 'totalTim', 'totalPemain', 'request'))
+            ->setPaper('a4', 'portrait')
+            ->setOption([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'isPhpEnabled' => true,
+                'defaultFont' => 'Helvetica',
+            ]);
+
+        $filename = 'daftar-tim-' . Str::slug($liga->nama_liga ?: 'liga') . '-' . date('Ymd-His') . '.pdf';
+
+        if ($request->has('download') || $request->get('action') === 'download') {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
 }
 

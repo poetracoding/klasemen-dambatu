@@ -29,7 +29,10 @@
             <span>Format: Single Round Robin</span>
         </p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="{{ route('tim.pdf') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-xs" title="Cetak / Unduh Daftar Tim Peserta">
+            <i class="bi bi-people"></i> Daftar Tim
+        </a>
         <a href="{{ route('jadwal') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors shadow-xs">
             <i class="bi bi-calendar3"></i> Jadwal Lengkap
         </a>
@@ -70,7 +73,12 @@
             </div>
         </div>
         <div class="text-3xl font-extrabold text-slate-900">{{ (int) $totalTim }}</div>
-        <div class="text-xs text-slate-400 mt-1">Tim terdaftar</div>
+        <div class="flex items-center justify-between text-xs text-slate-400 mt-1">
+            <span>Tim terdaftar</span>
+            <a href="{{ route('tim.pdf') }}" target="_blank" class="text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-semibold" title="Buka PDF Daftar Tim">
+                <i class="bi bi-file-earmark-arrow-down"></i> PDF
+            </a>
+        </div>
     </div>
 
     <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:border-slate-300 transition-colors">
