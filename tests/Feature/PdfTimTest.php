@@ -64,3 +64,4 @@ class PdfTimTest extends TestCase
         $this->assertEquals('application/pdf', $response->headers->get('content-type'));
     }
 }
+
