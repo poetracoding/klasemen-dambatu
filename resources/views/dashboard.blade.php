@@ -223,7 +223,7 @@
 </div>
 
 <!-- Section Peraturan Pertandingan -->
-@if (file_exists(public_path('peraturan.png')))
+@if (file_exists(public_path('peraturan2.png')))
     <div class="mt-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
             <div class="flex items-center gap-2.5">
@@ -239,7 +239,7 @@
                 <button type="button" onclick="openPeraturanModal()" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs cursor-pointer">
                     <i class="bi bi-arrows-fullscreen"></i> Perbesar Gambar
                 </button>
-                <a href="{{ asset('peraturan.png') }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-2xs w-fit">
+                <a href="{{ asset('peraturan2.png') }}" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-2xs w-fit">
                     <i class="bi bi-box-arrow-up-right"></i> Tab Baru
                 </a>
             </div>
@@ -248,7 +248,7 @@
         <!-- Banner Peraturan -->
         <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 group relative cursor-pointer" onclick="openPeraturanModal()">
             <div class="block w-full cursor-zoom-in relative">
-                <img src="{{ asset('peraturan.png') }}" alt="Peraturan Liga Dam Batu" class="w-full max-h-[720px] object-contain mx-auto rounded-xl transition-transform duration-300 group-hover:scale-[1.008]" loading="lazy">
+                <img src="{{ asset('peraturan2.png') }}" alt="Peraturan Liga Dam Batu" class="w-full max-h-[720px] object-contain mx-auto rounded-xl transition-transform duration-300 group-hover:scale-[1.008]" loading="lazy">
                 <div class="absolute bottom-3 right-3 bg-slate-900/85 backdrop-blur-md text-white text-xs font-medium px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 opacity-90 group-hover:opacity-100 transition-all">
                     <i class="bi bi-arrows-fullscreen text-sm"></i>
                     <span>Klik untuk Memperbesar</span>
@@ -286,12 +286,12 @@
                     </button>
                 </div>
 
-                <a href="{{ asset('peraturan.png') }}" download="Peraturan-Liga-Dam-Batu.png" class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors" title="Unduh Gambar Asli">
+                <a href="{{ asset('peraturan2.png') }}" download="Peraturan-Liga-Dam-Batu.png" class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors" title="Unduh Gambar Asli">
                     <i class="bi bi-download"></i>
                     <span class="hidden sm:inline">Unduh</span>
                 </a>
 
-                <a href="{{ asset('peraturan.png') }}" target="_blank" class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors" title="Buka di Tab Baru">
+                <a href="{{ asset('peraturan2.png') }}" target="_blank" class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors" title="Buka di Tab Baru">
                     <i class="bi bi-box-arrow-up-right"></i>
                 </a>
 
@@ -305,7 +305,7 @@
         <!-- Area Gambar (Scrollable & Zoomable) -->
         <div id="modalPeraturanBackdrop" class="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-center cursor-zoom-out select-none" onclick="handleBackdropClick(event)">
             <div class="relative transition-transform duration-200 ease-out origin-center inline-block" id="imageWrapper">
-                <img id="modalPeraturanImg" src="{{ asset('peraturan.png') }}" alt="Peraturan & Tata Tertib Pertandingan Liga Dam Batu" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl cursor-zoom-in border border-slate-700/50" onclick="toggleZoomClick(event)">
+                <img id="modalPeraturanImg" src="{{ asset('peraturan2.png') }}" alt="Peraturan & Tata Tertib Pertandingan Liga Dam Batu" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl cursor-zoom-in border border-slate-700/50" onclick="toggleZoomClick(event)">
             </div>
         </div>
     </div>
