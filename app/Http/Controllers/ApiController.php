@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Liga;
 use App\Models\Pertandingan;
+use App\Models\Poster;
 use Illuminate\Http\JsonResponse;
 
 class ApiController extends Controller
@@ -20,6 +21,11 @@ class ApiController extends Controller
                          COALESCE(MAX(updated_at), "") as last_update')
             ->first();
 
+        $posterAgg = Poster::selectRaw('COUNT(*) as total,
+                         SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as aktif,
+                         COALESCE(MAX(updated_at), "") as last_update')
+            ->first();
+
         $hashString = implode('|', [
             $liga->status,
             $liga->updated_at,
@@ -28,6 +34,9 @@ class ApiController extends Controller
             $agg->sh ?? 0,
             $agg->sa ?? 0,
             $agg->last_update ?? '',
+            $posterAgg->total ?? 0,
+            $posterAgg->aktif ?? 0,
+            $posterAgg->last_update ?? '',
         ]);
 
         return response()->json([

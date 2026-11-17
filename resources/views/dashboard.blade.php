@@ -252,71 +252,153 @@
         </div>
     </div>
 
-    <!-- Section Peraturan Pertandingan -->
-    @if (file_exists(public_path('peraturan4.png')))
-        <div class="mt-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
-            <div
-                class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
+    @php
+        $posters = $posters ?? collect();
+        $firstPoster = $posters->first();
+    @endphp
+
+    <!-- Section Informasi -->
+    @if ($posters->isNotEmpty())
+        <div id="informasiSection" class="mt-8 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-5 border-b border-slate-100">
                 <div class="flex items-center gap-2.5">
-                    <span
-                        class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shadow-2xs">
-                        <i class="bi bi-file-earmark-text-fill"></i>
+                    <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shadow-2xs">
+                        <i class="bi bi-info-circle-fill"></i>
                     </span>
                     <div>
-                        <h2 class="text-base font-bold text-slate-900 tracking-tight">Peraturan &amp; Tata Tertib
-                            Pertandingan</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Pedoman resmi pelaksanaan pertandingan Liga Dam Batu.</p>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base font-bold text-slate-900 tracking-tight">Informasi</h2>
+                            @if ($posters->count() > 1)
+                                <span id="posterHeaderBadge" class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    1 / {{ $posters->count() }}
+                                </span>
+                            @endif
+                        </div>
+                        <p id="posterActiveSubtitle" class="text-xs text-slate-400 mt-0.5">
+                            {{ $firstPoster->judul ?: 'Informasi & pengumuman resmi pelaksanaan Liga Dam Batu.' }}
+                        </p>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <button type="button" onclick="openPeraturanModal()"
                         class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs cursor-pointer">
                         <i class="bi bi-arrows-fullscreen"></i> Perbesar Gambar
                     </button>
-                    <a href="{{ asset('peraturan4.png') }}" target="_blank"
+                    <a id="cardDownloadPosterBtn" href="{{ $firstPoster->url }}" download="{{ $firstPoster->download_name }}"
+                        class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-2xs w-fit"
+                        title="Unduh Poster Aktif">
+                        <i class="bi bi-download"></i> Unduh Poster
+                    </a>
+                    <a id="cardNewTabPosterBtn" href="{{ $firstPoster->url }}" target="_blank"
                         class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors shadow-2xs w-fit">
                         <i class="bi bi-box-arrow-up-right"></i> Tab Baru
                     </a>
                 </div>
             </div>
 
-            <!-- Banner Peraturan -->
-            <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 group relative cursor-pointer"
-                onclick="openPeraturanModal()">
-                <div class="block w-full cursor-zoom-in relative">
-                    <img src="{{ asset('peraturan4.png') }}" alt="Peraturan Liga Dam Batu"
-                        class="w-full max-h-[720px] object-contain mx-auto rounded-xl transition-transform duration-300 group-hover:scale-[1.008]"
-                        loading="lazy">
-                    <div
-                        class="absolute bottom-3 right-3 bg-slate-900/85 backdrop-blur-md text-white text-xs font-medium px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 opacity-90 group-hover:opacity-100 transition-all">
+            <!-- Banner / Auto-Slide Container Poster Informasi -->
+            <div id="posterCarouselContainer"
+                class="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 group relative select-none">
+
+                <div class="relative w-full cursor-zoom-in" onclick="openPeraturanModal()">
+                    @foreach ($posters as $idx => $poster)
+                        <div class="poster-slide {{ $idx === 0 ? 'block opacity-100' : 'hidden opacity-0' }} transition-opacity duration-500"
+                            data-index="{{ $idx }}"
+                            data-url="{{ $poster->url }}"
+                            data-title="{{ $poster->judul ?: ('Informasi #' . ($idx + 1)) }}"
+                            data-desc="{{ $poster->deskripsi ?? '' }}"
+                            data-download="{{ $poster->download_name }}">
+                            <img src="{{ $poster->url }}"
+                                alt="{{ $poster->judul ?: 'Informasi Liga Dam Batu' }}"
+                                class="w-full max-h-[720px] object-contain mx-auto rounded-xl transition-transform duration-300 group-hover:scale-[1.005]"
+                                loading="lazy">
+                        </div>
+                    @endforeach
+
+                    <!-- Overlay Caption jika ada deskripsi -->
+                    <div id="posterCaptionBar" class="{{ ($firstPoster->judul || $firstPoster->deskripsi) ? 'flex' : 'hidden' }} items-center justify-between gap-3 px-4 py-2.5 bg-slate-900/75 backdrop-blur-md text-white text-xs border-t border-white/10">
+                        <div class="truncate">
+                            <span id="posterCaptionTitle" class="font-bold">{{ $firstPoster->judul ?? '' }}</span>
+                            <span id="posterCaptionDesc" class="text-slate-300 ml-1.5">{{ $firstPoster->deskripsi ? '— ' . $firstPoster->deskripsi : '' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Badge Klik Zoom -->
+                    <div class="absolute bottom-12 sm:bottom-3 right-3 bg-slate-900/85 backdrop-blur-md text-white text-xs font-medium px-3.5 py-2 rounded-xl shadow-lg flex items-center gap-2 opacity-90 group-hover:opacity-100 transition-all pointer-events-none">
                         <i class="bi bi-arrows-fullscreen text-sm"></i>
                         <span>Klik untuk Memperbesar</span>
                     </div>
                 </div>
+
+                @if ($posters->count() > 1)
+                    <!-- Tombol Navigasi Prev / Next -->
+                    <button type="button" onclick="prevPosterSlide(event)"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-slate-900/70 hover:bg-indigo-600 text-white flex items-center justify-center shadow-lg backdrop-blur-xs transition-all cursor-pointer opacity-80 group-hover:opacity-100"
+                        title="Poster Sebelumnya" aria-label="Poster Sebelumnya">
+                        <i class="bi bi-chevron-left text-lg"></i>
+                    </button>
+                    <button type="button" onclick="nextPosterSlide(event)"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-slate-900/70 hover:bg-indigo-600 text-white flex items-center justify-center shadow-lg backdrop-blur-xs transition-all cursor-pointer opacity-80 group-hover:opacity-100"
+                        title="Poster Berikutnya" aria-label="Poster Berikutnya">
+                        <i class="bi bi-chevron-right text-lg"></i>
+                    </button>
+
+                    <!-- Indikator Slide (Dots) & Auto-Slide Status -->
+                    <div class="flex items-center justify-center gap-2 py-2.5 bg-slate-100/90 dark:bg-slate-800/90 border-t border-slate-200/80 dark:border-slate-700/80">
+                        <div class="flex items-center gap-1.5" id="posterDotsContainer">
+                            @foreach ($posters as $idx => $poster)
+                                <button type="button" onclick="goToPosterSlide({{ $idx }}, event)"
+                                    class="poster-dot h-2 rounded-full transition-all cursor-pointer {{ $idx === 0 ? 'w-6 bg-indigo-600' : 'w-2 bg-slate-300 dark:bg-slate-600 hover:bg-indigo-400' }}"
+                                    data-index="{{ $idx }}"
+                                    aria-label="Slide {{ $idx + 1 }}"></button>
+                            @endforeach
+                        </div>
+                        <span class="text-[11px] text-slate-400 ml-2 flex items-center gap-1">
+                            <i class="bi bi-play-circle text-indigo-500"></i> Auto-slide
+                        </span>
+                    </div>
+                @endif
             </div>
         </div>
 
-        <!-- Modal Lightbox Perbesar Gambar Peraturan -->
+        <!-- Modal Lightbox Perbesar Gambar Informasi -->
         <div id="modalPeraturan"
             class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex-col transition-all duration-300"
             role="dialog" aria-modal="true" aria-labelledby="modalPeraturanTitle">
             <!-- Toolbar Atas -->
-            <div
-                class="flex items-center justify-between px-4 sm:px-6 py-3 bg-slate-900/90 border-b border-slate-800 text-white z-10 flex-shrink-0">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-3 bg-slate-900/90 border-b border-slate-800 text-white z-10 flex-shrink-0">
                 <div class="flex items-center gap-2.5">
                     <span class="w-7 h-7 rounded-lg bg-indigo-600/80 text-white flex items-center justify-center text-xs">
-                        <i class="bi bi-file-earmark-image"></i>
+                        <i class="bi bi-info-circle-fill"></i>
                     </span>
                     <div>
-                        <h3 id="modalPeraturanTitle" class="text-sm font-bold text-white tracking-tight">Peraturan &amp;
-                            Tata Tertib Pertandingan</h3>
-                        <p class="text-3xs text-slate-400 hidden sm:block">Gunakan tombol zoom atau klik gambar untuk
-                            memperbesar/memperkecil (Tekan ESC untuk keluar)</p>
+                        <h3 id="modalPeraturanTitle" class="text-sm font-bold text-white tracking-tight">Informasi</h3>
+                        <p id="modalPosterSubtitle" class="text-3xs text-slate-400 hidden sm:block">
+                            {{ $firstPoster->judul ?: 'Gunakan tombol zoom atau klik gambar untuk memperbesar/memperkecil (ESC untuk keluar)' }}
+                        </p>
                     </div>
                 </div>
 
-                <!-- Kontrol Zoom & Aksi -->
-                <div class="flex items-center gap-1.5 sm:gap-2">
+                <!-- Kontrol Slide, Zoom & Aksi -->
+                <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    @if ($posters->count() > 1)
+                        <div class="inline-flex items-center bg-slate-800 rounded-xl p-0.5 border border-slate-700/80">
+                            <button type="button" onclick="prevPosterSlide(event)"
+                                class="p-1.5 sm:px-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                title="Poster Sebelumnya">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <span id="modalSlideCounter" class="px-2 text-xs font-mono font-semibold text-slate-200 select-none">
+                                1 / {{ $posters->count() }}
+                            </span>
+                            <button type="button" onclick="nextPosterSlide(event)"
+                                class="p-1.5 sm:px-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                                title="Poster Berikutnya">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    @endif
+
                     <div class="inline-flex items-center bg-slate-800 rounded-xl p-0.5 border border-slate-700/80">
                         <button type="button" onclick="zoomPeraturan(-0.25)"
                             class="p-1.5 sm:px-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
@@ -337,14 +419,14 @@
                         </button>
                     </div>
 
-                    <a href="{{ asset('peraturan4.png') }}" download="Peraturan-Liga-Dam-Batu.png"
+                    <a id="modalDownloadPosterBtn" href="{{ $firstPoster->url }}" download="{{ $firstPoster->download_name }}"
                         class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors"
                         title="Unduh Gambar Asli">
                         <i class="bi bi-download"></i>
                         <span class="hidden sm:inline">Unduh</span>
                     </a>
 
-                    <a href="{{ asset('peraturan4.png') }}" target="_blank"
+                    <a id="modalNewTabPosterBtn" href="{{ $firstPoster->url }}" target="_blank"
                         class="p-2 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 border border-slate-700/80 transition-colors"
                         title="Buka di Tab Baru">
                         <i class="bi bi-box-arrow-up-right"></i>
@@ -361,98 +443,292 @@
 
             <!-- Area Gambar (Scrollable & Zoomable) -->
             <div id="modalPeraturanBackdrop"
-                class="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-center cursor-zoom-out select-none"
+                class="flex-1 overflow-auto p-4 sm:p-8 flex items-center justify-center cursor-zoom-out select-none relative"
                 onclick="handleBackdropClick(event)">
+                @if ($posters->count() > 1)
+                    <button type="button" onclick="prevPosterSlide(event)"
+                        class="fixed left-3 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-900/80 hover:bg-indigo-600 text-white flex items-center justify-center shadow-xl border border-slate-700 transition-all cursor-pointer"
+                        title="Poster Sebelumnya" aria-label="Poster Sebelumnya">
+                        <i class="bi bi-chevron-left text-xl"></i>
+                    </button>
+                    <button type="button" onclick="nextPosterSlide(event)"
+                        class="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-900/80 hover:bg-indigo-600 text-white flex items-center justify-center shadow-xl border border-slate-700 transition-all cursor-pointer"
+                        title="Poster Berikutnya" aria-label="Poster Berikutnya">
+                        <i class="bi bi-chevron-right text-xl"></i>
+                    </button>
+                @endif
+
                 <div class="relative transition-transform duration-200 ease-out origin-center inline-block"
                     id="imageWrapper">
-                    <img id="modalPeraturanImg" src="{{ asset('peraturan4.png') }}"
-                        alt="Peraturan & Tata Tertib Pertandingan Liga Dam Batu"
+                    <img id="modalPeraturanImg" src="{{ $firstPoster->url }}"
+                        alt="{{ $firstPoster->judul ?: 'Informasi Liga Dam Batu' }}"
                         class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl cursor-zoom-in border border-slate-700/50"
                         onclick="toggleZoomClick(event)">
                 </div>
             </div>
         </div>
+    @endif
+@endsection
 
-        <script>
-            let currentZoom = 1.0;
-            const minZoom = 0.5;
-            const maxZoom = 3.0;
+@section('scripts')
+<script>
+    (function () {
+        let currentZoom = 1.0;
+        const minZoom = 0.5;
+        const maxZoom = 3.0;
+        let currentSlideIndex = 0;
+        let autoSlideTimer = null;
+        let isHovered = false;
 
-            function updateZoomTransform() {
-                const wrapper = document.getElementById('imageWrapper');
-                const img = document.getElementById('modalPeraturanImg');
-                const text = document.getElementById('zoomLevelText');
-                if (wrapper) {
-                    wrapper.style.transform = `scale(${currentZoom})`;
-                }
-                if (text) {
-                    text.innerText = Math.round(currentZoom * 100) + '%';
-                }
-                if (img) {
-                    if (currentZoom > 1.0) {
-                        img.classList.remove('cursor-zoom-in');
-                        img.classList.add('cursor-zoom-out');
-                    } else {
-                        img.classList.remove('cursor-zoom-out');
-                        img.classList.add('cursor-zoom-in');
-                    }
-                }
-            }
+        function getSlides() {
+            return Array.from(document.querySelectorAll('.poster-slide'));
+        }
 
-            function zoomPeraturan(delta) {
-                currentZoom = Math.min(maxZoom, Math.max(minZoom, Math.round((currentZoom + delta) * 100) / 100));
-                updateZoomTransform();
-            }
+        function syncSlideUI() {
+            const slides = getSlides();
+            if (slides.length === 0) return;
 
-            function resetZoomPeraturan() {
-                currentZoom = 1.0;
-                updateZoomTransform();
-            }
+            if (currentSlideIndex >= slides.length) currentSlideIndex = 0;
+            if (currentSlideIndex < 0) currentSlideIndex = slides.length - 1;
 
-            function toggleZoomClick(e) {
-                e.stopPropagation();
-                if (currentZoom === 1.0) {
-                    currentZoom = 1.75;
+            const activeSlide = slides[currentSlideIndex];
+            const url = activeSlide.dataset.url || '';
+            const title = activeSlide.dataset.title || 'Informasi';
+            const desc = activeSlide.dataset.desc || '';
+            const downloadName = activeSlide.dataset.download || 'informasi.png';
+
+            slides.forEach(function (slide, idx) {
+                if (idx === currentSlideIndex) {
+                    slide.classList.remove('hidden', 'opacity-0');
+                    slide.classList.add('block', 'opacity-100');
                 } else {
-                    currentZoom = 1.0;
-                }
-                updateZoomTransform();
-            }
-
-            function openPeraturanModal() {
-                const modal = document.getElementById('modalPeraturan');
-                if (modal) {
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                    document.body.style.overflow = 'hidden';
-                    resetZoomPeraturan();
-                }
-            }
-
-            function closePeraturanModal() {
-                const modal = document.getElementById('modalPeraturan');
-                if (modal) {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                    document.body.style.overflow = '';
-                    resetZoomPeraturan();
-                }
-            }
-
-            function handleBackdropClick(e) {
-                if (e.target.id === 'modalPeraturanBackdrop') {
-                    closePeraturanModal();
-                }
-            }
-
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('modalPeraturan');
-                    if (modal && !modal.classList.contains('hidden')) {
-                        closePeraturanModal();
-                    }
+                    slide.classList.add('hidden', 'opacity-0');
+                    slide.classList.remove('block', 'opacity-100');
                 }
             });
-        </script>
-    @endif
+
+            document.querySelectorAll('.poster-dot').forEach(function (dot, idx) {
+                if (idx === currentSlideIndex) {
+                    dot.classList.add('w-6', 'bg-indigo-600');
+                    dot.classList.remove('w-2', 'bg-slate-300', 'dark:bg-slate-600');
+                } else {
+                    dot.classList.remove('w-6', 'bg-indigo-600');
+                    dot.classList.add('w-2', 'bg-slate-300', 'dark:bg-slate-600');
+                }
+            });
+
+            const headerBadge = document.getElementById('posterHeaderBadge');
+            if (headerBadge) headerBadge.innerText = (currentSlideIndex + 1) + ' / ' + slides.length;
+
+            const modalCounter = document.getElementById('modalSlideCounter');
+            if (modalCounter) modalCounter.innerText = (currentSlideIndex + 1) + ' / ' + slides.length;
+
+            const subtitleEl = document.getElementById('posterActiveSubtitle');
+            if (subtitleEl) {
+                subtitleEl.innerText = title || 'Informasi & pengumuman resmi pelaksanaan Liga Dam Batu.';
+            }
+
+            const captionBar = document.getElementById('posterCaptionBar');
+            const captionTitle = document.getElementById('posterCaptionTitle');
+            const captionDesc = document.getElementById('posterCaptionDesc');
+            if (captionBar && captionTitle && captionDesc) {
+                if (title || desc) {
+                    captionTitle.innerText = title;
+                    captionDesc.innerText = desc ? ('— ' + desc) : '';
+                    captionBar.classList.remove('hidden');
+                    captionBar.classList.add('flex');
+                } else {
+                    captionBar.classList.add('hidden');
+                    captionBar.classList.remove('flex');
+                }
+            }
+
+            const cardDl = document.getElementById('cardDownloadPosterBtn');
+            if (cardDl) {
+                cardDl.href = url;
+                cardDl.setAttribute('download', downloadName);
+            }
+
+            const cardTab = document.getElementById('cardNewTabPosterBtn');
+            if (cardTab) cardTab.href = url;
+
+            const modalImg = document.getElementById('modalPeraturanImg');
+            if (modalImg) {
+                modalImg.src = url;
+                modalImg.alt = title;
+            }
+
+            const modalSub = document.getElementById('modalPosterSubtitle');
+            if (modalSub) {
+                modalSub.innerText = title + (desc ? ' — ' + desc : '');
+            }
+
+            const modalDl = document.getElementById('modalDownloadPosterBtn');
+            if (modalDl) {
+                modalDl.href = url;
+                modalDl.setAttribute('download', downloadName);
+            }
+
+            const modalTab = document.getElementById('modalNewTabPosterBtn');
+            if (modalTab) modalTab.href = url;
+        }
+
+        function startAutoSlide() {
+            stopAutoSlide();
+            const slides = getSlides();
+            if (slides.length <= 1) return;
+
+            autoSlideTimer = setInterval(function () {
+                const modal = document.getElementById('modalPeraturan');
+                const modalOpen = modal && !modal.classList.contains('hidden');
+                if (!isHovered && !modalOpen) {
+                    currentSlideIndex = (currentSlideIndex + 1) % getSlides().length;
+                    syncSlideUI();
+                }
+            }, 4500);
+        }
+
+        function stopAutoSlide() {
+            if (autoSlideTimer) {
+                clearInterval(autoSlideTimer);
+                autoSlideTimer = null;
+            }
+        }
+
+        window.goToPosterSlide = function (index, e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            const slides = getSlides();
+            if (slides.length === 0) return;
+            currentSlideIndex = ((index % slides.length) + slides.length) % slides.length;
+            resetZoomPeraturan();
+            syncSlideUI();
+            startAutoSlide();
+        };
+
+        window.nextPosterSlide = function (e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            const slides = getSlides();
+            if (slides.length === 0) return;
+            currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+            resetZoomPeraturan();
+            syncSlideUI();
+            startAutoSlide();
+        };
+
+        window.prevPosterSlide = function (e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            const slides = getSlides();
+            if (slides.length === 0) return;
+            currentSlideIndex = (currentSlideIndex - 1 + slides.length) % slides.length;
+            resetZoomPeraturan();
+            syncSlideUI();
+            startAutoSlide();
+        };
+
+        window.updateZoomTransform = function () {
+            const wrapper = document.getElementById('imageWrapper');
+            const img = document.getElementById('modalPeraturanImg');
+            const text = document.getElementById('zoomLevelText');
+            if (wrapper) {
+                wrapper.style.transform = `scale(${currentZoom})`;
+            }
+            if (text) {
+                text.innerText = Math.round(currentZoom * 100) + '%';
+            }
+            if (img) {
+                if (currentZoom > 1.0) {
+                    img.classList.remove('cursor-zoom-in');
+                    img.classList.add('cursor-zoom-out');
+                } else {
+                    img.classList.remove('cursor-zoom-out');
+                    img.classList.add('cursor-zoom-in');
+                }
+            }
+        };
+
+        window.zoomPeraturan = function (delta) {
+            currentZoom = Math.min(maxZoom, Math.max(minZoom, Math.round((currentZoom + delta) * 100) / 100));
+            updateZoomTransform();
+        };
+
+        window.resetZoomPeraturan = function () {
+            currentZoom = 1.0;
+            updateZoomTransform();
+        };
+
+        window.toggleZoomClick = function (e) {
+            if (e && e.stopPropagation) e.stopPropagation();
+            currentZoom = (currentZoom === 1.0) ? 1.75 : 1.0;
+            updateZoomTransform();
+        };
+
+        window.openPeraturanModal = function () {
+            syncSlideUI();
+            const modal = document.getElementById('modalPeraturan');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+                resetZoomPeraturan();
+            }
+        };
+
+        window.closePeraturanModal = function () {
+            const modal = document.getElementById('modalPeraturan');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = '';
+                resetZoomPeraturan();
+            }
+        };
+
+        window.handleBackdropClick = function (e) {
+            if (e.target && e.target.id === 'modalPeraturanBackdrop') {
+                closePeraturanModal();
+            }
+        };
+
+        document.addEventListener('keydown', function (e) {
+            const modal = document.getElementById('modalPeraturan');
+            if (!modal || modal.classList.contains('hidden')) return;
+
+            if (e.key === 'Escape') {
+                closePeraturanModal();
+            } else if (e.key === 'ArrowRight') {
+                nextPosterSlide(e);
+            } else if (e.key === 'ArrowLeft') {
+                prevPosterSlide(e);
+            }
+        });
+
+        function bindCarouselHover() {
+            const container = document.getElementById('posterCarouselContainer');
+            if (container && !container.dataset.hoverBound) {
+                isHovered = false;
+                container.dataset.hoverBound = '1';
+                container.addEventListener('mouseenter', function () { isHovered = true; });
+                container.addEventListener('mouseleave', function () { isHovered = false; });
+            }
+        }
+
+        function initPosterCarousel() {
+            bindCarouselHover();
+            syncSlideUI();
+            startAutoSlide();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initPosterCarousel();
+
+            const mainEl = document.querySelector('main');
+            if (mainEl && window.MutationObserver) {
+                const observer = new MutationObserver(function () {
+                    initPosterCarousel();
+                });
+                observer.observe(mainEl, { childList: true });
+            }
+        });
+    })();
+</script>
 @endsection

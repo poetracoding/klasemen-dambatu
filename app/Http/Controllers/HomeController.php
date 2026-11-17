@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Liga;
 use App\Models\Pertandingan;
+use App\Models\Poster;
 use App\Models\Tim;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
@@ -28,7 +29,12 @@ class HomeController extends Controller
 
         $kl = TournamentService::hitungKlasemen($liga);
 
-        return view('dashboard', compact('liga', 'jumlahTim', 'total', 'selesai', 'tampil', 'hariIni', 'kl'));
+        $posters = Poster::where('is_active', true)
+            ->orderBy('urutan')
+            ->orderBy('id')
+            ->get();
+
+        return view('dashboard', compact('liga', 'jumlahTim', 'total', 'selesai', 'tampil', 'hariIni', 'kl', 'posters'));
     }
 
     public function jadwal(Request $request)

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JadwalController;
 use App\Http\Controllers\Admin\PengaturanController;
 use App\Http\Controllers\Admin\PertandinganController;
+use App\Http\Controllers\Admin\PosterController;
 use App\Http\Controllers\Admin\TimController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\HomeController;
@@ -80,6 +81,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     // Input Hasil & Skor Pertandingan
     Route::get('/pertandingan', [PertandinganController::class, 'index'])->name('pertandingan.index');
     Route::post('/pertandingan/{id}', [PertandinganController::class, 'simpanHasil'])->name('pertandingan.simpan');
+
+    // Poster Informasi
+    Route::get('/poster', [PosterController::class, 'index'])->name('poster.index');
+    Route::post('/poster', [PosterController::class, 'store'])->name('poster.store');
+    Route::put('/poster/{id}', [PosterController::class, 'update'])->name('poster.update');
+    Route::post('/poster/{id}/toggle', [PosterController::class, 'toggleStatus'])->name('poster.toggle');
+    Route::delete('/poster/{id}', [PosterController::class, 'destroy'])->name('poster.destroy');
 
     // Pengaturan
     Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan.index');

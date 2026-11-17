@@ -141,6 +141,7 @@
                         ['route' => 'admin.tim.index', 'label' => 'Tim & Pemain', 'icon' => 'bi-people'],
                         ['route' => 'admin.jadwal.index', 'label' => 'Jadwal', 'icon' => 'bi-calendar3'],
                         ['route' => 'admin.pertandingan.index', 'label' => 'Input Hasil', 'icon' => 'bi-trophy'],
+                        ['route' => 'admin.poster.index', 'label' => 'Poster Informasi', 'icon' => 'bi-images'],
                         ['route' => 'admin.pengaturan.index', 'label' => 'Pengaturan', 'icon' => 'bi-gear'],
                     ];
                 @endphp
