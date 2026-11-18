@@ -121,20 +121,20 @@
 <!-- Admin Navigation -->
 <nav class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-100 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
+        <div class="flex items-center justify-between gap-4 h-16">
             <!-- Brand -->
-            <div class="flex items-center gap-3">
-                <a class="flex items-center gap-2.5 font-bold text-lg text-white hover:text-indigo-300 transition-colors" href="{{ route('admin.dashboard') }}">
-                    <span class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
+            <div class="flex items-center gap-2.5 shrink-0">
+                <a class="flex items-center gap-2.5 font-bold text-base xl:text-lg text-white hover:text-indigo-300 transition-colors whitespace-nowrap shrink-0" href="{{ route('admin.dashboard') }}">
+                    <span class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30 shrink-0">
                         <i class="bi bi-grid-3x3-gap-fill text-lg"></i>
                     </span>
                     <span class="tracking-tight">{{ $liga->nama_liga ?? 'Liga Dam Batu' }}</span>
                 </a>
-                <span class="px-2 py-0.5 text-xs font-semibold rounded-md bg-indigo-950/80 text-indigo-300 border border-indigo-700/50">Admin</span>
+                <span class="hidden xl:inline-flex px-2 py-0.5 text-xs font-semibold rounded-md bg-indigo-950/80 text-indigo-300 border border-indigo-700/50 shrink-0 whitespace-nowrap">Admin</span>
             </div>
 
             <!-- Desktop Menu -->
-            <div class="hidden md:flex items-center space-x-1">
+            <div class="hidden lg:flex items-center gap-1">
                 @php
                     $adminNav = [
                         ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'bi-speedometer2'],
@@ -147,35 +147,35 @@
                 @endphp
                 @foreach ($adminNav as $item)
                     @php $active = request()->routeIs($item['route']); @endphp
-                    <a class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors {{ $active ? 'bg-slate-800 text-indigo-400 font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}" href="{{ route($item['route']) }}">
-                        <i class="bi {{ $item['icon'] }} text-base"></i>
+                    <a class="flex items-center gap-1.5 px-2.5 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-medium whitespace-nowrap shrink-0 transition-colors {{ $active ? 'bg-slate-800 text-indigo-400 font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}" href="{{ route($item['route']) }}">
+                        <i class="bi {{ $item['icon'] }} text-base shrink-0"></i>
                         <span>{{ $item['label'] }}</span>
                     </a>
                 @endforeach
             </div>
 
             <!-- Right Actions -->
-            <div class="hidden md:flex items-center space-x-2">
+            <div class="hidden lg:flex items-center gap-2 shrink-0">
                 <!-- Theme Toggle Button -->
-                <button type="button" onclick="toggleTheme()" class="theme-toggle-btn p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer mr-1" title="Beralih Mode Gelap/Terang" aria-label="Toggle Theme">
+                <button type="button" onclick="toggleTheme()" class="theme-toggle-btn p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0" title="Beralih Mode Gelap/Terang" aria-label="Toggle Theme">
                     <i class="theme-toggle-icon bi bi-moon-stars-fill text-indigo-400 text-base"></i>
                 </button>
 
-                <a class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors" href="{{ route('home') }}">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                    <span>Lihat Situs</span>
+                <a class="flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0" href="{{ route('home') }}" title="Lihat Situs Publik">
+                    <i class="bi bi-box-arrow-up-right shrink-0"></i>
+                    <span class="hidden xl:inline">Lihat Situs</span>
                 </a>
-                <form action="{{ route('logout') }}" method="POST" class="inline form-logout" data-confirm="Apakah Anda yakin ingin keluar dari panel admin?" data-confirm-title="Konfirmasi Keluar" data-confirm-btn="Ya, Keluar">
+                <form action="{{ route('logout') }}" method="POST" class="inline shrink-0 form-logout" data-confirm="Apakah Anda yakin ingin keluar dari panel admin?" data-confirm-title="Konfirmasi Keluar" data-confirm-btn="Ya, Keluar">
                     @csrf
-                    <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-300 hover:text-white hover:bg-rose-900/40 border border-rose-800/40 transition-colors cursor-pointer">
-                        <i class="bi bi-box-arrow-right"></i>
+                    <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-300 hover:text-white hover:bg-rose-900/40 border border-rose-800/40 transition-colors cursor-pointer whitespace-nowrap shrink-0">
+                        <i class="bi bi-box-arrow-right shrink-0"></i>
                         <span>Keluar</span>
                     </button>
                 </form>
             </div>
 
             <!-- Mobile Hamburger Button -->
-            <div class="flex md:hidden items-center gap-1.5">
+            <div class="flex lg:hidden items-center gap-1.5 shrink-0">
                 <button type="button" onclick="toggleTheme()" class="theme-toggle-btn p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none" title="Beralih Mode Gelap/Terang" aria-label="Toggle Theme">
                     <i class="theme-toggle-icon bi bi-moon-stars-fill text-indigo-400 text-base"></i>
                 </button>
@@ -187,7 +187,7 @@
     </div>
 
     <!-- Mobile Menu dropdown -->
-    <div id="mobileMenu" class="hidden md:hidden border-t border-slate-800 bg-slate-900 px-4 pt-2 pb-4 space-y-1">
+    <div id="mobileMenu" class="hidden lg:hidden border-t border-slate-800 bg-slate-900 px-4 pt-2 pb-4 space-y-1">
         @foreach ($adminNav as $item)
             @php $active = request()->routeIs($item['route']); @endphp
             <a class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $active ? 'bg-slate-800 text-indigo-400 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}" href="{{ route($item['route']) }}">
