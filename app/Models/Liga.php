@@ -10,6 +10,7 @@ class Liga extends Model
     protected $fillable = [
         'nama_liga',
         'musim',
+        'google_analytics_id',
         'tanggal_mulai',
         'tanggal_selesai',
         'status',

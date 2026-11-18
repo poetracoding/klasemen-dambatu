@@ -28,11 +28,17 @@ class PengaturanController extends Controller
         $request->validate([
             'nama_liga' => 'required|string|max:80',
             'musim' => 'nullable|string|max:40',
+            'google_analytics_id' => ['nullable', 'string', 'max:40', 'regex:/^(G|GT|UA|AW)-[A-Za-z0-9-]+$/i'],
+        ], [
+            'google_analytics_id.regex' => 'Format Google Analytics ID tidak valid (contoh: G-XXXXXXXXXX).',
         ]);
+
+        $gaId = trim((string) ($request->google_analytics_id ?? ''));
 
         $liga->update([
             'nama_liga' => trim($request->nama_liga),
             'musim' => trim($request->musim ?? ''),
+            'google_analytics_id' => $gaId !== '' ? strtoupper($gaId) : null,
         ]);
 
         return back()->with('success', 'Pengaturan liga berhasil disimpan.');

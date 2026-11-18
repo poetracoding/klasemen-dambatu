@@ -32,6 +32,25 @@
                     <input type="text" name="musim" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" maxlength="40" value="{{ old('musim', $liga->musim) }}">
                 </div>
 
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">Google Analytics Measurement ID (GA4)</label>
+                        @if (!empty($liga->google_analytics_id))
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                                Nonaktif
+                            </span>
+                        @endif
+                    </div>
+                    <input type="text" name="google_analytics_id" class="w-full text-sm font-mono rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus placeholder-slate-400" maxlength="40" placeholder="contoh: G-XXXXXXXXXX" value="{{ old('google_analytics_id', $liga->google_analytics_id) }}">
+                    <p class="text-[11px] text-slate-400 mt-1.5">
+                        Kosongkan jika ingin menonaktifkan pelacakan. Script pelacakan hanya dipasang pada halaman publik.
+                    </p>
+                </div>
+
                 <div class="grid grid-cols-3 gap-2 pt-2">
                     <div class="p-3 bg-slate-50 rounded-xl border border-slate-200/60 text-center">
                         <div class="text-xs text-slate-400">Status</div>
