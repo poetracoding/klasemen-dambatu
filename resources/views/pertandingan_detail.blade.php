@@ -39,10 +39,13 @@
                 <a class="text-2xl sm:text-3xl font-black text-slate-900 hover:text-indigo-600 transition-colors tracking-tight block {{ $homePemenang ? 'text-indigo-600' : '' }}" href="{{ route('tim.detail', $m->tim_home) }}">
                     {{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}
                 </a>
-                <div class="text-xs text-slate-500 flex items-center justify-center md:justify-end gap-1.5">
-                    <i class="bi bi-people"></i>
-                    <span>{{ $m->homeTeam->pemain1 ?? '-' }} &amp; {{ $m->homeTeam->pemain2 ?? '-' }}</span>
-                </div>
+                @include('partials.team_players', [
+                    'p1' => $m->homeTeam->pemain1 ?? null,
+                    'p2' => $m->homeTeam->pemain2 ?? null,
+                    'short' => false,
+                    'size' => 'xs',
+                    'class' => 'justify-center md:justify-end',
+                ])
                 <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
                     Tim Home
                 </div>
@@ -79,10 +82,13 @@
                 <a class="text-2xl sm:text-3xl font-black text-slate-900 hover:text-indigo-600 transition-colors tracking-tight block {{ $awayPemenang ? 'text-indigo-600' : '' }}" href="{{ route('tim.detail', $m->tim_away) }}">
                     {{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}
                 </a>
-                <div class="text-xs text-slate-500 flex items-center justify-center md:justify-start gap-1.5">
-                    <i class="bi bi-people"></i>
-                    <span>{{ $m->awayTeam->pemain1 ?? '-' }} &amp; {{ $m->awayTeam->pemain2 ?? '-' }}</span>
-                </div>
+                @include('partials.team_players', [
+                    'p1' => $m->awayTeam->pemain1 ?? null,
+                    'p2' => $m->awayTeam->pemain2 ?? null,
+                    'short' => false,
+                    'size' => 'xs',
+                    'class' => 'justify-center md:justify-start',
+                ])
                 <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
                     Tim Away
                 </div>

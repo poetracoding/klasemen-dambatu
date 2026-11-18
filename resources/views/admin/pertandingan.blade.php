@@ -76,6 +76,8 @@
                             $tglStr = $m->tanggal ? \Carbon\Carbon::parse($m->tanggal)->format('Y-m-d') : null;
                             $homeName = $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home);
                             $awayName = $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away);
+                            $homePlayersLabel = \App\Services\TournamentService::pemainLabel($m->homeTeam->pemain1 ?? '', $m->homeTeam->pemain2 ?? '', true, 7);
+                            $awayPlayersLabel = \App\Services\TournamentService::pemainLabel($m->awayTeam->pemain1 ?? '', $m->awayTeam->pemain2 ?? '', true, 7);
                         @endphp
                         <tr id="m{{ $m->id }}" class="hover:bg-slate-50/70 transition-colors">
                             <td class="py-3 px-3 text-center font-mono text-xs text-slate-400">
@@ -90,9 +92,27 @@
                                 </div>
                             </td>
                             <!-- Kolom Pertandingan -->
-                            <td class="py-3 px-3 whitespace-nowrap">
-                                <div class="font-bold text-slate-900 text-xs leading-snug">{{ $homeName }}</div>
-                                <div class="text-3xs text-slate-400 leading-snug">vs <span class="font-bold text-slate-800">{{ $awayName }}</span></div>
+                            <td class="py-3 px-3">
+                                <div class="space-y-1.5">
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-xs leading-snug">{{ $homeName }}</div>
+                                        @include('partials.team_players', [
+                                            'p1' => $m->homeTeam->pemain1 ?? null,
+                                            'p2' => $m->homeTeam->pemain2 ?? null,
+                                            'short' => true,
+                                            'maxLen' => 7,
+                                        ])
+                                    </div>
+                                    <div class="border-t border-slate-100 pt-1">
+                                        <div class="text-3xs text-slate-400 leading-snug">vs <span class="font-bold text-slate-800 text-xs">{{ $awayName }}</span></div>
+                                        @include('partials.team_players', [
+                                            'p1' => $m->awayTeam->pemain1 ?? null,
+                                            'p2' => $m->awayTeam->pemain2 ?? null,
+                                            'short' => true,
+                                            'maxLen' => 7,
+                                        ])
+                                    </div>
+                                </div>
                             </td>
                             <!-- Kolom Poin / Skor dengan Font Kecil Rapi -->
                             <td class="py-3 px-3 whitespace-nowrap">
@@ -132,8 +152,8 @@
                             <td class="py-3 px-3">
                                 <select form="{{ $fid }}" id="pemenang-{{ $m->id }}" name="pemenang_id" class="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-1.5 px-2 text-slate-800 form-input-focus">
                                     <option value="">— Belum / Pilih —</option>
-                                    <option value="{{ $m->tim_home }}" {{ (int) $m->pemenang_id === (int) $m->tim_home ? 'selected' : '' }}>{{ $homeName }}</option>
-                                    <option value="{{ $m->tim_away }}" {{ (int) $m->pemenang_id === (int) $m->tim_away ? 'selected' : '' }}>{{ $awayName }}</option>
+                                    <option value="{{ $m->tim_home }}" {{ (int) $m->pemenang_id === (int) $m->tim_home ? 'selected' : '' }}>{{ $homeName }}{{ $homePlayersLabel ? ' (' . $homePlayersLabel . ')' : '' }}</option>
+                                    <option value="{{ $m->tim_away }}" {{ (int) $m->pemenang_id === (int) $m->tim_away ? 'selected' : '' }}>{{ $awayName }}{{ $awayPlayersLabel ? ' (' . $awayPlayersLabel . ')' : '' }}</option>
                                 </select>
                             </td>
                             <!-- Catatan -->

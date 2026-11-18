@@ -88,11 +88,12 @@
                                 <a class="font-bold text-slate-900 hover:text-indigo-600 transition-colors block" href="{{ route('tim.detail', $k['id']) }}">
                                     {{ $k['nama_tim'] }}
                                 </a>
-                                <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
-                                    <span>{{ $k['pemain1'] }}</span>
-                                    <span>&amp;</span>
-                                    <span>{{ $k['pemain2'] }}</span>
-                                </div>
+                                @include('partials.team_players', [
+                                    'p1' => $k['pemain1'] ?? null,
+                                    'p2' => $k['pemain2'] ?? null,
+                                    'short' => false,
+                                    'size' => 'xs',
+                                ])
                             </td>
                             <td class="py-4 px-2 sm:px-3 text-center font-mono font-medium text-slate-700">{{ $k['mp'] }}</td>
                             <td class="py-4 px-2 sm:px-3 text-center font-mono font-bold text-emerald-600">{{ $k['w'] }}</td>

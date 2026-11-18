@@ -218,7 +218,7 @@
                     <td class="text-center font-bold">{{ $pos }}</td>
                     <td>
                         <div class="font-bold" style="color: #0f172a;">{{ $k['nama_tim'] }}</div>
-                        <div class="player-names">{{ $k['pemain1'] }} &middot; {{ $k['pemain2'] }}</div>
+                        <div class="player-names">{{ $k['pemain1'] }} &amp; {{ $k['pemain2'] }}</div>
                     </td>
                     <td class="text-center">{{ $k['mp'] }}</td>
                     <td class="text-center font-bold" style="color: #059669;">{{ $k['w'] }}</td>

@@ -61,7 +61,7 @@
                 <option value="0">Semua Tim</option>
                 @foreach ($teams as $t)
                     <option value="{{ $t->id }}" {{ $selectedTim === (int) $t->id ? 'selected' : '' }}>
-                        {{ $t->nama_tim }}
+                        {{ $t->nama_tim }} ({{ \App\Services\TournamentService::pemainLabel($t->pemain1, $t->pemain2, true, 7) }})
                     </option>
                 @endforeach
             </select>

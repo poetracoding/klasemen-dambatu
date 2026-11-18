@@ -111,9 +111,17 @@
             border: 1px solid #0f172a;
         }
         .data-table td {
-            padding: 4px 4px;
+            padding: 3px 4px;
             border: 1px solid #cbd5e1;
             font-size: 9px;
+            vertical-align: middle;
+        }
+        .player-sub {
+            font-size: 7.5px;
+            color: #64748b;
+            font-weight: normal;
+            margin-top: 1px;
+            line-height: 1.15;
         }
         .data-table tr {
             page-break-inside: avoid;
@@ -250,6 +258,8 @@
                                 @php
                                     $isHomeWin = $m->status === 'selesai' && $m->pemenang_id === $m->tim_home;
                                     $isAwayWin = $m->status === 'selesai' && $m->pemenang_id === $m->tim_away;
+                                    $homePlayers = \App\Services\TournamentService::pemainLabel($m->homeTeam->pemain1 ?? '', $m->homeTeam->pemain2 ?? '', true, 7);
+                                    $awayPlayers = \App\Services\TournamentService::pemainLabel($m->awayTeam->pemain1 ?? '', $m->awayTeam->pemain2 ?? '', true, 7);
                                 @endphp
                                 <tr>
                                     <td class="text-center font-bold">{{ $m->nomor_pertandingan }}</td>
@@ -257,8 +267,13 @@
                                     <td class="text-center">Rnd {{ $m->ronde }}</td>
                                     <td class="text-center">{{ $m->lokasi ?? '-' }}</td>
                                     <td class="text-right {{ $isHomeWin ? 'winner' : '' }}">
-                                        {{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}
-                                        @if ($isHomeWin) &#10004; @endif
+                                        <div>
+                                            {{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}
+                                            @if ($isHomeWin) &#10004; @endif
+                                        </div>
+                                        @if ($homePlayers)
+                                            <div class="player-sub">{{ $homePlayers }}</div>
+                                        @endif
                                     </td>
                                     <td class="text-center">
                                         @if ($m->status === 'selesai')
@@ -270,8 +285,13 @@
                                         @endif
                                     </td>
                                     <td class="text-left {{ $isAwayWin ? 'winner' : '' }}">
-                                        @if ($isAwayWin) &#10004; @endif
-                                        {{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}
+                                        <div>
+                                            @if ($isAwayWin) &#10004; @endif
+                                            {{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}
+                                        </div>
+                                        @if ($awayPlayers)
+                                            <div class="player-sub">{{ $awayPlayers }}</div>
+                                        @endif
                                     </td>
                                     <td class="text-center">
                                         @if ($m->status === 'selesai')

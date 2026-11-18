@@ -148,13 +148,29 @@
                                     <div class="text-slate-400 font-sans text-2xs">{{ $m->lokasi ?: 'Meja' }}</div>
                                 </td>
                                 <td class="py-3 px-3">
-                                    <div class="font-semibold text-slate-800 line-clamp-1">
-                                        {{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <div>
+                                            <div class="font-semibold text-slate-800 leading-tight">{{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}</div>
+                                            @include('partials.team_players', [
+                                                'p1' => $m->homeTeam->pemain1 ?? null,
+                                                'p2' => $m->homeTeam->pemain2 ?? null,
+                                                'short' => true,
+                                                'maxLen' => 7,
+                                            ])
+                                        </div>
                                         <span class="text-xs text-slate-400 font-normal">vs</span>
-                                        {{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}
+                                        <div>
+                                            <div class="font-semibold text-slate-800 leading-tight">{{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}</div>
+                                            @include('partials.team_players', [
+                                                'p1' => $m->awayTeam->pemain1 ?? null,
+                                                'p2' => $m->awayTeam->pemain2 ?? null,
+                                                'short' => true,
+                                                'maxLen' => 7,
+                                            ])
+                                        </div>
                                     </div>
                                     @if ($m->status === 'selesai' || $m->status === 'berlangsung')
-                                        <div class="text-xs font-mono font-bold text-indigo-600">
+                                        <div class="text-xs font-mono font-bold text-indigo-600 mt-1">
                                             Skor: {{ $m->skor_home }} - {{ $m->skor_away }}
                                         </div>
                                     @endif
@@ -213,8 +229,14 @@
                                 <td class="py-3 px-3 text-center text-xs font-bold text-slate-400">
                                     {{ $k['pos'] }}
                                 </td>
-                                <td class="py-3 px-3 font-semibold text-slate-800 line-clamp-1">
-                                    {{ $k['nama_tim'] }}
+                                <td class="py-3 px-3">
+                                    <div class="font-semibold text-slate-800 line-clamp-1">{{ $k['nama_tim'] }}</div>
+                                    @include('partials.team_players', [
+                                        'p1' => $k['pemain1'] ?? null,
+                                        'p2' => $k['pemain2'] ?? null,
+                                        'short' => true,
+                                        'maxLen' => 7,
+                                    ])
                                 </td>
                                 <td class="py-3 px-2 text-center font-mono text-xs text-slate-500">{{ $k['mp'] }}</td>
                                 <td class="py-3 px-2 text-center font-mono text-xs font-bold {{ $k['sb'] > 0 ? 'text-emerald-700' : ($k['sb'] < 0 ? 'text-rose-600' : 'text-slate-400') }}">

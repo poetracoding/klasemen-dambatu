@@ -403,6 +403,30 @@ class TournamentService
         return self::jam($w);
     }
 
+    public static function namaSingkat(?string $nama, int $maxLen = 7): string
+    {
+        $nama = trim((string) $nama);
+        if ($nama === '') {
+            return '';
+        }
+        if (mb_strlen($nama) <= $maxLen) {
+            return $nama;
+        }
+        $parts = preg_split('/\s+/', $nama);
+        $first = $parts[0] ?? $nama;
+        if (mb_strlen($first) > $maxLen) {
+            $first = mb_substr($first, 0, max(1, $maxLen));
+        }
+        return rtrim($first, '.') . '...';
+    }
+
+    public static function pemainLabel(?string $p1, ?string $p2, bool $short = true, int $maxLen = 7): string
+    {
+        $n1 = $short ? self::namaSingkat($p1, $maxLen) : trim((string) $p1);
+        $n2 = $short ? self::namaSingkat($p2, $maxLen) : trim((string) $p2);
+        return trim($n1 . ($n1 !== '' && $n2 !== '' ? ' & ' : '') . $n2);
+    }
+
     public static function badgeStatus(string $s): string
     {
         $badges = [

@@ -19,7 +19,7 @@
                             <th scope="col" class="py-3.5 px-4">Tanggal</th>
                         @endif
                         <th scope="col" class="py-3.5 px-4">Jam</th>
-                        <th scope="col" class="py-3.5 px-4">Pertandingan &amp; Skor</th>
+                        <th scope="col" colspan="3" class="py-3.5 px-4 text-center">Pertandingan &amp; Skor</th>
                         <th scope="col" class="py-3.5 px-4">Lokasi</th>
                         <th scope="col" class="py-3.5 px-4">Status</th>
                         <th scope="col" class="py-3.5 px-4">Hasil</th>
@@ -46,29 +46,50 @@
                             <td class="py-3.5 px-4 text-slate-600 whitespace-nowrap font-mono text-xs">
                                 {{ \App\Services\TournamentService::jamId($m->waktu) }}
                             </td>
-                            <td class="py-3.5 px-4 whitespace-nowrap">
-                                <a class="group inline-flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" href="{{ route('pertandingan.detail', $m->id) }}">
-                                    <!-- Home Team -->
-                                    <span class="{{ $m->status === 'selesai' && $m->pemenang_id == $m->tim_home ? 'text-indigo-600 font-extrabold' : '' }}">
+                            <!-- Home Team -->
+                            <td class="py-3.5 pl-4 pr-2 text-right">
+                                <a class="inline-flex flex-col items-end font-semibold text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" href="{{ route('pertandingan.detail', $m->id) }}">
+                                    <span class="whitespace-nowrap {{ $m->status === 'selesai' && $m->pemenang_id == $m->tim_home ? 'text-indigo-600 font-extrabold' : '' }}">
                                         {{ $homeName }}
                                     </span>
+                                    @include('partials.team_players', [
+                                        'p1' => $m->homeTeam->pemain1 ?? null,
+                                        'p2' => $m->homeTeam->pemain2 ?? null,
+                                        'short' => true,
+                                        'maxLen' => 7,
+                                        'align' => 'right',
+                                    ])
+                                </a>
+                            </td>
 
-                                    <!-- Score Box / vs -->
+                            <!-- Score Box / vs -->
+                            <td class="py-3.5 px-1 text-center w-14">
+                                <a class="inline-flex items-center justify-center" href="{{ route('pertandingan.detail', $m->id) }}">
                                     @if ($skorAda)
-                                        <span class="inline-flex items-center justify-center font-mono font-black text-xs px-2.5 py-0.5 rounded-md bg-slate-900 text-white tracking-wider shadow-xs">
+                                        <span class="inline-flex items-center justify-center font-mono font-black text-xs px-2.5 py-0.5 rounded-md bg-slate-900 text-white tracking-wider shadow-xs whitespace-nowrap">
                                             {{ (int) ($m->skor_home ?? 0) }} - {{ (int) ($m->skor_away ?? 0) }}
                                         </span>
                                     @else
-                                        <span class="text-xs font-normal text-slate-400 px-1.5 py-0.5 rounded bg-slate-100">
+                                        <span class="text-xs font-normal text-slate-400 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
                                             vs
                                         </span>
                                     @endif
+                                </a>
+                            </td>
 
-                                    <!-- Away Team -->
-                                    <span class="{{ $m->status === 'selesai' && $m->pemenang_id == $m->tim_away ? 'text-indigo-600 font-extrabold' : '' }}">
+                            <!-- Away Team -->
+                            <td class="py-3.5 pl-2 pr-4 text-left">
+                                <a class="inline-flex flex-col items-start font-semibold text-slate-800 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" href="{{ route('pertandingan.detail', $m->id) }}">
+                                    <span class="whitespace-nowrap {{ $m->status === 'selesai' && $m->pemenang_id == $m->tim_away ? 'text-indigo-600 font-extrabold' : '' }}">
                                         {{ $awayName }}
                                     </span>
-                                    <i class="bi bi-chevron-right opacity-0 -ml-1 group-hover:opacity-100 group-hover:ml-0 transition-all text-xs"></i>
+                                    @include('partials.team_players', [
+                                        'p1' => $m->awayTeam->pemain1 ?? null,
+                                        'p2' => $m->awayTeam->pemain2 ?? null,
+                                        'short' => true,
+                                        'maxLen' => 7,
+                                        'align' => 'left',
+                                    ])
                                 </a>
                             </td>
                             <td class="py-3.5 px-4 text-slate-600 whitespace-nowrap">
@@ -82,6 +103,12 @@
                                     <span class="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
                                         <i class="bi bi-trophy text-xs"></i> {{ $pemenangName }} Menang
                                     </span>
+                                    @include('partials.team_players', [
+                                        'p1' => $m->pemenang->pemain1 ?? null,
+                                        'p2' => $m->pemenang->pemain2 ?? null,
+                                        'short' => true,
+                                        'maxLen' => 7,
+                                    ])
                                 @else
                                     <span class="text-slate-400">-</span>
                                 @endif

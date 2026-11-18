@@ -317,7 +317,7 @@
                         <th scope="col" class="py-3 px-4 w-12 text-center">#</th>
                         <th scope="col" class="py-3 px-4">Hari &amp; Tanggal</th>
                         <th scope="col" class="py-3 px-4">Waktu</th>
-                        <th scope="col" class="py-3 px-4">Pertandingan</th>
+                        <th scope="col" colspan="3" class="py-3 px-4 text-center">Pertandingan</th>
                         <th scope="col" class="py-3 px-4">Meja / Lokasi</th>
                         <th scope="col" class="py-3 px-4">Status</th>
                         <th scope="col" class="py-3 px-4 text-right">Aksi</th>
@@ -343,17 +343,38 @@
                             <td class="py-3.5 px-4 whitespace-nowrap font-mono text-xs font-semibold text-slate-700">
                                 {{ \App\Services\TournamentService::jamId($m->waktu) }}
                             </td>
-                            <td class="py-3.5 px-4 whitespace-nowrap">
-                                <div class="font-semibold text-slate-900">
-                                    {{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}
-                                    <span class="text-xs text-slate-400 font-normal px-1">vs</span>
-                                    {{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}
+                            <td class="py-3.5 pl-4 pr-2 text-right">
+                                <div class="inline-flex flex-col items-end">
+                                    <span class="font-semibold text-slate-900 whitespace-nowrap">{{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}</span>
+                                    @include('partials.team_players', [
+                                        'p1' => $m->homeTeam->pemain1 ?? null,
+                                        'p2' => $m->homeTeam->pemain2 ?? null,
+                                        'short' => true,
+                                        'maxLen' => 7,
+                                        'align' => 'right',
+                                    ])
                                 </div>
+                            </td>
+                            <td class="py-3.5 px-1 text-center w-14">
                                 @if ($m->status === 'selesai' || $m->status === 'berlangsung')
-                                    <span class="inline-flex items-center font-mono text-2xs px-2 py-0.5 rounded bg-slate-900 text-white font-bold mt-0.5">
-                                        Skor: {{ (int) $m->skor_home }} - {{ (int) $m->skor_away }}
+                                    <span class="inline-flex items-center font-mono text-2xs px-2 py-0.5 rounded bg-slate-900 text-white font-bold whitespace-nowrap">
+                                        {{ (int) $m->skor_home }} - {{ (int) $m->skor_away }}
                                     </span>
+                                @else
+                                    <span class="text-xs font-normal text-slate-400 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">vs</span>
                                 @endif
+                            </td>
+                            <td class="py-3.5 pl-2 pr-4 text-left">
+                                <div class="inline-flex flex-col items-start">
+                                    <span class="font-semibold text-slate-900 whitespace-nowrap">{{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}</span>
+                                    @include('partials.team_players', [
+                                        'p1' => $m->awayTeam->pemain1 ?? null,
+                                        'p2' => $m->awayTeam->pemain2 ?? null,
+                                        'short' => true,
+                                        'maxLen' => 7,
+                                        'align' => 'left',
+                                    ])
+                                </div>
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap font-medium text-slate-700">
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700">

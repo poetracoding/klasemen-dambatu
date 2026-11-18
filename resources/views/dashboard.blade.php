@@ -226,6 +226,12 @@
                                             href="{{ route('tim.detail', $k['id']) }}">
                                             {{ $k['nama_tim'] }}
                                         </a>
+                                        @include('partials.team_players', [
+                                            'p1' => $k['pemain1'] ?? null,
+                                            'p2' => $k['pemain2'] ?? null,
+                                            'short' => true,
+                                            'maxLen' => 7,
+                                        ])
                                     </td>
                                     <td class="py-3 px-2 text-center text-xs text-slate-500 font-mono">{{ $k['mp'] }}
                                     </td>
