@@ -141,8 +141,15 @@
                         ['route' => 'admin.tim.index', 'label' => 'Tim & Pemain', 'icon' => 'bi-people'],
                         ['route' => 'admin.jadwal.index', 'label' => 'Jadwal', 'icon' => 'bi-calendar3'],
                         ['route' => 'admin.pertandingan.index', 'label' => 'Input Hasil', 'icon' => 'bi-trophy'],
-                        ['route' => 'admin.poster.index', 'label' => 'Poster Informasi', 'icon' => 'bi-images'],
-                        ['route' => 'admin.pengaturan.index', 'label' => 'Pengaturan', 'icon' => 'bi-gear'],
+                    ];
+                    $isPengaturanActive = request()->routeIs('admin.pengaturan.*') || request()->routeIs('admin.poster.*');
+                    $pengaturanLinks = [
+                        ['url' => route('admin.pengaturan.index'), 'label' => 'Informasi Liga', 'icon' => 'bi-sliders', 'active' => request()->routeIs('admin.pengaturan.index')],
+                        ['url' => route('admin.poster.index'), 'label' => 'Poster Informasi', 'icon' => 'bi-images', 'active' => request()->routeIs('admin.poster.*')],
+                        ['url' => route('admin.pengaturan.password'), 'label' => 'Ganti Password', 'icon' => 'bi-shield-lock', 'active' => request()->routeIs('admin.pengaturan.password')],
+                        ['url' => route('admin.pengaturan.backup_restore'), 'label' => 'Backup & Restore', 'icon' => 'bi-cloud-arrow-down', 'active' => request()->routeIs('admin.pengaturan.backup_restore')],
+                        ['divider' => true],
+                        ['url' => route('admin.pengaturan.analytics'), 'label' => 'Analytics', 'icon' => 'bi-graph-up-arrow', 'active' => request()->routeIs('admin.pengaturan.analytics')],
                     ];
                 @endphp
                 @foreach ($adminNav as $item)
@@ -152,6 +159,33 @@
                         <span>{{ $item['label'] }}</span>
                     </a>
                 @endforeach
+
+                <!-- Dropdown Pengaturan -->
+                <div class="relative shrink-0" id="pengaturanDropdownWrap">
+                    <button type="button" id="pengaturanDropdownBtn"
+                        class="flex items-center gap-1.5 px-2.5 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer {{ $isPengaturanActive ? 'bg-slate-800 text-indigo-400 font-semibold shadow-xs' : 'text-slate-300 hover:text-white hover:bg-slate-800/60' }}"
+                        aria-expanded="false" aria-haspopup="true">
+                        <i class="bi bi-gear text-base shrink-0"></i>
+                        <span>Pengaturan</span>
+                        <i class="bi bi-chevron-down text-xs transition-transform duration-150" id="pengaturanDropdownChevron"></i>
+                    </button>
+
+                    <div id="pengaturanDropdownMenu"
+                        class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-slate-900 border border-slate-700/90 shadow-2xl py-2 z-50">
+                        @foreach ($pengaturanLinks as $sub)
+                            @if (!empty($sub['divider']))
+                                <div class="my-1.5 border-t border-slate-800"></div>
+                            @else
+                                <a href="{{ $sub['url'] }}"
+                                    onclick="closePengaturanDropdown()"
+                                    class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium transition-colors {{ !empty($sub['active']) ? 'bg-slate-800/90 text-indigo-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-slate-800/70' }}">
+                                    <i class="bi {{ $sub['icon'] }} text-sm shrink-0"></i>
+                                    <span>{{ $sub['label'] }}</span>
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
             </div>
 
             <!-- Right Actions -->
@@ -195,6 +229,28 @@
                 <span>{{ $item['label'] }}</span>
             </a>
         @endforeach
+
+        <!-- Mobile Dropdown Pengaturan -->
+        <div class="pt-1">
+            <button type="button" id="mobilePengaturanBtn"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer {{ $isPengaturanActive ? 'bg-slate-800 text-indigo-400 font-semibold' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                <span class="flex items-center gap-2.5">
+                    <i class="bi bi-gear text-lg"></i>
+                    <span>Pengaturan</span>
+                </span>
+                <i class="bi bi-chevron-down text-xs transition-transform duration-150 {{ $isPengaturanActive ? 'rotate-180' : '' }}" id="mobilePengaturanChevron"></i>
+            </button>
+            <div id="mobilePengaturanMenu" class="{{ $isPengaturanActive ? '' : 'hidden' }} pl-8 pr-2 py-1 space-y-1">
+                @foreach ($pengaturanLinks as $sub)
+                    @if (empty($sub['divider']))
+                        <a href="{{ $sub['url'] }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ !empty($sub['active']) ? 'text-indigo-400 bg-slate-800/70 font-semibold' : 'text-slate-400 hover:text-white hover:bg-slate-800/50' }}">
+                            <i class="bi {{ $sub['icon'] }} text-sm"></i>
+                            <span>{{ $sub['label'] }}</span>
+                        </a>
+                    @endif
+                @endforeach
+            </div>
+        </div>
         <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between">
             <button type="button" onclick="toggleTheme()" class="theme-toggle-btn flex items-center gap-2 text-xs font-medium text-slate-300 hover:text-white cursor-pointer">
                 <i class="theme-toggle-icon bi bi-moon-stars-fill text-indigo-400"></i>
@@ -299,6 +355,56 @@
 </footer>
 
 <script src="{{ asset('assets/js/app.js') }}?v={{ filemtime(public_path('assets/js/app.js')) }}"></script>
+<script>
+    (function () {
+        const btn = document.getElementById('pengaturanDropdownBtn');
+        const menu = document.getElementById('pengaturanDropdownMenu');
+        const chevron = document.getElementById('pengaturanDropdownChevron');
+        const wrap = document.getElementById('pengaturanDropdownWrap');
+
+        window.closePengaturanDropdown = function () {
+            if (menu) menu.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        };
+
+        if (btn && menu) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const isHidden = menu.classList.contains('hidden');
+                if (isHidden) {
+                    menu.classList.remove('hidden');
+                    if (chevron) chevron.classList.add('rotate-180');
+                    btn.setAttribute('aria-expanded', 'true');
+                } else {
+                    window.closePengaturanDropdown();
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (wrap && !wrap.contains(e.target)) {
+                    window.closePengaturanDropdown();
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    window.closePengaturanDropdown();
+                }
+            });
+        }
+
+        const mobBtn = document.getElementById('mobilePengaturanBtn');
+        const mobMenu = document.getElementById('mobilePengaturanMenu');
+        const mobChevron = document.getElementById('mobilePengaturanChevron');
+        if (mobBtn && mobMenu) {
+            mobBtn.addEventListener('click', function () {
+                mobMenu.classList.toggle('hidden');
+                if (mobChevron) mobChevron.classList.toggle('rotate-180');
+            });
+        }
+    })();
+</script>
 @yield('scripts')
 </body>
 </html>

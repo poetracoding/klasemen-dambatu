@@ -7,6 +7,8 @@ use App\Models\Liga;
 use App\Models\Pertandingan;
 use App\Models\Tim;
 use App\Models\User;
+use App\Models\VisitorLog;
+use App\Services\TournamentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +22,86 @@ class PengaturanController extends Controller
     {
         $liga = Liga::current();
         return view('admin.pengaturan', compact('liga'));
+    }
+
+    public function password()
+    {
+        $liga = Liga::current();
+        return view('admin.pengaturan_password', compact('liga'));
+    }
+
+    public function backupRestore()
+    {
+        $liga = Liga::current();
+        return view('admin.pengaturan_backup', compact('liga'));
+    }
+
+    public function analytics()
+    {
+        $liga = Liga::current();
+        $today = now()->toDateString();
+        $sevenDaysAgo = now()->subDays(6)->toDateString();
+        $fourteenDaysAgo = now()->subDays(13)->toDateString();
+
+        $todayViews = VisitorLog::where('visit_date', $today)->count();
+        $todayUnique = VisitorLog::where('visit_date', $today)->distinct('session_id')->count('session_id');
+        $weekViews = VisitorLog::where('visit_date', '>=', $sevenDaysAgo)->count();
+        $weekUnique = VisitorLog::where('visit_date', '>=', $sevenDaysAgo)->distinct('session_id')->count('session_id');
+        $totalViews = VisitorLog::count();
+        $totalUnique = VisitorLog::distinct('session_id')->count('session_id');
+
+        $dailyRaw = VisitorLog::where('visit_date', '>=', $fourteenDaysAgo)
+            ->selectRaw('visit_date, COUNT(*) as views, COUNT(DISTINCT session_id) as uniques')
+            ->groupBy('visit_date')
+            ->get()
+            ->keyBy(fn ($row) => $row->visit_date instanceof \Carbon\Carbon ? $row->visit_date->format('Y-m-d') : substr((string) $row->visit_date, 0, 10));
+
+        $dailyStats = [];
+        for ($i = 13; $i >= 0; $i--) {
+            $d = now()->subDays($i)->toDateString();
+            $row = $dailyRaw->get($d);
+            $dailyStats[] = [
+                'date' => $d,
+                'label' => date('d/m', strtotime($d)),
+                'day' => TournamentService::hariId($d),
+                'views' => $row ? (int) $row->views : 0,
+                'uniques' => $row ? (int) $row->uniques : 0,
+            ];
+        }
+        $maxDailyViews = max(1, collect($dailyStats)->max('views'));
+
+        $topPages = VisitorLog::selectRaw('path, COALESCE(MAX(page_title), path) as page_title, COUNT(*) as views, COUNT(DISTINCT session_id) as uniques')
+            ->groupBy('path')
+            ->orderByDesc('views')
+            ->limit(8)
+            ->get();
+
+        $mobileViews = VisitorLog::where('device_type', 'mobile')->count();
+        $desktopViews = VisitorLog::where('device_type', 'desktop')->count();
+        $recentVisits = VisitorLog::orderByDesc('id')->limit(15)->get();
+
+        return view('admin.analytics', compact(
+            'liga',
+            'todayViews',
+            'todayUnique',
+            'weekViews',
+            'weekUnique',
+            'totalViews',
+            'totalUnique',
+            'dailyStats',
+            'maxDailyViews',
+            'topPages',
+            'mobileViews',
+            'desktopViews',
+            'recentVisits'
+        ));
+    }
+
+    public function resetAnalytics()
+    {
+        VisitorLog::truncate();
+
+        return back()->with('success', 'Data statistik pengunjung berhasil direset.');
     }
 
     public function updateLiga(Request $request)

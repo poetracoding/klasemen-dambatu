@@ -34,7 +34,7 @@
         <div class="flex items-center gap-3">
             <i class="bi bi-shield-exclamation text-xl text-amber-600"></i>
             <div class="text-xs sm:text-sm">
-                <span class="font-bold">Peringatan Keamanan:</span> Anda masih memakai password bawaan (<code class="bg-amber-100 px-1 py-0.5 rounded text-amber-800 font-mono">admin123</code>). Segera ganti di menu <a href="{{ route('admin.pengaturan.index') }}" class="font-bold underline hover:text-amber-700">Pengaturan</a>.
+                <span class="font-bold">Peringatan Keamanan:</span> Anda masih memakai password bawaan (<code class="bg-amber-100 px-1 py-0.5 rounded text-amber-800 font-mono">admin123</code>). Segera ganti di menu <a href="{{ route('admin.pengaturan.password') }}" class="font-bold underline hover:text-amber-700">Ganti Password</a>.
             </div>
         </div>
     </div>

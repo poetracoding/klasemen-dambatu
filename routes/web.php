@@ -91,6 +91,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     // Pengaturan
     Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan.index');
+    Route::get('/pengaturan/password', [PengaturanController::class, 'password'])->name('pengaturan.password');
+    Route::get('/pengaturan/backup-restore', [PengaturanController::class, 'backupRestore'])->name('pengaturan.backup_restore');
+    Route::get('/pengaturan/analytics', [PengaturanController::class, 'analytics'])->name('pengaturan.analytics');
+    Route::post('/pengaturan/analytics/reset', [PengaturanController::class, 'resetAnalytics'])->name('pengaturan.analytics.reset');
     Route::post('/pengaturan/liga', [PengaturanController::class, 'updateLiga'])->name('pengaturan.update_liga');
     Route::post('/pengaturan/password', [PengaturanController::class, 'gantiPassword'])->name('pengaturan.ganti_password');
     Route::post('/pengaturan/backup', [PengaturanController::class, 'backup'])->name('pengaturan.backup');
