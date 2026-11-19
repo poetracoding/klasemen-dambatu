@@ -152,6 +152,7 @@
                         ['route' => 'jadwal', 'label' => 'Jadwal Liga', 'icon' => 'bi-calendar3'],
                         ['route' => 'klasemen', 'label' => 'Klasemen', 'icon' => 'bi-list-ol'],
                         ['route' => 'history', 'label' => 'History', 'icon' => 'bi-clock-history'],
+                        ['route' => 'game', 'label' => 'Game', 'icon' => 'bi-dice-6'],
                     ];
                 @endphp
                 @foreach ($navItems as $item)

@@ -31,6 +31,7 @@ Route::get('/klasemen.php', function (\Illuminate\Http\Request $request) {
     return redirect()->to('/klasemen' . ($request->getQueryString() ? '?' . $request->getQueryString() : ''), 301);
 });
 Route::get('/history', [HomeController::class, 'history'])->name('history');
+Route::get('/game', [HomeController::class, 'game'])->name('game');
 Route::get('/tim/{id}', [HomeController::class, 'timDetail'])->name('tim.detail');
 Route::get('/pertandingan/{id}', [HomeController::class, 'pertandinganDetail'])->name('pertandingan.detail');
 

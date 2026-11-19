@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 5. Live Auto-Update untuk halaman publik (tanpa refresh browser)
     var isAreaAdmin = document.body.getAttribute('data-area') === 'admin';
-    if (!isAreaAdmin) {
+    if (!isAreaAdmin && !window.DISABLE_LIVE_UPDATE) {
         var base = (window.BASE_URL || '').replace(/\/+$/, '');
         var checkUrl = (base ? base : '') + '/api/check_update.php';
         var currentHash = null;

@@ -169,5 +169,11 @@ class HomeController extends Controller
 
         return view('pertandingan_detail', compact('liga', 'm'));
     }
+
+    public function game()
+    {
+        $liga = Liga::current();
+        return view('game', compact('liga'));
+    }
 }
 

@@ -123,6 +123,9 @@ class TrackPublicVisit
         if ($path === '/history') {
             return 'History Pertandingan';
         }
+        if ($path === '/game') {
+            return 'Game Dam Batu';
+        }
         if (str_starts_with($path, '/tim/')) {
             return 'Detail Tim';
         }
