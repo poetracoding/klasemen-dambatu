@@ -258,6 +258,46 @@
         </div>
     </div>
 
+    <!-- Card Ajakan Bermain Game Dam Batu Online -->
+    <div class="mt-8 relative overflow-hidden rounded-3xl p-6 sm:p-8 text-white shadow-md border border-emerald-700/40"
+        style="background: linear-gradient(135deg, #065f46 0%, #047857 50%, #0f766e 100%);">
+        <div class="absolute -right-8 -bottom-10 opacity-10 pointer-events-none text-[140px] leading-none select-none">
+            <i class="bi bi-dice-6-fill"></i>
+        </div>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div class="max-w-2xl">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/15 text-emerald-100 border border-white/20 mb-3">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+                    <span>Hiburan Gratis &middot; Langsung Main di Browser</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white">
+                    Yuk, Main Game Dam Batu Online!
+                </h2>
+                <p class="text-xs sm:text-sm text-emerald-100/90 mt-1.5 leading-relaxed">
+                    Sambil menunggu jadwal pertandingan berikutnya, asah strategi Anda melawan 2 atau 3 AI dengan aturan 4 kartu sisa tertutup dan 3 tingkat kesulitan.
+                </p>
+                <div class="flex flex-wrap items-center gap-2 mt-3.5 text-[11px] font-semibold text-emerald-100">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/20 border border-white/10">
+                        <i class="bi bi-people-fill text-amber-300"></i> 3–4 Pemain
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/20 border border-white/10">
+                        <i class="bi bi-cpu-fill text-amber-300"></i> 3 Level AI
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black/20 border border-white/10">
+                        <i class="bi bi-arrows-fullscreen text-amber-300"></i> Mode Layar Penuh
+                    </span>
+                </div>
+            </div>
+            <div class="flex-shrink-0">
+                <a href="{{ route('game') }}"
+                    class="inline-flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3.5 rounded-2xl text-sm font-extrabold text-slate-900 bg-amber-400 hover:bg-amber-300 shadow-lg shadow-black/20 transition-all hover:scale-[1.02]">
+                    <i class="bi bi-play-circle-fill text-lg"></i>
+                    <span>Main Sekarang</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
     @php
         $posters = $posters ?? collect();
         $firstPoster = $posters->first();
