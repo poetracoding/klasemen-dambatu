@@ -56,15 +56,16 @@ class TrackPublicVisit
 
             $ua = (string) $request->userAgent();
             $isMobile = (bool) preg_match('/(mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini)/i', $ua);
+            $clientIp = $this->resolveClientIp($request);
 
             $sessionId = $request->hasSession() && $request->session()->getId()
                 ? $request->session()->getId()
-                : sha1(($request->ip() ?? '') . '|' . $ua);
+                : sha1(($clientIp ?? '') . '|' . $ua);
 
             VisitorLog::create([
                 'visit_date' => now()->toDateString(),
                 'session_id' => mb_substr($sessionId, 0, 100),
-                'ip_address' => $request->ip(),
+                'ip_address' => mb_substr($clientIp, 0, 45),
                 'path' => mb_substr($path, 0, 255),
                 'page_title' => $this->resolvePageTitle($path),
                 'device_type' => $isMobile ? 'mobile' : 'desktop',
@@ -75,6 +76,34 @@ class TrackPublicVisit
         } catch (\Throwable $e) {
             // Jangan ganggu response utama jika pencatatan log gagal
         }
+    }
+
+    /**
+     * Dapatkan IP address klien secara aman dengan memvalidasi reverse proxy lokal.
+     * Mencegah IP spoofing dari pihak luar atau jaringan LAN.
+     */
+    private function resolveClientIp(Request $request): string
+    {
+        $rawRemote = (string) $request->server('REMOTE_ADDR');
+
+        // Hanya percaya header proxy jika koneksi berasal dari localhost (cloudflared / nginx lokal)
+        if (in_array($rawRemote, ['127.0.0.1', '::1'], true)) {
+            $cfIp = $request->header('cf-connecting-ip');
+            if ($cfIp && filter_var($cfIp, FILTER_VALIDATE_IP)) {
+                return $cfIp;
+            }
+
+            $forwarded = $request->header('x-forwarded-for');
+            if ($forwarded) {
+                $parts = explode(',', $forwarded);
+                $firstIp = trim($parts[0] ?? '');
+                if (filter_var($firstIp, FILTER_VALIDATE_IP)) {
+                    return $firstIp;
+                }
+            }
+        }
+
+        return $request->ip() ?: '127.0.0.1';
     }
 
     private function resolvePageTitle(string $path): string
