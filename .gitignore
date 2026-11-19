@@ -1,27 +1,98 @@
-*.log
-.DS_Store
+# ==========================================
+# Laravel & Composer
+# ==========================================
+/vendor/
+/bootstrap/cache/*.php
+/storage/*.key
+/storage/pail/
+/public/storage
+/public/hot
+/public/build/
+/auth.json
+Homestead.json
+Homestead.yaml
+
+# ==========================================
+# Environment & Secrets
+# ==========================================
 .env
 .env.backup
+.env.bak
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
-/auth.json
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
-/vendor
+.env.staging
+.env.local
+.env.*.local
+
+# ==========================================
+# Logs
+# ==========================================
+*.log
+storage/logs/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# Node / Frontend Build & Dependencies
+# ==========================================
+/node_modules/
+.npm
+.vite/
+
+# ==========================================
+# Database & Dumps
+# ==========================================
 database/*.sqlite
 database/*.sqlite-journal
 database/*.bak
-Homestead.json
-Homestead.yaml
+database/*.sql
+*.sql
+*.sqlite
+
+# ==========================================
+# Testing & Code Quality
+# ==========================================
+.phpunit.result.cache
+/.phpunit.cache/
+.phpunit.coverage/
+.pest/
+.phpactor.json
+.php-cs-fixer.cache
+coverage/
+*.coverage
+
+# ==========================================
+# IDEs & Text Editors
+# ==========================================
+/.fleet/
+/.idea/
+/.nova/
+/.vscode/
+/.zed/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# ==========================================
+# AI / Tools / Assistant Caches
+# ==========================================
+.gemini/
+.claude/
