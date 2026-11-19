@@ -5,16 +5,20 @@
 @section('content')
 @php
     $pertandingans = $matches ?? $pertandingans ?? collect();
-    $filterStatus = $f ?? $filterStatus ?? '';
-    $filterTanggal = $ft ?? $filterTanggal ?? '';
+    $filterStatus = $f ?? 'belum';
+    $filterTanggal = $ft ?? '';
     $teams = $tims ?? \App\Models\Tim::where('liga_id', $liga->id)->orderBy('nama_tim')->get();
-    $filterTim = (int) request('tim', 0);
+    $filterTim = (int) ($timId ?? request('tim', 0));
+    $searchQuery = $qSearch ?? (string) request('q', '');
 @endphp
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
         <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Input Hasil &amp; Poin Pertandingan</h1>
         <p class="text-sm text-slate-500 mt-1">Masukkan skor/poin pertandingan seperti gol sepak bola dan tentukan status laga.</p>
+    </div>
+    <div class="text-xs text-slate-500 font-medium">
+        Menampilkan <span class="font-bold text-slate-800">{{ $pertandingans->count() }}</span> pertandingan
     </div>
 </div>
 
@@ -28,22 +32,45 @@
 <!-- Filter Bar -->
 <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs mb-6">
     <form class="grid grid-cols-1 sm:grid-cols-12 gap-3" method="get" action="{{ route('admin.pertandingan.index') }}">
-        <div class="sm:col-span-5">
-            <label class="block text-xs font-semibold text-slate-500 mb-1.5">Filter Status</label>
-            <select name="f" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-slate-800 form-input-focus">
-                <option value="">Semua Pertandingan</option>
-                <option value="belum" {{ $filterStatus === 'belum' ? 'selected' : '' }}>Belum Selesai</option>
-                <option value="selesai" {{ $filterStatus === 'selesai' ? 'selected' : '' }}>Sudah Selesai</option>
+        <div class="sm:col-span-3">
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">Filter Tim</label>
+            <select name="tim" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-slate-800 form-input-focus">
+                <option value="0">Semua Tim</option>
+                @foreach ($teams as $t)
+                    <option value="{{ $t->id }}" {{ $filterTim === (int) $t->id ? 'selected' : '' }}>
+                        {{ $t->nama_tim }} ({{ \App\Services\TournamentService::pemainLabel($t->pemain1, $t->pemain2, true, 7) }})
+                    </option>
+                @endforeach
             </select>
         </div>
-        <div class="sm:col-span-4">
-            <label class="block text-xs font-semibold text-slate-500 mb-1.5">Pilih Tanggal</label>
+        <div class="sm:col-span-3">
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">Cari Tim / Pemain</label>
+            <div class="relative">
+                <i class="bi bi-search absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                <input type="search" name="q" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-8 pr-3 text-slate-800 form-input-focus" placeholder="Ketik nama tim/pemain..." value="{{ $searchQuery }}">
+            </div>
+        </div>
+        <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">Status</label>
+            <select name="f" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-slate-800 form-input-focus">
+                <option value="belum" {{ $filterStatus === 'belum' ? 'selected' : '' }}>Belum Bertanding</option>
+                <option value="selesai" {{ $filterStatus === 'selesai' ? 'selected' : '' }}>Sudah Selesai</option>
+                <option value="semua" {{ $filterStatus === 'semua' || $filterStatus === '' ? 'selected' : '' }}>Semua</option>
+            </select>
+        </div>
+        <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5">Tanggal</label>
             <input type="date" name="tanggal" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 text-slate-800 form-input-focus" value="{{ $filterTanggal }}">
         </div>
-        <div class="sm:col-span-3 flex items-end">
-            <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs shadow-indigo-600/20 cursor-pointer">
+        <div class="sm:col-span-2 flex items-end gap-1.5">
+            <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs shadow-indigo-600/20 cursor-pointer">
                 <i class="bi bi-funnel"></i> Filter
             </button>
+            @if ($filterTim > 0 || $searchQuery !== '' || $filterTanggal !== '' || $filterStatus !== 'belum')
+                <a href="{{ route('admin.pertandingan.index') }}" class="inline-flex items-center justify-center p-2 rounded-xl text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors" title="Reset Filter">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            @endif
         </div>
     </form>
 </div>
@@ -164,6 +191,10 @@
                             <td class="py-3 px-3 text-center whitespace-nowrap">
                                 <form id="{{ $fid }}" action="{{ route('admin.pertandingan.simpan', $m->id) }}" method="POST" class="form-hasil">
                                     @csrf
+                                    <input type="hidden" name="f" value="{{ $filterStatus }}">
+                                    <input type="hidden" name="ft" value="{{ $filterTanggal }}">
+                                    <input type="hidden" name="tim" value="{{ $filterTim ?: '' }}">
+                                    <input type="hidden" name="q" value="{{ $searchQuery }}">
                                     <button type="submit" class="inline-flex items-center justify-center p-2 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer" {{ $liga->status === 'draft' ? 'disabled' : '' }} title="Simpan Skor &amp; Hasil">
                                         <i class="bi bi-floppy text-sm"></i>
                                     </button>

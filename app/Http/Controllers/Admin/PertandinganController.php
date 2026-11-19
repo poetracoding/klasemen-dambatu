@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Liga;
 use App\Models\Pertandingan;
+use App\Models\Tim;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
 
@@ -13,8 +14,10 @@ class PertandinganController extends Controller
     public function index(Request $request)
     {
         $liga = Liga::current();
-        $f = $request->get('f', '');
-        $ft = $request->get('tanggal', '');
+        $f = $request->has('f') ? (string) $request->get('f') : 'belum';
+        $ft = (string) $request->get('tanggal', '');
+        $timId = (int) $request->get('tim', 0);
+        $qSearch = trim((string) $request->get('q', ''));
 
         $query = Pertandingan::where('liga_id', $liga->id)
             ->with(['homeTeam', 'awayTeam', 'pemenang']);
@@ -31,9 +34,31 @@ class PertandinganController extends Controller
             $ft = '';
         }
 
-        $matches = $query->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')->get();
+        if ($timId > 0) {
+            $query->where(function ($q) use ($timId) {
+                $q->where('tim_home', $timId)->orWhere('tim_away', $timId);
+            });
+        }
 
-        return view('admin.pertandingan', compact('liga', 'f', 'ft', 'matches'));
+        if ($qSearch !== '') {
+            $like = '%' . $qSearch . '%';
+            $query->where(function ($q) use ($like) {
+                $q->whereHas('homeTeam', function ($sub) use ($like) {
+                    $sub->where('nama_tim', 'like', $like)
+                        ->orWhere('pemain1', 'like', $like)
+                        ->orWhere('pemain2', 'like', $like);
+                })->orWhereHas('awayTeam', function ($sub) use ($like) {
+                    $sub->where('nama_tim', 'like', $like)
+                        ->orWhere('pemain1', 'like', $like)
+                        ->orWhere('pemain2', 'like', $like);
+                });
+            });
+        }
+
+        $matches = $query->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')->get();
+        $tims = Tim::where('liga_id', $liga->id)->orderBy('nama_tim')->get();
+
+        return view('admin.pertandingan', compact('liga', 'f', 'ft', 'timId', 'qSearch', 'matches', 'tims'));
     }
 
     public function simpanHasil(Request $request, $id)
@@ -79,8 +104,12 @@ class PertandinganController extends Controller
             $msg .= ' Seluruh pertandingan telah selesai! Juara liga sudah ditentukan.';
         }
 
-        return redirect()->route('admin.pertandingan.index', array_filter(['f' => $request->f, 'tanggal' => $request->ft]))
-            ->with('success', $msg);
+        return redirect()->route('admin.pertandingan.index', array_filter([
+            'f' => $request->input('f'),
+            'tanggal' => $request->input('ft'),
+            'tim' => $request->input('tim'),
+            'q' => $request->input('q'),
+        ]))->with('success', $msg);
     }
 }
 
