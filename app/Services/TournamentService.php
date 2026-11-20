@@ -515,4 +515,274 @@ class TournamentService
             'tickerDateRange' => $dateRangeStr,
         ];
     }
+
+    /**
+     * Hitung skor kekuatan & riwayat performa per tim untuk keperluan prediksi & analisis tren.
+     */
+    public static function hitungKekuatanTim(Liga $liga): array
+    {
+        $klasemen = self::hitungKlasemen($liga);
+        $totalTeams = count($klasemen);
+
+        $finishedMatches = Pertandingan::where('liga_id', $liga->id)
+            ->where('status', 'selesai')
+            ->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan, id')
+            ->get();
+
+        $historyByTeam = [];
+        foreach ($finishedMatches as $m) {
+            $homeWon = (int) $m->pemenang_id === (int) $m->tim_home;
+            $awayWon = (int) $m->pemenang_id === (int) $m->tim_away;
+            $diffHome = (int) $m->skor_home - (int) $m->skor_away;
+
+            $historyByTeam[$m->tim_home][] = [
+                'won' => $homeWon,
+                'diff' => $diffHome,
+                'opp_id' => $m->tim_away,
+            ];
+            $historyByTeam[$m->tim_away][] = [
+                'won' => $awayWon,
+                'diff' => -$diffHome,
+                'opp_id' => $m->tim_home,
+            ];
+        }
+
+        $map = [];
+        foreach ($klasemen as $row) {
+            $id = (int) $row['id'];
+            $mp = (int) $row['mp'];
+            $w = (int) $row['w'];
+            $l = (int) $row['l'];
+            $sb = (int) $row['sb'];
+            $pos = (int) $row['pos'];
+
+            $teamHistory = $historyByTeam[$id] ?? [];
+            $winRate = $mp > 0 ? ($w / $mp) * 100.0 : 50.0;
+            $avgDiff = $mp > 0 ? ($sb / $mp) : 0.0;
+
+            // Tren 5 pertandingan terakhir (bobot lebih besar ke laga paling baru)
+            $recentMatches = array_slice($teamHistory, -5);
+            $recentForm = array_map(fn ($h) => $h['won'] ? 'W' : 'L', $recentMatches);
+
+            if (count($recentMatches) > 0) {
+                $weights = [1.0, 1.2, 1.4, 1.6, 1.8];
+                $offset = count($weights) - count($recentMatches);
+                $weightedWins = 0.0;
+                $weightSum = 0.0;
+                foreach ($recentMatches as $idx => $h) {
+                    $wt = $weights[$offset + $idx];
+                    $weightSum += $wt;
+                    if ($h['won']) {
+                        $weightedWins += $wt;
+                    }
+                }
+                $recentRate = $weightSum > 0 ? ($weightedWins / $weightSum) * 100.0 : 50.0;
+                $recentRawRate = (count(array_filter($recentMatches, fn ($h) => $h['won'])) / count($recentMatches)) * 100.0;
+            } else {
+                $recentRate = 50.0;
+                $recentRawRate = 0.0;
+            }
+
+            // Streak terkini (menang/kalah beruntun dari laga terakhir)
+            $streakType = 'N';
+            $streakCount = 0;
+            if (!empty($teamHistory)) {
+                $lastWon = $teamHistory[count($teamHistory) - 1]['won'];
+                $streakType = $lastWon ? 'W' : 'L';
+                for ($i = count($teamHistory) - 1; $i >= 0; $i--) {
+                    if ($teamHistory[$i]['won'] === $lastWon) {
+                        $streakCount++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            // Skor selisih poin (dinormalisasi ke 0..100, rata-rata 0 -> 50)
+            $diffScore = 50.0 + max(-50.0, min(50.0, $avgDiff * 2.5));
+            // Skor peringkat klasemen (0..100)
+            $rankScore = $totalTeams > 1 ? (($totalTeams - $pos) / ($totalTeams - 1)) * 100.0 : 50.0;
+
+            $strength = $mp > 0
+                ? ($winRate * 0.40) + ($recentRate * 0.30) + ($diffScore * 0.20) + ($rankScore * 0.10)
+                : 50.0;
+
+            $map[$id] = [
+                'id' => $id,
+                'nama_tim' => $row['nama_tim'],
+                'pemain1' => $row['pemain1'],
+                'pemain2' => $row['pemain2'],
+                'pos' => $pos,
+                'mp' => $mp,
+                'w' => $w,
+                'l' => $l,
+                'sb' => $sb,
+                'pts' => (int) $row['pts'],
+                'win_rate' => $mp > 0 ? round($winRate, 1) : 0.0,
+                'recent_rate' => $mp > 0 ? round($recentRawRate, 1) : 0.0,
+                'avg_diff' => round($avgDiff, 1),
+                'recent_form' => $recentForm,
+                'streak_type' => $streakType,
+                'streak_count' => $streakCount,
+                'strength' => round($strength, 2),
+            ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * Perkirakan persentase peluang kemenangan untuk pertandingan yang belum selesai.
+     */
+    public static function prediksiPertandingan(Liga $liga, Pertandingan $match, ?array $strengthMap = null): array
+    {
+        $map = $strengthMap ?? self::hitungKekuatanTim($liga);
+
+        $defaultTeam = [
+            'id' => 0,
+            'nama_tim' => '-',
+            'pos' => 0,
+            'mp' => 0,
+            'w' => 0,
+            'l' => 0,
+            'sb' => 0,
+            'pts' => 0,
+            'win_rate' => 0.0,
+            'recent_rate' => 0.0,
+            'avg_diff' => 0.0,
+            'recent_form' => [],
+            'streak_type' => 'N',
+            'streak_count' => 0,
+            'strength' => 50.0,
+        ];
+
+        $home = $map[(int) $match->tim_home] ?? $defaultTeam;
+        $away = $map[(int) $match->tim_away] ?? $defaultTeam;
+
+        $hasData = ($home['mp'] > 0 || $away['mp'] > 0);
+
+        if (!$hasData) {
+            $homePct = 50;
+            $awayPct = 50;
+        } else {
+            $diff = $home['strength'] - $away['strength'];
+            $prob = 1.0 / (1.0 + exp(-$diff / 18.0));
+            $homePct = max(10, min(90, (int) round($prob * 100)));
+            $awayPct = 100 - $homePct;
+        }
+
+        $favored = $homePct > $awayPct ? 'home' : ($awayPct > $homePct ? 'away' : 'even');
+
+        return [
+            'home_pct' => $homePct,
+            'away_pct' => $awayPct,
+            'favored' => $favored,
+            'has_data' => $hasData,
+            'home' => $home,
+            'away' => $away,
+        ];
+    }
+
+    /**
+     * Analisis tren performa tiap tim (cenderung menang / kalah) & proyeksi sisa pertandingan.
+     */
+    public static function analisisTrenTim(Liga $liga): array
+    {
+        $strengthMap = self::hitungKekuatanTim($liga);
+
+        $remainingMatches = Pertandingan::where('liga_id', $liga->id)
+            ->where('status', '<>', 'selesai')
+            ->get();
+
+        $remainingByTeam = [];
+        foreach ($remainingMatches as $m) {
+            $remainingByTeam[$m->tim_home][] = $m;
+            $remainingByTeam[$m->tim_away][] = $m;
+        }
+
+        $analysis = [];
+        foreach ($strengthMap as $id => $team) {
+            $mp = $team['mp'];
+            $winRate = $team['win_rate'];
+            $recentRate = $team['recent_rate'];
+            $avgDiff = $team['avg_diff'];
+            $streakType = $team['streak_type'];
+            $streakCount = $team['streak_count'];
+
+            if ($mp === 0) {
+                $trendKey = 'no_data';
+                $trendLabel = 'Belum Bertanding';
+                $trendColor = 'slate';
+                $trendDesc = 'Belum ada riwayat pertandingan untuk membaca tren tim.';
+            } elseif (($winRate >= 70 && ($streakType === 'W' || $avgDiff > 0)) || ($streakType === 'W' && $streakCount >= 3)) {
+                $trendKey = 'dominant';
+                $trendLabel = 'Tren Menang Kuat';
+                $trendColor = 'emerald';
+                $trendDesc = 'Performa sangat konsisten dan berpeluang tinggi terus menang.';
+            } elseif (($recentRate >= 60 && $recentRate > $winRate) || ($streakType === 'W' && $streakCount >= 2)) {
+                $trendKey = 'rising';
+                $trendLabel = 'Tren Membaik';
+                $trendColor = 'sky';
+                $trendDesc = 'Momentum positif meningkat pada laga-laga terakhir.';
+            } elseif (($winRate <= 30 && ($streakType === 'L' || $avgDiff < 0)) || ($streakType === 'L' && $streakCount >= 3)) {
+                $trendKey = 'vulnerable';
+                $trendLabel = 'Tren Kalah (Rentan)';
+                $trendColor = 'rose';
+                $trendDesc = 'Sering menelan kekalahan & selisih poin negatif; berisiko terus kalah jika tidak membaik.';
+            } elseif (($recentRate <= 40 && $recentRate < $winRate) || ($streakType === 'L' && $streakCount >= 2)) {
+                $trendKey = 'slump';
+                $trendLabel = 'Tren Menurun';
+                $trendColor = 'amber';
+                $trendDesc = 'Performa menurun pada pertandingan terakhir.';
+            } else {
+                $trendKey = 'steady';
+                $trendLabel = 'Seimbang / Stabil';
+                $trendColor = 'indigo';
+                $trendDesc = 'Hasil menang dan kalah relatif berimbang.';
+            }
+
+            // Proyeksi menghadapi sisa lawan
+            $teamRemaining = $remainingByTeam[$id] ?? [];
+            $projWins = 0;
+            $projLosses = 0;
+            $projEven = 0;
+            $pctSum = 0;
+
+            foreach ($teamRemaining as $rm) {
+                $pred = self::prediksiPertandingan($liga, $rm, $strengthMap);
+                $myPct = ((int) $rm->tim_home === $id) ? $pred['home_pct'] : $pred['away_pct'];
+                $pctSum += $myPct;
+                if ($myPct > 50) {
+                    $projWins++;
+                } elseif ($myPct < 50) {
+                    $projLosses++;
+                } else {
+                    $projEven++;
+                }
+            }
+
+            $remCount = count($teamRemaining);
+            $avgProjPct = $remCount > 0 ? (int) round($pctSum / $remCount) : ($mp > 0 ? (int) round($winRate) : 50);
+
+            $analysis[] = array_merge($team, [
+                'trend_key' => $trendKey,
+                'trend_label' => $trendLabel,
+                'trend_color' => $trendColor,
+                'trend_desc' => $trendDesc,
+                'remaining_count' => $remCount,
+                'projected_wins' => $projWins,
+                'projected_losses' => $projLosses,
+                'projected_even' => $projEven,
+                'projected_win_pct' => $avgProjPct,
+            ]);
+        }
+
+        usort($analysis, function ($a, $b) {
+            return $b['strength'] <=> $a['strength']
+                ?: $b['win_rate'] <=> $a['win_rate']
+                ?: $a['pos'] <=> $b['pos'];
+        });
+
+        return $analysis;
+    }
 }

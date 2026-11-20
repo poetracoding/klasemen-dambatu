@@ -63,6 +63,7 @@ Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout']
 */
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/tren-tim', [DashboardController::class, 'trenTim'])->name('tren_tim.index');
 
     // Tim Management
     Route::get('/tim', [TimController::class, 'index'])->name('tim.index');

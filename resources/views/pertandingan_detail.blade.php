@@ -123,4 +123,98 @@
         </div>
     </div>
 </div>
+
+@if (!empty($prediksi))
+    @php
+        $homePct = $prediksi['home_pct'];
+        $awayPct = $prediksi['away_pct'];
+        $favored = $prediksi['favored'];
+        $hStat = $prediksi['home'];
+        $aStat = $prediksi['away'];
+    @endphp
+    <!-- Perkiraan Peluang Kemenangan (Hanya untuk laga belum selesai) -->
+    <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 sm:p-8 mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4 mb-5 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </span>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 tracking-tight">Perkiraan Peluang Kemenangan</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Dihitung dari Win Rate, tren 5 laga terakhir, selisih skor rata-rata, dan peringkat.</p>
+                </div>
+            </div>
+            @if (!$prediksi['has_data'])
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200 w-fit">
+                    Belum Ada Data Laga
+                </span>
+            @elseif ($favored === 'even')
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 w-fit">
+                    Peluang Seimbang
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit">
+                    <i class="bi bi-stars"></i>
+                    Diunggulkan: {{ $favored === 'home' ? ($m->homeTeam->nama_tim ?? 'Tim Home') : ($m->awayTeam->nama_tim ?? 'Tim Away') }}
+                </span>
+            @endif
+        </div>
+
+        <!-- Bar Persentase -->
+        <div class="mb-5">
+            <div class="flex items-end justify-between gap-4 mb-2">
+                <div class="text-left">
+                    <div class="text-xs font-bold text-slate-700 truncate max-w-[160px] sm:max-w-xs">{{ $m->homeTeam->nama_tim ?? 'Tim Home' }}</div>
+                    <div class="text-2xl sm:text-3xl font-black font-mono {{ $favored === 'home' ? 'text-indigo-600' : 'text-slate-700' }}">{{ $homePct }}%</div>
+                </div>
+                <div class="text-xs font-bold uppercase tracking-widest text-slate-400 pb-1">Peluang</div>
+                <div class="text-right">
+                    <div class="text-xs font-bold text-slate-700 truncate max-w-[160px] sm:max-w-xs">{{ $m->awayTeam->nama_tim ?? 'Tim Away' }}</div>
+                    <div class="text-2xl sm:text-3xl font-black font-mono {{ $favored === 'away' ? 'text-emerald-600' : 'text-slate-700' }}">{{ $awayPct }}%</div>
+                </div>
+            </div>
+
+            <div class="w-full h-4 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
+                <div class="h-full bg-indigo-600 transition-all duration-500" style="width: {{ $homePct }}%"></div>
+                <div class="h-full bg-emerald-500 transition-all duration-500" style="width: {{ $awayPct }}%"></div>
+            </div>
+        </div>
+
+        <!-- Perbandingan Indikator -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-4 text-center mb-5">
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70">
+                <div class="text-[11px] font-semibold uppercase text-slate-400">Win Rate</div>
+                <div class="text-xs sm:text-sm font-bold font-mono text-slate-800 mt-1">
+                    <span class="text-indigo-600">{{ (int) round($hStat['win_rate']) }}%</span>
+                    <span class="text-slate-300 mx-1">vs</span>
+                    <span class="text-emerald-600">{{ (int) round($aStat['win_rate']) }}%</span>
+                </div>
+            </div>
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70">
+                <div class="text-[11px] font-semibold uppercase text-slate-400">Tren Terakhir</div>
+                <div class="text-xs sm:text-sm font-bold font-mono text-slate-800 mt-1">
+                    <span class="text-indigo-600">{{ !empty($hStat['recent_form']) ? implode('', $hStat['recent_form']) : '-' }}</span>
+                    <span class="text-slate-300 mx-1">vs</span>
+                    <span class="text-emerald-600">{{ !empty($aStat['recent_form']) ? implode('', $aStat['recent_form']) : '-' }}</span>
+                </div>
+            </div>
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/70">
+                <div class="text-[11px] font-semibold uppercase text-slate-400">Rata2 Selisih</div>
+                <div class="text-xs sm:text-sm font-bold font-mono text-slate-800 mt-1">
+                    <span class="text-indigo-600">{{ $hStat['avg_diff'] > 0 ? '+' : '' }}{{ $hStat['avg_diff'] }}</span>
+                    <span class="text-slate-300 mx-1">vs</span>
+                    <span class="text-emerald-600">{{ $aStat['avg_diff'] > 0 ? '+' : '' }}{{ $aStat['avg_diff'] }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disclaimer Wajib -->
+        <div class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs flex items-start gap-2.5">
+            <i class="bi bi-info-circle-fill text-amber-600 text-base flex-shrink-0 mt-0.5"></i>
+            <div>
+                <strong>Catatan:</strong> Persentase ini hanya perkiraan statistik berdasarkan riwayat pertandingan sebelumnya. Kemenangan sesungguhnya tetap ditentukan di meja pertandingan.
+            </div>
+        </div>
+    </div>
+@endif
 @endsection

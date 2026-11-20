@@ -167,7 +167,11 @@ class HomeController extends Controller
             ->with(['homeTeam', 'awayTeam', 'pemenang'])
             ->findOrFail($id);
 
-        return view('pertandingan_detail', compact('liga', 'm'));
+        $prediksi = $m->status !== 'selesai'
+            ? TournamentService::prediksiPertandingan($liga, $m)
+            : null;
+
+        return view('pertandingan_detail', compact('liga', 'm', 'prediksi'));
     }
 
     public function game()

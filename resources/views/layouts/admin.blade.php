@@ -141,6 +141,7 @@
                         ['route' => 'admin.tim.index', 'label' => 'Tim & Pemain', 'icon' => 'bi-people'],
                         ['route' => 'admin.jadwal.index', 'label' => 'Jadwal', 'icon' => 'bi-calendar3'],
                         ['route' => 'admin.pertandingan.index', 'label' => 'Input Hasil', 'icon' => 'bi-trophy'],
+                        ['route' => 'admin.tren_tim.index', 'label' => 'Tren Tim', 'icon' => 'bi-activity'],
                     ];
                     $isPengaturanActive = request()->routeIs('admin.pengaturan.*') || request()->routeIs('admin.poster.*');
                     $pengaturanLinks = [

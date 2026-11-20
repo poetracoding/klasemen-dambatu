@@ -35,7 +35,17 @@ class DashboardController extends Controller
             ->orderBy('nomor_pertandingan')
             ->get();
 
-        return view('admin.dashboard', compact('liga', 'jumlahTim', 'total', 'selesai', 'main', 'belum', 'kl', 'hariIni'));
+        $trenTims = TournamentService::analisisTrenTim($liga);
+
+        return view('admin.dashboard', compact('liga', 'jumlahTim', 'total', 'selesai', 'main', 'belum', 'kl', 'hariIni', 'trenTims'));
+    }
+
+    public function trenTim()
+    {
+        $liga = Liga::current();
+        $trenTims = TournamentService::analisisTrenTim($liga);
+
+        return view('admin.tren_tim', compact('liga', 'trenTims'));
     }
 }
 
