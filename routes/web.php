@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\BeritaController as AdminBeritaController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JadwalController;
 use App\Http\Controllers\Admin\PengaturanController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\Admin\PertandinganController;
 use App\Http\Controllers\Admin\PosterController;
 use App\Http\Controllers\Admin\TimController;
 use App\Http\Controllers\ApiController;
+use App\Http\Controllers\BeritaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PdfController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +33,12 @@ Route::get('/klasemen.php', function (\Illuminate\Http\Request $request) {
     return redirect()->to('/klasemen' . ($request->getQueryString() ? '?' . $request->getQueryString() : ''), 301);
 });
 Route::get('/history', [HomeController::class, 'history'])->name('history');
+Route::get('/berita', [BeritaController::class, 'index'])->name('berita.index');
+Route::get('/berita/{slug}', [BeritaController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('berita.show');
+Route::post('/berita/{slug}/like', [BeritaController::class, 'toggleLike'])
+    ->where('slug', '[a-z0-9-]+')
+    ->middleware('throttle:30,1')
+    ->name('berita.like');
 Route::get('/game', [HomeController::class, 'game'])->name('game');
 Route::get('/tim/{id}', [HomeController::class, 'timDetail'])->name('tim.detail');
 Route::get('/pertandingan/{id}', [HomeController::class, 'pertandinganDetail'])->name('pertandingan.detail');
@@ -90,6 +98,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::put('/poster/{id}', [PosterController::class, 'update'])->name('poster.update');
     Route::post('/poster/{id}/toggle', [PosterController::class, 'toggleStatus'])->name('poster.toggle');
     Route::delete('/poster/{id}', [PosterController::class, 'destroy'])->name('poster.destroy');
+
+    // Kelola Berita
+    Route::get('/berita', [AdminBeritaController::class, 'index'])->name('berita.index');
+    Route::post('/berita', [AdminBeritaController::class, 'store'])->name('berita.store');
+    Route::put('/berita/{id}', [AdminBeritaController::class, 'update'])->name('berita.update');
+    Route::post('/berita/{id}/toggle', [AdminBeritaController::class, 'toggleStatus'])->name('berita.toggle');
+    Route::delete('/berita/{id}', [AdminBeritaController::class, 'destroy'])->name('berita.destroy');
 
     // Pengaturan
     Route::get('/pengaturan', [PengaturanController::class, 'index'])->name('pengaturan.index');

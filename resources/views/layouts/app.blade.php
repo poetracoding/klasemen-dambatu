@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — {{ $liga->nama_liga ?? 'Liga Dam Batu' }}</title>
     @php
         $gaId = $liga->google_analytics_id ?? (\App\Models\Liga::current()->google_analytics_id ?? null);
@@ -152,11 +153,12 @@
                         ['route' => 'jadwal', 'label' => 'Jadwal Liga', 'icon' => 'bi-calendar3'],
                         ['route' => 'klasemen', 'label' => 'Klasemen', 'icon' => 'bi-list-ol'],
                         ['route' => 'history', 'label' => 'History', 'icon' => 'bi-clock-history'],
+                        ['route' => 'berita.index', 'label' => 'Berita', 'icon' => 'bi-newspaper', 'pattern' => 'berita.*'],
                         ['route' => 'game', 'label' => 'Game', 'icon' => 'bi-dice-6'],
                     ];
                 @endphp
                 @foreach ($navItems as $item)
-                    @php $active = request()->routeIs($item['route']); @endphp
+                    @php $active = request()->routeIs($item['pattern'] ?? $item['route']); @endphp
                     <a class="flex items-center gap-1.5 px-2.5 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-medium whitespace-nowrap shrink-0 transition-all {{ $active ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60' }}" href="{{ route($item['route']) }}">
                         <i class="bi {{ $item['icon'] }} text-base shrink-0"></i>
                         <span>{{ $item['label'] }}</span>
@@ -205,7 +207,7 @@
     <!-- Mobile Menu dropdown -->
     <div id="mobileMenu" class="hidden lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-2 pb-4 space-y-1 shadow-lg">
         @foreach ($navItems as $item)
-            @php $active = request()->routeIs($item['route']); @endphp
+            @php $active = request()->routeIs($item['pattern'] ?? $item['route']); @endphp
             <a class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $active ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route($item['route']) }}">
                 <i class="bi {{ $item['icon'] }} text-lg"></i>
                 <span>{{ $item['label'] }}</span>

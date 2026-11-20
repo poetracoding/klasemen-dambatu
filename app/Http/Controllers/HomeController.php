@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Berita;
+use App\Models\BeritaLike;
 use App\Models\Liga;
 use App\Models\Pertandingan;
 use App\Models\Poster;
@@ -11,7 +13,7 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $liga = Liga::current();
         $jumlahTim = Tim::where('liga_id', $liga->id)->count();
@@ -34,7 +36,22 @@ class HomeController extends Controller
             ->orderBy('id')
             ->get();
 
-        return view('dashboard', compact('liga', 'jumlahTim', 'total', 'selesai', 'tampil', 'hariIni', 'kl', 'posters'));
+        $beritas = Berita::published()
+            ->with('author')
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->limit(4)
+            ->get();
+
+        $visitorHash = BeritaController::resolveVisitorHash($request);
+        $likedBeritaIds = $beritas->isNotEmpty()
+            ? BeritaLike::where('visitor_hash', $visitorHash)
+                ->whereIn('berita_id', $beritas->pluck('id'))
+                ->pluck('berita_id')
+                ->all()
+            : [];
+
+        return view('dashboard', compact('liga', 'jumlahTim', 'total', 'selesai', 'tampil', 'hariIni', 'kl', 'posters', 'beritas', 'likedBeritaIds'));
     }
 
     public function jadwal(Request $request)

@@ -143,10 +143,11 @@
                         ['route' => 'admin.pertandingan.index', 'label' => 'Input Hasil', 'icon' => 'bi-trophy'],
                         ['route' => 'admin.tren_tim.index', 'label' => 'Tren Tim', 'icon' => 'bi-activity'],
                     ];
-                    $isPengaturanActive = request()->routeIs('admin.pengaturan.*') || request()->routeIs('admin.poster.*');
+                    $isPengaturanActive = request()->routeIs('admin.pengaturan.*') || request()->routeIs('admin.poster.*') || request()->routeIs('admin.berita.*');
                     $pengaturanLinks = [
                         ['url' => route('admin.pengaturan.index'), 'label' => 'Informasi Liga', 'icon' => 'bi-sliders', 'active' => request()->routeIs('admin.pengaturan.index')],
                         ['url' => route('admin.poster.index'), 'label' => 'Poster Informasi', 'icon' => 'bi-images', 'active' => request()->routeIs('admin.poster.*')],
+                        ['url' => route('admin.berita.index'), 'label' => 'Kelola Berita', 'icon' => 'bi-newspaper', 'active' => request()->routeIs('admin.berita.*')],
                         ['url' => route('admin.pengaturan.password'), 'label' => 'Ganti Password', 'icon' => 'bi-shield-lock', 'active' => request()->routeIs('admin.pengaturan.password')],
                         ['url' => route('admin.pengaturan.backup_restore'), 'label' => 'Backup & Restore', 'icon' => 'bi-cloud-arrow-down', 'active' => request()->routeIs('admin.pengaturan.backup_restore')],
                         ['divider' => true],

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Berita;
 use App\Models\Liga;
 use App\Models\Pertandingan;
 use App\Models\Poster;
@@ -26,6 +27,10 @@ class ApiController extends Controller
                          COALESCE(MAX(updated_at), "") as last_update')
             ->first();
 
+        $beritaAgg = Berita::published()
+            ->selectRaw('COUNT(*) as total, COALESCE(MAX(updated_at), "") as last_update')
+            ->first();
+
         $hashString = implode('|', [
             $liga->status,
             $liga->updated_at,
@@ -37,6 +42,8 @@ class ApiController extends Controller
             $posterAgg->total ?? 0,
             $posterAgg->aktif ?? 0,
             $posterAgg->last_update ?? '',
+            $beritaAgg->total ?? 0,
+            $beritaAgg->last_update ?? '',
         ]);
 
         return response()->json([
