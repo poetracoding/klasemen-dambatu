@@ -120,4 +120,43 @@ class PrediksiDanTrenTimTest extends TestCase
         $resAdminDash->assertStatus(200);
         $resAdminDash->assertSee('Ringkasan Tren &amp; Proyeksi Tim', false);
     }
+
+    public function test_recent_form_and_streak_are_ordered_by_updated_at_instead_of_scheduled_date(): void
+    {
+        $liga = Liga::create([
+            'nama_liga' => 'Liga Lompat Jadwal',
+            'musim' => '2026',
+            'status' => 'berjalan',
+            'jumlah_meja' => 2,
+        ]);
+
+        $timA = Tim::create(['liga_id' => $liga->id, 'nama_tim' => 'TIM A', 'pemain1' => 'P1', 'pemain2' => 'P2', 'status' => 1]);
+        $timB = Tim::create(['liga_id' => $liga->id, 'nama_tim' => 'TIM B', 'pemain1' => 'P3', 'pemain2' => 'P4', 'status' => 1]);
+        $timC = Tim::create(['liga_id' => $liga->id, 'nama_tim' => 'TIM C', 'pemain1' => 'P5', 'pemain2' => 'P6', 'status' => 1]);
+
+        // Laga jadwal lebih akhir (20 Nov), tapi dimainkan & diupdate LEBIH DULU (kalah)
+        $m1 = Pertandingan::create([
+            'liga_id' => $liga->id, 'nomor_pertandingan' => 1, 'ronde' => 1,
+            'tim_home' => $timA->id, 'tim_away' => $timB->id,
+            'tanggal' => '2026-11-20',
+            'status' => 'selesai', 'skor_home' => 10, 'skor_away' => 30, 'pemenang_id' => $timB->id,
+        ]);
+        Pertandingan::where('id', $m1->id)->update(['updated_at' => '2026-11-18 10:00:00']);
+
+        // Laga jadwal lebih awal (10 Nov), tapi baru dimainkan & diupdate BELAKANGAN (menang)
+        $m2 = Pertandingan::create([
+            'liga_id' => $liga->id, 'nomor_pertandingan' => 2, 'ronde' => 2,
+            'tim_home' => $timA->id, 'tim_away' => $timC->id,
+            'tanggal' => '2026-11-10',
+            'status' => 'selesai', 'skor_home' => 35, 'skor_away' => 15, 'pemenang_id' => $timA->id,
+        ]);
+        Pertandingan::where('id', $m2->id)->update(['updated_at' => '2026-11-20 15:00:00']);
+
+        $strength = TournamentService::hitungKekuatanTim($liga);
+
+        // Urutan form harus ['L', 'W'] (terbaru W), dan streak harus 1W
+        $this->assertEquals(['L', 'W'], $strength[$timA->id]['recent_form']);
+        $this->assertEquals('W', $strength[$timA->id]['streak_type']);
+        $this->assertEquals(1, $strength[$timA->id]['streak_count']);
+    }
 }

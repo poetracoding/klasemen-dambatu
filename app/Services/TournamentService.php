@@ -526,7 +526,7 @@ class TournamentService
 
         $finishedMatches = Pertandingan::where('liga_id', $liga->id)
             ->where('status', 'selesai')
-            ->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan, id')
+            ->orderByRaw('updated_at IS NULL, updated_at, id')
             ->get();
 
         $historyByTeam = [];
