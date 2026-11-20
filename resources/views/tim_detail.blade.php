@@ -51,11 +51,28 @@
                 <div class="text-2xl font-extrabold text-slate-900 mt-1 font-mono">{{ $stats['mp'] }}</div>
                 <div class="text-2xs text-slate-400 mt-0.5">Pertandingan</div>
             </div>
-            <div class="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-100 text-center">
-                <div class="text-xs font-semibold uppercase text-emerald-600">Menang - Kalah</div>
-                <div class="text-2xl font-extrabold text-emerald-700 mt-1 font-mono">{{ $stats['w'] }} - {{ $stats['l'] }}</div>
-                <div class="text-xs text-emerald-600 font-medium mt-0.5">
-                    {{ $stats['mp'] > 0 ? round(($stats['w'] / $stats['mp']) * 100) : 0 }}% Win Rate
+            @php
+                $winRateExact = $stats['mp'] > 0 ? ($stats['w'] / $stats['mp']) * 100 : 0;
+                $winRate = round($winRateExact);
+                if ($winRateExact > 50) {
+                    $wlCardCls = 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-800/50';
+                    $wlLabelCls = 'text-emerald-600 dark:text-emerald-400';
+                    $wlScoreCls = 'text-emerald-700 dark:text-emerald-300';
+                } elseif ($winRateExact == 50) {
+                    $wlCardCls = 'bg-orange-50/60 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800/50';
+                    $wlLabelCls = 'text-orange-600 dark:text-orange-400';
+                    $wlScoreCls = 'text-orange-700 dark:text-orange-300';
+                } else {
+                    $wlCardCls = 'bg-rose-50/60 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/50';
+                    $wlLabelCls = 'text-rose-600 dark:text-rose-400';
+                    $wlScoreCls = 'text-rose-700 dark:text-rose-300';
+                }
+            @endphp
+            <div class="rounded-2xl p-4 border text-center {{ $wlCardCls }}">
+                <div class="text-xs font-semibold uppercase {{ $wlLabelCls }}">Menang - Kalah</div>
+                <div class="text-2xl font-extrabold mt-1 font-mono {{ $wlScoreCls }}">{{ $stats['w'] }} - {{ $stats['l'] }}</div>
+                <div class="text-xs font-medium mt-0.5 {{ $wlLabelCls }}">
+                    {{ $winRate }}% Win Rate
                 </div>
             </div>
             <div class="bg-slate-50/70 rounded-2xl p-4 border border-slate-100 text-center">
