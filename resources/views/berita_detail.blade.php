@@ -51,16 +51,14 @@
                 {!! nl2br(e($berita->isi)) !!}
             </div>
 
-            <!-- Bar Aksi: Suka & Bagikan -->
+            <!-- Bar Aksi: Reaksi Emoji & Bagikan -->
             <div class="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                <button type="button"
-                    class="btn-like-berita inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors cursor-pointer {{ $isLiked ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600' }}"
-                    data-url="{{ route('berita.like', $berita->slug) }}"
-                    data-liked="{{ $isLiked ? '1' : '0' }}">
-                    <i class="like-icon bi {{ $isLiked ? 'bi-heart-fill text-rose-500' : 'bi-heart' }}"></i>
-                    <span class="like-label">{{ $isLiked ? 'Disukai' : 'Suka' }}</span>
-                    <span class="like-count px-2 py-0.5 rounded-full text-xs font-mono bg-white/80 dark:bg-slate-900/60">{{ $berita->likes_count }}</span>
-                </button>
+                @include('partials.berita_reactions', [
+                    'berita' => $berita,
+                    'counts' => $reactionCounts ?? \App\Models\BeritaLike::emptyCounts(),
+                    'userReaction' => $userReaction ?? null,
+                    'compact' => false,
+                ])
 
                 <div class="flex flex-wrap items-center gap-2">
                     <a href="https://wa.me/?text={{ urlencode($berita->judul . ' - ' . route('berita.show', $berita->slug)) }}"

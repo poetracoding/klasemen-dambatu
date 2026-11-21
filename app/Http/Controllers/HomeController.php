@@ -44,14 +44,25 @@ class HomeController extends Controller
             ->get();
 
         $visitorHash = BeritaController::resolveVisitorHash($request);
-        $likedBeritaIds = $beritas->isNotEmpty()
-            ? BeritaLike::where('visitor_hash', $visitorHash)
-                ->whereIn('berita_id', $beritas->pluck('id'))
-                ->pluck('berita_id')
-                ->all()
-            : [];
+        $beritaIds = $beritas->pluck('id')->all();
+        $beritaReactionCounts = BeritaLike::countsForBeritas($beritaIds);
+        $beritaVisitorReactions = BeritaLike::visitorReactionsForBeritas($visitorHash, $beritaIds);
+        $likedBeritaIds = array_keys($beritaVisitorReactions);
 
-        return view('dashboard', compact('liga', 'jumlahTim', 'total', 'selesai', 'tampil', 'hariIni', 'kl', 'posters', 'beritas', 'likedBeritaIds'));
+        return view('dashboard', compact(
+            'liga',
+            'jumlahTim',
+            'total',
+            'selesai',
+            'tampil',
+            'hariIni',
+            'kl',
+            'posters',
+            'beritas',
+            'likedBeritaIds',
+            'beritaReactionCounts',
+            'beritaVisitorReactions'
+        ));
     }
 
     public function jadwal(Request $request)

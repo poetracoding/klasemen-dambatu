@@ -42,6 +42,7 @@ class BeritaTest extends TestCase
         $this->post('/admin/berita', [])->assertRedirect('/login');
         $this->put('/admin/berita/1', [])->assertRedirect('/login');
         $this->post('/admin/berita/1/toggle')->assertRedirect('/login');
+        $this->post('/admin/berita/1/publish-now')->assertRedirect('/login');
         $this->delete('/admin/berita/1')->assertRedirect('/login');
     }
 
@@ -212,5 +213,183 @@ class BeritaTest extends TestCase
         // Analytics mencatat /berita dan /berita/{slug}
         $this->assertEquals(1, VisitorLog::where('path', '/berita')->where('page_title', 'Berita Turnamen')->count());
         $this->assertEquals(1, VisitorLog::where('path', '/berita/' . $published->slug)->where('page_title', 'Baca Berita')->count());
+    }
+
+    public function test_scheduled_berita_stays_hidden_until_published_at_and_supports_publish_now(): void
+    {
+        $admin = $this->createAdmin();
+        Liga::current();
+
+        // Tolak status scheduled tanpa tanggal atau tanggal masa lalu
+        $this->actingAs($admin)->post('/admin/berita', [
+            'judul' => 'Berita Terjadwal Tanpa Waktu',
+            'kategori' => 'Berita',
+            'isi' => 'Isi berita terjadwal.',
+            'status' => 'scheduled',
+        ])->assertSessionHasErrors('published_at');
+
+        $this->actingAs($admin)->post('/admin/berita', [
+            'judul' => 'Berita Terjadwal Masa Lalu',
+            'kategori' => 'Berita',
+            'isi' => 'Isi berita terjadwal.',
+            'status' => 'scheduled',
+            'published_at' => now()->subMinutes(10)->format('Y-m-d\TH:i'),
+        ])->assertSessionHasErrors('published_at');
+
+        // Buat berita terjadwal +2 jam ke depan
+        $this->actingAs($admin)->post('/admin/berita', [
+            'judul' => 'Berita Terjadwal Otomatis',
+            'kategori' => 'Pengumuman',
+            'ringkasan' => 'Ringkasan pengumuman terjadwal.',
+            'isi' => 'Berita ini baru boleh tampil setelah jadwal tercapai.',
+            'status' => 'scheduled',
+            'published_at' => now()->addHours(2)->format('Y-m-d\TH:i'),
+        ])->assertSessionHas('success');
+
+        $scheduled = Berita::orderByDesc('id')->first();
+        $this->assertNotNull($scheduled);
+        $this->assertEquals('published', $scheduled->status);
+        $this->assertTrue($scheduled->isScheduled());
+        $this->assertFalse($scheduled->isLive());
+
+        // Halaman admin menampilkan badge Terjadwal
+        $this->actingAs($admin)->get('/admin/berita')
+            ->assertStatus(200)
+            ->assertSee('Terjadwal');
+
+        $hashBefore = $this->getJson('/api/check-update')->json('hash');
+
+        // Sebelum waktu terbit tiba -> tersembunyi di publik & 404 pada detail/like
+        $this->get('/')->assertStatus(200)->assertDontSee('Berita Terjadwal Otomatis');
+        $this->get('/berita')->assertStatus(200)->assertDontSee('Berita Terjadwal Otomatis');
+        $this->get('/berita/' . $scheduled->slug)->assertStatus(404);
+        $this->postJson('/berita/' . $scheduled->slug . '/like')->assertStatus(404);
+
+        // Maju waktu 3 jam -> otomatis tampil ke publik, bisa di-like, dan hash check-update berubah
+        $this->travel(3)->hours();
+        $this->get('/')->assertStatus(200)->assertSee('Berita Terjadwal Otomatis');
+        $this->get('/berita')->assertStatus(200)->assertSee('Berita Terjadwal Otomatis');
+        $this->get('/berita/' . $scheduled->slug)->assertStatus(200)->assertSee('Berita Terjadwal Otomatis');
+        $this->postJson('/berita/' . $scheduled->slug . '/like')->assertStatus(200)->assertJson([
+            'success' => true,
+            'liked' => true,
+            'likes_count' => 1,
+        ]);
+        $hashAfter = $this->getJson('/api/check-update')->json('hash');
+        $this->assertNotEquals($hashBefore, $hashAfter);
+        $this->travelBack();
+
+        // Terbitkan sekarang (publish-now) untuk berita terjadwal kedua + edit kembali ke terjadwal
+        $this->actingAs($admin)->post('/admin/berita', [
+            'judul' => 'Berita Terbit Instan',
+            'kategori' => 'Liputan',
+            'isi' => 'Siap diterbitkan kapan saja.',
+            'status' => 'scheduled',
+            'published_at' => now()->addHours(3)->format('Y-m-d\TH:i'),
+        ])->assertSessionHas('success');
+
+        $second = Berita::orderByDesc('id')->first();
+        $this->get('/berita/' . $second->slug)->assertStatus(404);
+
+        $this->actingAs($admin)->post('/admin/berita/' . $second->id . '/publish-now')
+            ->assertSessionHas('success');
+        $this->assertTrue($second->fresh()->isLive());
+        $this->get('/berita/' . $second->slug)->assertStatus(200);
+
+        // Kembalikan lagi ke status terjadwal via edit -> publik kembali 404
+        $this->actingAs($admin)->put('/admin/berita/' . $second->id, [
+            'judul' => 'Berita Terbit Instan',
+            'kategori' => 'Liputan',
+            'isi' => 'Dijadwalkan ulang 5 jam lagi.',
+            'status' => 'scheduled',
+            'published_at' => now()->addHours(5)->format('Y-m-d\TH:i'),
+        ])->assertSessionHas('success');
+        $this->get('/berita/' . $second->fresh()->slug)->assertStatus(404);
+    }
+
+    public function test_multi_emoji_reactions_switch_toggle_and_reject_invalid_reaction(): void
+    {
+        $admin = $this->createAdmin();
+        $liga = Liga::current();
+
+        // Pastikan zona paste/drop screenshot tersedia di halaman admin berita
+        $this->actingAs($admin)->get('/admin/berita')
+            ->assertStatus(200)
+            ->assertSee('id="createBeritaPasteZone"', false)
+            ->assertSee('id="editBeritaPasteZone"', false);
+
+        $berita = Berita::create([
+            'liga_id' => $liga->id,
+            'judul' => 'Laga Seru Penuh Kejutan',
+            'slug' => 'laga-seru-penuh-kejutan',
+            'kategori' => 'Liputan',
+            'isi' => 'Artikel dengan reaksi multi emoji.',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        // Halaman detail menampilkan seluruh emoji positif & tanpa Dislike
+        $detail = $this->get('/berita/' . $berita->slug);
+        $detail->assertStatus(200);
+        $detail->assertSee('❤️');
+        $detail->assertSee('😊');
+        $detail->assertSee('😂');
+        $detail->assertSee('🔥');
+        $detail->assertSee('👏');
+        $detail->assertDontSee('Dislike');
+
+        // Kirim reaksi tertawa (haha)
+        $res1 = $this->postJson('/berita/' . $berita->slug . '/like', ['reaction' => 'haha']);
+        $res1->assertStatus(200)->assertJson([
+            'success' => true,
+            'liked' => true,
+            'user_reaction' => 'haha',
+            'likes_count' => 1,
+            'reaction_counts' => [
+                'love' => 0,
+                'smile' => 0,
+                'haha' => 1,
+                'fire' => 0,
+                'clap' => 0,
+            ],
+        ]);
+
+        // Pindah reaksi dari haha ke senyum (smile) -> total tetap 1
+        $res2 = $this->postJson('/berita/' . $berita->slug . '/like', ['reaction' => 'smile']);
+        $res2->assertStatus(200)->assertJson([
+            'success' => true,
+            'liked' => true,
+            'user_reaction' => 'smile',
+            'likes_count' => 1,
+            'reaction_counts' => [
+                'love' => 0,
+                'smile' => 1,
+                'haha' => 0,
+                'fire' => 0,
+                'clap' => 0,
+            ],
+        ]);
+
+        // Klik reaksi smile lagi -> batal (toggle off)
+        $res3 = $this->postJson('/berita/' . $berita->slug . '/like', ['reaction' => 'smile']);
+        $res3->assertStatus(200)->assertJson([
+            'success' => true,
+            'liked' => false,
+            'user_reaction' => null,
+            'likes_count' => 0,
+            'reaction_counts' => [
+                'love' => 0,
+                'smile' => 0,
+                'haha' => 0,
+                'fire' => 0,
+                'clap' => 0,
+            ],
+        ]);
+        $this->assertEquals(0, $berita->fresh()->likes_count);
+
+        // Reaksi tidak valid (termasuk dislike) ditolak dengan 422
+        $this->postJson('/berita/' . $berita->slug . '/like', ['reaction' => 'dislike'])
+            ->assertStatus(422)
+            ->assertJson(['success' => false]);
     }
 }

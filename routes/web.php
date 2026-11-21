@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\PosterController;
 use App\Http\Controllers\Admin\TimController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\BeritaController;
+use App\Http\Controllers\FcmController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PdfController;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,12 @@ Route::get('/cetak/tim', [PdfController::class, 'tim'])->name('tim.pdf');
 // Live HTML auto-update API endpoint (both paths supported)
 Route::get('/api/check-update', [ApiController::class, 'checkUpdate'])->name('api.check_update');
 Route::get('/api/check_update.php', [ApiController::class, 'checkUpdate']);
+
+// FCM Web Push & PWA Manifest
+Route::get('/firebase-messaging-sw.js', [FcmController::class, 'serviceWorker'])->name('fcm.sw');
+Route::get('/manifest.json', [FcmController::class, 'manifest'])->name('fcm.manifest');
+Route::post('/api/fcm/subscribe', [FcmController::class, 'subscribe'])->middleware('throttle:20,1')->name('fcm.subscribe');
+Route::post('/api/fcm/unsubscribe', [FcmController::class, 'unsubscribe'])->middleware('throttle:20,1')->name('fcm.unsubscribe');
 
 /*
 |--------------------------------------------------------------------------
@@ -104,6 +111,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::post('/berita', [AdminBeritaController::class, 'store'])->name('berita.store');
     Route::put('/berita/{id}', [AdminBeritaController::class, 'update'])->name('berita.update');
     Route::post('/berita/{id}/toggle', [AdminBeritaController::class, 'toggleStatus'])->name('berita.toggle');
+    Route::post('/berita/{id}/publish-now', [AdminBeritaController::class, 'publishNow'])->name('berita.publish_now');
     Route::delete('/berita/{id}', [AdminBeritaController::class, 'destroy'])->name('berita.destroy');
 
     // Pengaturan
@@ -113,6 +121,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/pengaturan/analytics', [PengaturanController::class, 'analytics'])->name('pengaturan.analytics');
     Route::post('/pengaturan/analytics/reset', [PengaturanController::class, 'resetAnalytics'])->name('pengaturan.analytics.reset');
     Route::post('/pengaturan/liga', [PengaturanController::class, 'updateLiga'])->name('pengaturan.update_liga');
+    Route::post('/pengaturan/test-fcm', [PengaturanController::class, 'testFcm'])->name('pengaturan.test_fcm');
     Route::post('/pengaturan/password', [PengaturanController::class, 'gantiPassword'])->name('pengaturan.ganti_password');
     Route::post('/pengaturan/backup', [PengaturanController::class, 'backup'])->name('pengaturan.backup');
     Route::post('/pengaturan/upload-db', [PengaturanController::class, 'uploadDb'])->name('pengaturan.upload_db');

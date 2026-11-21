@@ -23,12 +23,14 @@ class Berita extends Model
         'gambar',
         'status',
         'published_at',
+        'notified_at',
         'views_count',
         'likes_count',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
+        'notified_at' => 'datetime',
         'views_count' => 'integer',
         'likes_count' => 'integer',
     ];
@@ -57,7 +59,35 @@ class Berita extends Model
 
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', 'published');
+        return $query->where('status', 'published')
+            ->where(function (Builder $q) {
+                $q->whereNull('published_at')
+                    ->orWhere('published_at', '<=', now());
+            });
+    }
+
+    public function scopeScheduled(Builder $query): Builder
+    {
+        return $query->where('status', 'published')
+            ->whereNotNull('published_at')
+            ->where('published_at', '>', now());
+    }
+
+    public function isScheduled(): bool
+    {
+        return $this->status === 'published'
+            && $this->published_at !== null
+            && $this->published_at->isFuture();
+    }
+
+    public function isLive(): bool
+    {
+        return $this->status === 'published' && !$this->isScheduled();
+    }
+
+    public function getFormStatusAttribute(): string
+    {
+        return $this->isScheduled() ? 'scheduled' : $this->status;
     }
 
     public function getGambarUrlAttribute(): ?string

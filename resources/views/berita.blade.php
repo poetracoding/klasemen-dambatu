@@ -53,7 +53,10 @@
 @else
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         @foreach ($beritas as $b)
-            @php $isLiked = in_array($b->id, $likedIds ?? [], true); @endphp
+            @php
+                $bCounts = $reactionCountsMap[$b->id] ?? \App\Models\BeritaLike::emptyCounts();
+                $bUserReaction = $visitorReactions[$b->id] ?? null;
+            @endphp
             <article class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col hover:border-indigo-300 transition-all">
                 <a href="{{ route('berita.show', $b->slug) }}" class="block h-44 bg-slate-100 overflow-hidden relative group">
                     @if ($b->gambar_url)
@@ -83,16 +86,15 @@
                         <p class="text-xs text-slate-500 leading-relaxed line-clamp-3">{{ $b->excerpt }}</p>
                     </div>
 
-                    <div class="flex items-center justify-between gap-2 pt-4 mt-4 border-t border-slate-100">
-                        <button type="button"
-                            class="btn-like-berita inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors cursor-pointer {{ $isLiked ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600' }}"
-                            data-url="{{ route('berita.like', $b->slug) }}"
-                            data-liked="{{ $isLiked ? '1' : '0' }}">
-                            <i class="like-icon bi {{ $isLiked ? 'bi-heart-fill text-rose-500' : 'bi-heart' }}"></i>
-                            <span class="like-count font-mono">{{ $b->likes_count }}</span>
-                        </button>
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-4 mt-4 border-t border-slate-100">
+                        @include('partials.berita_reactions', [
+                            'berita' => $b,
+                            'counts' => $bCounts,
+                            'userReaction' => $bUserReaction,
+                            'compact' => true,
+                        ])
 
-                        <a href="{{ route('berita.show', $b->slug) }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1">
+                        <a href="{{ route('berita.show', $b->slug) }}" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 ml-auto">
                             Baca Selengkapnya <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>

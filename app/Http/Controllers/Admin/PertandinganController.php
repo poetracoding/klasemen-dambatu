@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Liga;
 use App\Models\Pertandingan;
 use App\Models\Tim;
+use App\Services\FcmService;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
 
@@ -98,6 +99,12 @@ class PertandinganController extends Controller
         ]);
 
         TournamentService::sinkronStatusLiga($liga);
+
+        try {
+            app(FcmService::class)->notifyScoreUpdate($match);
+        } catch (\Throwable $e) {
+            // Pastikan gagal kirim notifikasi tidak menggagalkan penyimpanan skor
+        }
 
         $msg = 'Hasil & poin pertandingan #' . $match->nomor_pertandingan . " ($skorHome - $skorAway) berhasil disimpan. Klasemen terupdate.";
         if ($liga->fresh()->status === 'selesai') {

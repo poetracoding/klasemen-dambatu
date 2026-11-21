@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Berita;
 use App\Models\Liga;
+use App\Services\FcmService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -22,14 +24,7 @@ class BeritaController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'judul' => 'required|string|max:180',
-            'kategori' => ['required', 'string', Rule::in(Berita::KATEGORI_LIST)],
-            'ringkasan' => 'nullable|string|max:300',
-            'isi' => 'required|string|max:20000',
-            'status' => ['required', 'string', Rule::in(['published', 'draft'])],
-            'gambar' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
-        ]);
+        $validated = $this->validateBeritaRequest($request);
 
         $liga = Liga::current();
         $gambarPath = null;
@@ -39,9 +34,23 @@ class BeritaController extends Controller
         }
 
         $judul = trim($validated['judul']);
-        $status = $validated['status'];
+        $inputStatus = $validated['status'];
 
-        Berita::create([
+        if ($inputStatus === 'scheduled') {
+            $dbStatus = 'published';
+            $publishedAt = Carbon::parse($validated['published_at']);
+            $message = "Berita berhasil dijadwalkan terbit pada {$publishedAt->format('d/m/Y H:i')} WIB.";
+        } elseif ($inputStatus === 'published') {
+            $dbStatus = 'published';
+            $publishedAt = now();
+            $message = 'Berita berhasil dipublikasikan.';
+        } else {
+            $dbStatus = 'draft';
+            $publishedAt = !empty($validated['published_at']) ? Carbon::parse($validated['published_at']) : null;
+            $message = 'Berita berhasil disimpan sebagai draft.';
+        }
+
+        $berita = Berita::create([
             'liga_id' => $liga->id,
             'user_id' => Auth::id(),
             'judul' => $judul,
@@ -50,25 +59,20 @@ class BeritaController extends Controller
             'ringkasan' => isset($validated['ringkasan']) && trim($validated['ringkasan']) !== '' ? trim($validated['ringkasan']) : null,
             'isi' => trim($validated['isi']),
             'gambar' => $gambarPath,
-            'status' => $status,
-            'published_at' => $status === 'published' ? now() : null,
+            'status' => $dbStatus,
+            'published_at' => $publishedAt,
         ]);
 
-        return back()->with('success', 'Berita berhasil ditambahkan.');
+        $this->dispatchBeritaNotification($berita);
+
+        return back()->with('success', $message);
     }
 
     public function update(Request $request, $id)
     {
         $berita = Berita::findOrFail($id);
 
-        $validated = $request->validate([
-            'judul' => 'required|string|max:180',
-            'kategori' => ['required', 'string', Rule::in(Berita::KATEGORI_LIST)],
-            'ringkasan' => 'nullable|string|max:300',
-            'isi' => 'required|string|max:20000',
-            'status' => ['required', 'string', Rule::in(['published', 'draft'])],
-            'gambar' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
-        ]);
+        $validated = $this->validateBeritaRequest($request);
 
         $gambarPath = $berita->gambar;
         if ($request->hasFile('gambar')) {
@@ -81,10 +85,20 @@ class BeritaController extends Controller
             ? Berita::generateUniqueSlug($judul, $berita->id)
             : $berita->slug;
 
-        $status = $validated['status'];
-        $publishedAt = $berita->published_at;
-        if ($status === 'published' && $publishedAt === null) {
-            $publishedAt = now();
+        $inputStatus = $validated['status'];
+        if ($inputStatus === 'scheduled') {
+            $dbStatus = 'published';
+            $publishedAt = Carbon::parse($validated['published_at']);
+        } elseif ($inputStatus === 'published') {
+            $dbStatus = 'published';
+            $publishedAt = ($berita->published_at === null || $berita->published_at->isFuture())
+                ? now()
+                : $berita->published_at;
+        } else {
+            $dbStatus = 'draft';
+            $publishedAt = $request->has('published_at')
+                ? (!empty($validated['published_at']) ? Carbon::parse($validated['published_at']) : null)
+                : $berita->published_at;
         }
 
         $berita->update([
@@ -94,9 +108,11 @@ class BeritaController extends Controller
             'ringkasan' => isset($validated['ringkasan']) && trim($validated['ringkasan']) !== '' ? trim($validated['ringkasan']) : null,
             'isi' => trim($validated['isi']),
             'gambar' => $gambarPath,
-            'status' => $status,
+            'status' => $dbStatus,
             'published_at' => $publishedAt,
         ]);
+
+        $this->dispatchBeritaNotification($berita);
 
         return back()->with('success', 'Berita berhasil diperbarui.');
     }
@@ -104,16 +120,52 @@ class BeritaController extends Controller
     public function toggleStatus($id)
     {
         $berita = Berita::findOrFail($id);
-        $newStatus = $berita->status === 'published' ? 'draft' : 'published';
 
-        $berita->status = $newStatus;
-        if ($newStatus === 'published' && $berita->published_at === null) {
+        if ($berita->status === 'published') {
+            $berita->status = 'draft';
+            $berita->save();
+
+            return back()->with('success', 'Berita berhasil disimpan sebagai draft.');
+        }
+
+        $berita->status = 'published';
+        if ($berita->published_at === null) {
             $berita->published_at = now();
         }
         $berita->save();
 
-        $label = $newStatus === 'published' ? 'dipublikasikan' : 'disimpan sebagai draft';
-        return back()->with('success', "Berita berhasil {$label}.");
+        $this->dispatchBeritaNotification($berita);
+
+        $message = $berita->isScheduled()
+            ? "Berita dijadwalkan terbit pada {$berita->published_at->format('d/m/Y H:i')} WIB."
+            : 'Berita berhasil dipublikasikan.';
+
+        return back()->with('success', $message);
+    }
+
+    public function publishNow($id)
+    {
+        $berita = Berita::findOrFail($id);
+        $berita->status = 'published';
+        $berita->published_at = now();
+        $berita->save();
+
+        $this->dispatchBeritaNotification($berita);
+
+        return back()->with('success', 'Berita berhasil dipublikasikan sekarang.');
+    }
+
+    private function dispatchBeritaNotification(Berita $berita): void
+    {
+        if (!$berita->isLive() || $berita->notified_at !== null) {
+            return;
+        }
+
+        try {
+            app(FcmService::class)->notifyBeritaPublished($berita);
+        } catch (\Throwable $e) {
+            // Pastikan gagal kirim notifikasi tidak menggagalkan penyimpanan berita
+        }
     }
 
     public function destroy($id)
@@ -123,6 +175,28 @@ class BeritaController extends Controller
         $berita->delete();
 
         return back()->with('success', 'Berita berhasil dihapus.');
+    }
+
+    private function validateBeritaRequest(Request $request): array
+    {
+        return $request->validate([
+            'judul' => 'required|string|max:180',
+            'kategori' => ['required', 'string', Rule::in(Berita::KATEGORI_LIST)],
+            'ringkasan' => 'nullable|string|max:300',
+            'isi' => 'required|string|max:20000',
+            'status' => ['required', 'string', Rule::in(['published', 'scheduled', 'draft'])],
+            'published_at' => [
+                Rule::requiredIf(fn () => $request->input('status') === 'scheduled'),
+                'nullable',
+                'date',
+                $request->input('status') === 'scheduled' ? 'after:now' : 'nullable',
+            ],
+            'gambar' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ], [
+            'published_at.required' => 'Jadwal terbit wajib diisi jika memilih status Jadwalkan Terbit.',
+            'published_at.date' => 'Format tanggal dan waktu jadwal terbit tidak valid.',
+            'published_at.after' => 'Jadwal terbit harus lebih besar dari waktu sekarang.',
+        ]);
     }
 
     private function storeUploadedImage($file): string

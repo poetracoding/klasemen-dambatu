@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\FcmToken;
 use App\Models\Liga;
 use App\Models\Pertandingan;
 use App\Models\Tim;
 use App\Models\User;
 use App\Models\VisitorLog;
+use App\Services\FcmService;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,10 +20,27 @@ use Throwable;
 
 class PengaturanController extends Controller
 {
-    public function index()
+    public function index(FcmService $fcm)
     {
         $liga = Liga::current();
-        return view('admin.pengaturan', compact('liga'));
+        $fcmEnabled = $fcm->isEnabled();
+        $fcmClientReady = $fcm->isClientReady();
+        $fcmServerReady = $fcm->isServerReady();
+        $fcmCredentialsPath = (string) config('services.fcm.credentials_path', '');
+        $fcmTokenCount = FcmToken::count();
+        $fcmSkorCount = FcmToken::where('notify_skor', true)->count();
+        $fcmBeritaCount = FcmToken::where('notify_berita', true)->count();
+
+        return view('admin.pengaturan', compact(
+            'liga',
+            'fcmEnabled',
+            'fcmClientReady',
+            'fcmServerReady',
+            'fcmCredentialsPath',
+            'fcmTokenCount',
+            'fcmSkorCount',
+            'fcmBeritaCount'
+        ));
     }
 
     public function password()
@@ -124,6 +143,46 @@ class PengaturanController extends Controller
         ]);
 
         return back()->with('success', 'Pengaturan liga berhasil disimpan.');
+    }
+
+    public function testFcm(Request $request, FcmService $fcm)
+    {
+        $validated = $request->validate([
+            'judul' => 'nullable|string|max:120',
+            'pesan' => 'nullable|string|max:255',
+        ]);
+
+        if (!$fcm->isEnabled()) {
+            return back()->with('warning', 'FCM belum diaktifkan. Set FCM_ENABLED=true di file .env lalu jalankan php artisan config:clear.');
+        }
+
+        if (!$fcm->isServerReady()) {
+            return back()->with('danger', 'File Service Account JSON FCM tidak ditemukan atau tidak valid. Periksa FCM_CREDENTIALS_PATH di .env.');
+        }
+
+        if (FcmToken::count() === 0) {
+            return back()->with('warning', 'Belum ada browser yang berlangganan notifikasi. Buka halaman publik, klik ikon lonceng di navbar, lalu izinkan notifikasi terlebih dahulu.');
+        }
+
+        $title = trim((string) ($validated['judul'] ?? '')) ?: 'Tes Notifikasi Liga Dam Batu';
+        $body = trim((string) ($validated['pesan'] ?? '')) ?: 'Jika notifikasi ini muncul, konfigurasi FCM Web Push Anda sudah aktif dan berhasil!';
+
+        $res = $fcm->sendTestNotification($title, $body, route('home'));
+
+        if ($res['sent'] > 0) {
+            $details = [];
+            if ($res['removed'] > 0) {
+                $details[] = "{$res['removed']} token kadaluarsa dihapus";
+            }
+            if ($res['failed'] > 0) {
+                $details[] = "{$res['failed']} gagal";
+            }
+            $suffix = $details !== [] ? ' (' . implode(', ', $details) . ').' : '.';
+
+            return back()->with('success', "Test notifikasi FCM berhasil dikirim ke {$res['sent']} perangkat{$suffix}");
+        }
+
+        return back()->with('danger', "Test notifikasi FCM gagal terkirim (gagal: {$res['failed']}, token kadaluarsa dihapus: {$res['removed']}). Periksa log Laravel dan konfigurasi Firebase.");
     }
 
     public function gantiPassword(Request $request)

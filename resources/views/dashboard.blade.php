@@ -448,7 +448,10 @@
             @else
                 <div class="{{ $posters->isNotEmpty() ? 'space-y-4' : 'grid grid-cols-1 md:grid-cols-2 gap-4' }}">
                     @foreach ($latestBeritas as $b)
-                        @php $isLiked = in_array($b->id, $likedBeritaIds, true); @endphp
+                        @php
+                            $bCounts = ($beritaReactionCounts[$b->id] ?? null) ?: \App\Models\BeritaLike::emptyCounts();
+                            $bUserReaction = $beritaVisitorReactions[$b->id] ?? null;
+                        @endphp
                         <article
                             class="group p-3.5 rounded-2xl border border-slate-200/70 hover:border-indigo-300 bg-slate-50/40 transition-all">
                             <div class="flex items-start gap-3">
@@ -480,24 +483,22 @@
                                     <p class="text-[11px] text-slate-500 mt-1 line-clamp-2">{{ $b->excerpt }}</p>
                                 </div>
                             </div>
-                            <div class="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-slate-200/60">
-                                <div class="flex items-center gap-2">
-                                    <button type="button"
-                                        class="btn-like-berita inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer {{ $isLiked ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-rose-50 hover:text-rose-600' }}"
-                                        data-url="{{ route('berita.like', $b->slug) }}"
-                                        data-liked="{{ $isLiked ? '1' : '0' }}">
-                                        <i
-                                            class="like-icon bi {{ $isLiked ? 'bi-heart-fill text-rose-500' : 'bi-heart' }}"></i>
-                                        <span class="like-count font-mono">{{ $b->likes_count }}</span>
-                                    </button>
+                            <div class="flex flex-wrap items-center justify-between gap-2 mt-2.5 pt-2 border-t border-slate-200/60">
+                                @include('partials.berita_reactions', [
+                                    'berita' => $b,
+                                    'counts' => $bCounts,
+                                    'userReaction' => $bUserReaction,
+                                    'compact' => true,
+                                ])
+                                <div class="flex items-center gap-2.5 ml-auto">
                                     <span class="text-[11px] text-slate-400 font-mono">
                                         <i class="bi bi-eye"></i> {{ number_format($b->views_count) }}
                                     </span>
+                                    <a href="{{ route('berita.show', $b->slug) }}"
+                                        class="text-[11px] font-semibold text-indigo-600 hover:underline whitespace-nowrap">
+                                        Baca &rarr;
+                                    </a>
                                 </div>
-                                <a href="{{ route('berita.show', $b->slug) }}"
-                                    class="text-[11px] font-semibold text-indigo-600 hover:underline">
-                                    Baca &rarr;
-                                </a>
                             </div>
                         </article>
                     @endforeach

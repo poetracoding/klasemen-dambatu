@@ -4,7 +4,8 @@
 
 @section('content')
 @php
-    $pubCount = $beritas->where('status', 'published')->count();
+    $pubCount = $beritas->filter(fn ($b) => $b->isLive())->count();
+    $scheduledCount = $beritas->filter(fn ($b) => $b->isScheduled())->count();
     $draftCount = $beritas->where('status', 'draft')->count();
 @endphp
 
@@ -21,6 +22,12 @@
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             {{ $pubCount }} Terbit
         </span>
+        @if ($scheduledCount > 0)
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                <i class="bi bi-clock-fill text-[10px]"></i>
+                {{ $scheduledCount }} Terjadwal
+            </span>
+        @endif
         @if ($draftCount > 0)
             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                 {{ $draftCount }} Draft
@@ -64,11 +71,21 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1.5">Status <span class="text-rose-500">*</span></label>
-                        <select name="status" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 text-slate-800 form-input-focus">
-                            <option value="published" {{ old('status', 'published') === 'published' ? 'selected' : '' }}>Publikasikan</option>
+                        <select id="createBeritaStatus" name="status" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 text-slate-800 form-input-focus">
+                            <option value="published" {{ old('status', 'published') === 'published' ? 'selected' : '' }}>Publikasikan Sekarang</option>
+                            <option value="scheduled" {{ old('status') === 'scheduled' ? 'selected' : '' }}>Jadwalkan Terbit</option>
                             <option value="draft" {{ old('status') === 'draft' ? 'selected' : '' }}>Simpan Draft</option>
                         </select>
                     </div>
+                </div>
+
+                <div id="createBeritaScheduleWrap" class="{{ old('status') === 'scheduled' ? '' : 'hidden' }} rounded-2xl border border-sky-200/80 bg-sky-50/60 p-3.5">
+                    <label for="createBeritaPublishedAt" class="block text-xs font-semibold text-sky-800 mb-1.5">
+                        <i class="bi bi-calendar-event mr-1"></i>Jadwal Terbit (WIB) <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="datetime-local" id="createBeritaPublishedAt" name="published_at" value="{{ old('published_at') }}"
+                        class="w-full text-sm rounded-xl border border-sky-200 bg-white py-2 px-3 text-slate-800 form-input-focus">
+                    <p class="text-[11px] text-sky-700/80 mt-1.5">Berita otomatis tampil ke publik tepat saat jadwal tiba (WIB).</p>
                 </div>
 
                 <div>
@@ -89,9 +106,22 @@
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Gambar Sampul <span class="text-slate-400 font-normal">(opsional)</span></label>
                     <input type="file" id="beritaUploadInput" name="gambar" accept="image/jpeg,image/png,image/webp"
                         class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl bg-slate-50/50 p-1.5 cursor-pointer">
+                    <div id="createBeritaPasteZone" tabindex="0"
+                        class="mt-2 rounded-xl border border-dashed border-slate-300 bg-slate-50/70 hover:border-indigo-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none p-3 text-center transition-colors cursor-pointer">
+                        <div class="text-xs font-medium text-slate-600 flex items-center justify-center gap-1.5">
+                            <i class="bi bi-clipboard-check text-indigo-500"></i>
+                            <span>Klik di sini lalu tekan <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-mono text-slate-700">Ctrl+V</kbd> untuk tempel screenshot, atau seret gambar</span>
+                        </div>
+                        <p id="createBeritaPasteStatus" class="hidden text-[11px] mt-1.5 font-medium"></p>
+                    </div>
                     <p class="text-[11px] text-slate-400 mt-1">Format JPG, PNG, WEBP &middot; Maksimal 5MB.</p>
-                    <div id="beritaUploadPreviewWrap" class="hidden mt-2.5 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 h-32">
+                    <div id="beritaUploadPreviewWrap" class="hidden relative mt-2.5 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 h-32">
                         <img id="beritaUploadPreviewImg" src="" alt="Preview" class="w-full h-full object-cover">
+                        <button type="button" id="createBeritaClearImgBtn"
+                            class="hidden absolute top-2 right-2 w-7 h-7 rounded-lg bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
+                            title="Hapus Gambar Terpilih">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -141,9 +171,13 @@
                                         </span>
                                         <form action="{{ route('admin.berita.toggle', $b->id) }}" method="POST" class="inline">
                                             @csrf
-                                            @if ($b->status === 'published')
+                                            @if ($b->isLive())
                                                 <button type="submit" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer" title="Klik untuk ubah ke Draft">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Terbit
+                                                </button>
+                                            @elseif ($b->isScheduled())
+                                                <button type="submit" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition-colors cursor-pointer" title="Klik untuk ubah ke Draft">
+                                                    <i class="bi bi-clock-fill text-[10px]"></i> Terjadwal
                                                 </button>
                                             @else
                                                 <button type="submit" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer" title="Klik untuk Publikasikan">
@@ -151,13 +185,19 @@
                                                 </button>
                                             @endif
                                         </form>
-                                        <span class="text-[11px] text-slate-400 font-mono">
-                                            {{ ($b->published_at ?? $b->created_at)->format('d/m/Y H:i') }}
-                                        </span>
+                                        @if ($b->isScheduled())
+                                            <span class="text-[11px] text-sky-600 font-semibold font-mono">
+                                                Jadwal: {{ $b->published_at->format('d/m/Y H:i') }} WIB
+                                            </span>
+                                        @else
+                                            <span class="text-[11px] text-slate-400 font-mono">
+                                                {{ ($b->published_at ?? $b->created_at)->format('d/m/Y H:i') }} WIB
+                                            </span>
+                                        @endif
                                     </div>
 
                                     <h3 class="font-bold text-slate-900 text-sm leading-snug">
-                                        @if ($b->status === 'published')
+                                        @if ($b->isLive())
                                             <a href="{{ route('berita.show', $b->slug) }}" target="_blank" class="hover:text-indigo-600 transition-colors">
                                                 {{ $b->judul }}
                                             </a>
@@ -179,10 +219,17 @@
                                         </div>
 
                                         <div class="flex items-center gap-1">
-                                            @if ($b->status === 'published')
+                                            @if ($b->isLive())
                                                 <a href="{{ route('berita.show', $b->slug) }}" target="_blank" class="inline-flex items-center p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-colors" title="Buka Berita">
                                                     <i class="bi bi-box-arrow-up-right"></i>
                                                 </a>
+                                            @elseif ($b->isScheduled())
+                                                <form action="{{ route('admin.berita.publish_now', $b->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex items-center p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer" title="Terbitkan Sekarang">
+                                                        <i class="bi bi-send-check"></i>
+                                                    </button>
+                                                </form>
                                             @endif
 
                                             <button type="button"
@@ -192,7 +239,8 @@
                                                 data-kategori="{{ $b->kategori }}"
                                                 data-ringkasan="{{ $b->ringkasan ?? '' }}"
                                                 data-isi="{{ $b->isi }}"
-                                                data-status="{{ $b->status }}"
+                                                data-status="{{ $b->form_status }}"
+                                                data-published-at="{{ $b->published_at ? $b->published_at->format('Y-m-d\TH:i') : '' }}"
                                                 data-gambar="{{ $b->gambar_url ?? '' }}"
                                                 class="inline-flex items-center p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 transition-colors cursor-pointer" title="Edit Berita">
                                                 <i class="bi bi-pencil-square"></i>
@@ -233,8 +281,13 @@
             @csrf
             @method('PUT')
 
-            <div id="editBeritaGambarWrap" class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-2 text-center">
+            <div id="editBeritaGambarWrap" class="hidden relative rounded-2xl border border-slate-200 bg-slate-50 p-2 text-center">
                 <img id="editBeritaGambarPreview" src="" alt="Preview Sampul" class="max-h-36 mx-auto rounded-xl object-contain">
+                <button type="button" id="editBeritaClearImgBtn"
+                    class="hidden absolute top-2 right-2 w-7 h-7 rounded-lg bg-slate-900/75 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
+                    title="Batalkan Gambar Baru">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
 
             <div>
@@ -254,10 +307,20 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
                     <select id="editBeritaStatus" name="status" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 text-slate-800 form-input-focus">
-                        <option value="published">Terbit</option>
-                        <option value="draft">Draft</option>
+                        <option value="published">Publikasikan Sekarang</option>
+                        <option value="scheduled">Jadwalkan Terbit</option>
+                        <option value="draft">Simpan Draft</option>
                     </select>
                 </div>
+            </div>
+
+            <div id="editBeritaScheduleWrap" class="hidden rounded-2xl border border-sky-200/80 bg-sky-50/60 p-3.5">
+                <label for="editBeritaPublishedAt" class="block text-xs font-semibold text-sky-800 mb-1.5">
+                    <i class="bi bi-calendar-event mr-1"></i>Jadwal Terbit (WIB) <span class="text-rose-500">*</span>
+                </label>
+                <input type="datetime-local" id="editBeritaPublishedAt" name="published_at"
+                    class="w-full text-sm rounded-xl border border-sky-200 bg-white py-2 px-3 text-slate-800 form-input-focus">
+                <p class="text-[11px] text-sky-700/80 mt-1.5">Berita otomatis tampil ke publik tepat saat jadwal tiba (WIB).</p>
             </div>
 
             <div>
@@ -272,8 +335,16 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1.5">Ganti Gambar Sampul <span class="text-slate-400 font-normal">(opsional)</span></label>
-                <input type="file" name="gambar" accept="image/jpeg,image/png,image/webp"
+                <input type="file" id="editBeritaUploadInput" name="gambar" accept="image/jpeg,image/png,image/webp"
                     class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl bg-slate-50/50 p-1.5 cursor-pointer">
+                <div id="editBeritaPasteZone" tabindex="0"
+                    class="mt-2 rounded-xl border border-dashed border-slate-300 bg-slate-50/70 hover:border-indigo-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 focus:outline-none p-2.5 text-center transition-colors cursor-pointer">
+                    <div class="text-[11px] font-medium text-slate-600 flex items-center justify-center gap-1.5">
+                        <i class="bi bi-clipboard-check text-indigo-500"></i>
+                        <span>Klik &amp; tekan <kbd class="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-mono text-slate-700">Ctrl+V</kbd> untuk tempel screenshot baru, atau seret gambar</span>
+                    </div>
+                    <p id="editBeritaPasteStatus" class="hidden text-[11px] mt-1 font-medium"></p>
+                </div>
             </div>
 
             <div class="pt-3 flex items-center justify-end gap-2">
@@ -291,23 +362,274 @@
 
 @section('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('beritaUploadInput');
-    const wrap = document.getElementById('beritaUploadPreviewWrap');
-    const img = document.getElementById('beritaUploadPreviewImg');
-    if (input && wrap && img) {
-        input.addEventListener('change', function () {
-            const file = this.files && this.files[0];
-            if (!file || !file.type.startsWith('image/')) {
-                wrap.classList.add('hidden');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                img.src = e.target.result;
-                wrap.classList.remove('hidden');
+const MAX_COVER_SIZE = 5 * 1024 * 1024;
+const ALLOWED_COVER_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+
+function formatLocalDatetimeInput(date) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return date.getFullYear() + '-' +
+        pad(date.getMonth() + 1) + '-' +
+        pad(date.getDate()) + 'T' +
+        pad(date.getHours()) + ':' +
+        pad(date.getMinutes());
+}
+
+function formatScreenshotTimestamp() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() +
+        pad(d.getMonth() + 1) +
+        pad(d.getDate()) + '_' +
+        pad(d.getHours()) +
+        pad(d.getMinutes()) +
+        pad(d.getSeconds());
+}
+
+function setPasteStatus(statusEl, message, isError) {
+    if (!statusEl) return;
+    if (!message) {
+        statusEl.textContent = '';
+        statusEl.className = 'hidden text-[11px] mt-1 font-medium';
+        return;
+    }
+    statusEl.textContent = message;
+    statusEl.className = isError
+        ? 'text-[11px] mt-1 font-semibold text-rose-600'
+        : 'text-[11px] mt-1 font-semibold text-emerald-600';
+}
+
+function convertImageToPngFile(file) {
+    return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas tidak tersedia'));
+                    return;
+                }
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob(function (blob) {
+                    if (!blob) {
+                        reject(new Error('Konversi gagal'));
+                        return;
+                    }
+                    resolve(new File([blob], 'screenshot_' + formatScreenshotTimestamp() + '.png', {
+                        type: 'image/png'
+                    }));
+                }, 'image/png');
             };
-            reader.readAsDataURL(file);
+            img.onerror = function () {
+                reject(new Error('Gambar tidak valid'));
+            };
+            img.src = ev.target.result;
+        };
+        reader.onerror = function () {
+            reject(new Error('Gagal membaca gambar'));
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function applyImageFileToInput(file, cfg, fromClipboardOrDrop) {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+        setPasteStatus(cfg.statusEl, 'File yang ditempel/diseret bukan gambar.', true);
+        return;
+    }
+
+    let finalFile = file;
+    if (!ALLOWED_COVER_MIMES.includes(finalFile.type)) {
+        try {
+            finalFile = await convertImageToPngFile(finalFile);
+        } catch (e) {
+            setPasteStatus(cfg.statusEl, 'Format gambar tidak didukung. Gunakan JPG, PNG, atau WEBP.', true);
+            return;
+        }
+    } else if (!finalFile.name || finalFile.name === 'image.png' || finalFile.name === 'blob') {
+        const ext = finalFile.type === 'image/jpeg' ? 'jpg' : (finalFile.type === 'image/webp' ? 'webp' : 'png');
+        finalFile = new File([finalFile], 'screenshot_' + formatScreenshotTimestamp() + '.' + ext, {
+            type: finalFile.type
+        });
+    }
+
+    if (finalFile.size > MAX_COVER_SIZE) {
+        setPasteStatus(cfg.statusEl, 'Ukuran gambar melebihi batas maksimal 5MB.', true);
+        return;
+    }
+
+    if (fromClipboardOrDrop) {
+        try {
+            const dt = new DataTransfer();
+            dt.items.add(finalFile);
+            cfg.inputEl.files = dt.files;
+        } catch (err) {
+            setPasteStatus(cfg.statusEl, 'Browser tidak mendukung tempel file ke input. Silakan pilih file manual.', true);
+            return;
+        }
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        cfg.imgEl.src = e.target.result;
+        cfg.wrapEl.classList.remove('hidden');
+        if (cfg.clearBtnEl) cfg.clearBtnEl.classList.remove('hidden');
+        if (fromClipboardOrDrop) {
+            setPasteStatus(cfg.statusEl, 'Gambar siap diupload: ' + finalFile.name, false);
+        } else {
+            setPasteStatus(cfg.statusEl, '', false);
+        }
+    };
+    reader.readAsDataURL(finalFile);
+}
+
+function bindImageZoneEvents(cfg) {
+    if (!cfg.inputEl || !cfg.wrapEl || !cfg.imgEl) return;
+
+    cfg.inputEl.addEventListener('change', function () {
+        const file = this.files && this.files[0];
+        if (!file) {
+            if (cfg.onReset) cfg.onReset();
+            return;
+        }
+        applyImageFileToInput(file, cfg, false);
+    });
+
+    if (cfg.clearBtnEl) {
+        cfg.clearBtnEl.addEventListener('click', function () {
+            cfg.inputEl.value = '';
+            setPasteStatus(cfg.statusEl, '', false);
+            if (cfg.onReset) cfg.onReset();
+        });
+    }
+
+    if (cfg.zoneEl) {
+        ['dragenter', 'dragover'].forEach(function (evName) {
+            cfg.zoneEl.addEventListener(evName, function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                cfg.zoneEl.classList.add('border-indigo-500', 'bg-indigo-50/70');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(function (evName) {
+            cfg.zoneEl.addEventListener(evName, function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                cfg.zoneEl.classList.remove('border-indigo-500', 'bg-indigo-50/70');
+            });
+        });
+
+        cfg.zoneEl.addEventListener('drop', function (ev) {
+            const files = ev.dataTransfer && ev.dataTransfer.files;
+            if (files && files[0]) {
+                applyImageFileToInput(files[0], cfg, true);
+            }
+        });
+    }
+}
+
+function syncScheduleField(selectEl, wrapEl, inputEl, autoFillWhenEmpty) {
+    if (!selectEl || !wrapEl || !inputEl) return;
+    const isScheduled = selectEl.value === 'scheduled';
+    wrapEl.classList.toggle('hidden', !isScheduled);
+    inputEl.required = isScheduled;
+    if (isScheduled && autoFillWhenEmpty && !inputEl.value) {
+        const nextHour = new Date(Date.now() + 60 * 60 * 1000);
+        inputEl.value = formatLocalDatetimeInput(nextHour);
+    }
+}
+
+let editOriginalGambarUrl = '';
+
+document.addEventListener('DOMContentLoaded', function () {
+    const createCoverCfg = {
+        inputEl: document.getElementById('beritaUploadInput'),
+        wrapEl: document.getElementById('beritaUploadPreviewWrap'),
+        imgEl: document.getElementById('beritaUploadPreviewImg'),
+        zoneEl: document.getElementById('createBeritaPasteZone'),
+        statusEl: document.getElementById('createBeritaPasteStatus'),
+        clearBtnEl: document.getElementById('createBeritaClearImgBtn'),
+        onReset: function () {
+            const wrapEl = document.getElementById('beritaUploadPreviewWrap');
+            const imgEl = document.getElementById('beritaUploadPreviewImg');
+            const clearBtn = document.getElementById('createBeritaClearImgBtn');
+            if (imgEl) imgEl.src = '';
+            if (wrapEl) wrapEl.classList.add('hidden');
+            if (clearBtn) clearBtn.classList.add('hidden');
+        }
+    };
+    bindImageZoneEvents(createCoverCfg);
+
+    const editCoverCfg = {
+        inputEl: document.getElementById('editBeritaUploadInput'),
+        wrapEl: document.getElementById('editBeritaGambarWrap'),
+        imgEl: document.getElementById('editBeritaGambarPreview'),
+        zoneEl: document.getElementById('editBeritaPasteZone'),
+        statusEl: document.getElementById('editBeritaPasteStatus'),
+        clearBtnEl: document.getElementById('editBeritaClearImgBtn'),
+        onReset: function () {
+            const wrapEl = document.getElementById('editBeritaGambarWrap');
+            const imgEl = document.getElementById('editBeritaGambarPreview');
+            const clearBtn = document.getElementById('editBeritaClearImgBtn');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            if (editOriginalGambarUrl) {
+                imgEl.src = editOriginalGambarUrl;
+                wrapEl.classList.remove('hidden');
+            } else {
+                imgEl.src = '';
+                wrapEl.classList.add('hidden');
+            }
+        }
+    };
+    bindImageZoneEvents(editCoverCfg);
+
+    document.addEventListener('paste', function (e) {
+        const clipboard = e.clipboardData;
+        if (!clipboard) return;
+
+        let imageFile = null;
+        const items = clipboard.items || [];
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type && items[i].type.startsWith('image/')) {
+                imageFile = items[i].getAsFile();
+                break;
+            }
+        }
+        if (!imageFile && clipboard.files && clipboard.files.length > 0) {
+            if (clipboard.files[0].type && clipboard.files[0].type.startsWith('image/')) {
+                imageFile = clipboard.files[0];
+            }
+        }
+
+        // Biarkan paste teks biasa berjalan normal
+        if (!imageFile) return;
+
+        e.preventDefault();
+        const modal = document.getElementById('editBeritaModal');
+        const isEditOpen = modal && !modal.classList.contains('hidden');
+        applyImageFileToInput(imageFile, isEditOpen ? editCoverCfg : createCoverCfg, true);
+    });
+
+    const createStatus = document.getElementById('createBeritaStatus');
+    const createWrap = document.getElementById('createBeritaScheduleWrap');
+    const createInput = document.getElementById('createBeritaPublishedAt');
+    if (createStatus && createWrap && createInput) {
+        syncScheduleField(createStatus, createWrap, createInput, false);
+        createStatus.addEventListener('change', function () {
+            syncScheduleField(createStatus, createWrap, createInput, true);
+        });
+    }
+
+    const editStatus = document.getElementById('editBeritaStatus');
+    const editWrap = document.getElementById('editBeritaScheduleWrap');
+    const editInput = document.getElementById('editBeritaPublishedAt');
+    if (editStatus && editWrap && editInput) {
+        editStatus.addEventListener('change', function () {
+            syncScheduleField(editStatus, editWrap, editInput, true);
         });
     }
 });
@@ -317,16 +639,29 @@ function openEditBeritaModal(btn) {
     form.action = "{{ url('admin/berita') }}/" + btn.dataset.id;
     document.getElementById('editBeritaJudul').value = btn.dataset.judul || '';
     document.getElementById('editBeritaKategori').value = btn.dataset.kategori || 'Berita';
-    document.getElementById('editBeritaStatus').value = btn.dataset.status || 'published';
+    const editStatus = document.getElementById('editBeritaStatus');
+    const editWrap = document.getElementById('editBeritaScheduleWrap');
+    const editInput = document.getElementById('editBeritaPublishedAt');
+    editStatus.value = btn.dataset.status || 'published';
+    editInput.value = btn.dataset.publishedAt || '';
+    syncScheduleField(editStatus, editWrap, editInput, false);
     document.getElementById('editBeritaRingkasan').value = btn.dataset.ringkasan || '';
     document.getElementById('editBeritaIsi').value = btn.dataset.isi || '';
 
+    const editUploadInput = document.getElementById('editBeritaUploadInput');
+    if (editUploadInput) editUploadInput.value = '';
+    setPasteStatus(document.getElementById('editBeritaPasteStatus'), '', false);
+    const editClearBtn = document.getElementById('editBeritaClearImgBtn');
+    if (editClearBtn) editClearBtn.classList.add('hidden');
+
+    editOriginalGambarUrl = btn.dataset.gambar || '';
     const gWrap = document.getElementById('editBeritaGambarWrap');
     const gImg = document.getElementById('editBeritaGambarPreview');
-    if (btn.dataset.gambar) {
-        gImg.src = btn.dataset.gambar;
+    if (editOriginalGambarUrl) {
+        gImg.src = editOriginalGambarUrl;
         gWrap.classList.remove('hidden');
     } else {
+        gImg.src = '';
         gWrap.classList.add('hidden');
     }
 

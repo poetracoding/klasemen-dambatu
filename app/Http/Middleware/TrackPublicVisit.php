@@ -34,7 +34,7 @@ class TrackPublicVisit
             return false;
         }
 
-        if ($request->is('admin', 'admin/*', 'api/*', 'cetak/*', 'login', 'logout', 'up')) {
+        if ($request->is('admin', 'admin/*', 'api/*', 'cetak/*', 'login', 'logout', 'up', 'firebase-messaging-sw.js', 'manifest.json')) {
             return false;
         }
 

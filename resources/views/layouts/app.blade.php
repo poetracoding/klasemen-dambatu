@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="manifest" href="{{ route('fcm.manifest') }}">
     <title>@yield('title', 'Dashboard') — {{ $liga->nama_liga ?? 'Liga Dam Batu' }}</title>
     @php
         $gaId = $liga->google_analytics_id ?? (\App\Models\Liga::current()->google_analytics_id ?? null);
@@ -131,6 +132,10 @@
     <script>window.BASE_URL = '{{ url('/') }}';</script>
 </head>
 <body class="min-h-full flex flex-col text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-950 antialiased font-sans transition-colors duration-200" data-area="public">
+@php
+    $fcmService = app(\App\Services\FcmService::class);
+    $fcmReady = $fcmService->isClientReady();
+@endphp
 
 <!-- Public Navigation -->
 <nav class="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors">
@@ -174,6 +179,16 @@
                     <span class="xl:hidden">Live</span>
                 </div>
 
+                @if ($fcmReady)
+                    <!-- FCM Notification Toggle Button -->
+                    <button type="button"
+                        class="fcm-toggle-btn relative p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                        title="Aktifkan Notifikasi Skor & Berita" aria-label="Toggle Notifikasi Push">
+                        <i class="fcm-bell-icon bi bi-bell text-base"></i>
+                        <span class="fcm-bell-dot hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-500 ring-2 ring-white dark:ring-slate-900"></span>
+                    </button>
+                @endif
+
                 <!-- Theme Toggle Button -->
                 <button type="button" onclick="toggleTheme()" class="theme-toggle-btn p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0" title="Beralih Mode Gelap/Terang" aria-label="Toggle Theme">
                     <i class="theme-toggle-icon bi bi-moon-stars-fill text-indigo-500 dark:text-amber-400 text-base"></i>
@@ -194,6 +209,14 @@
 
             <!-- Mobile Hamburger Button -->
             <div class="flex lg:hidden items-center gap-1.5 shrink-0">
+                @if ($fcmReady)
+                    <button type="button"
+                        class="fcm-toggle-btn relative p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none cursor-pointer"
+                        title="Aktifkan Notifikasi Skor & Berita" aria-label="Toggle Notifikasi Push">
+                        <i class="fcm-bell-icon bi bi-bell text-base"></i>
+                        <span class="fcm-bell-dot hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-indigo-500 ring-2 ring-white dark:ring-slate-900"></span>
+                    </button>
+                @endif
                 <button type="button" onclick="toggleTheme()" class="theme-toggle-btn p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none" title="Beralih Mode Gelap/Terang" aria-label="Toggle Theme">
                     <i class="theme-toggle-icon bi bi-moon-stars-fill text-indigo-500 dark:text-amber-400 text-base"></i>
                 </button>
@@ -318,6 +341,9 @@
 </footer>
 
 <script src="{{ asset('assets/js/app.js') }}?v={{ filemtime(public_path('assets/js/app.js')) }}"></script>
+@if ($fcmReady)
+    @include('partials.fcm_script', ['fcmConfig' => $fcmService->webConfig()])
+@endif
 @yield('scripts')
 </body>
 </html>

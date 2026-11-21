@@ -28,7 +28,7 @@ class ApiController extends Controller
             ->first();
 
         $beritaAgg = Berita::published()
-            ->selectRaw('COUNT(*) as total, COALESCE(MAX(updated_at), "") as last_update')
+            ->selectRaw('COUNT(*) as total, COALESCE(MAX(updated_at), "") as last_update, COALESCE(MAX(published_at), "") as last_published')
             ->first();
 
         $hashString = implode('|', [
@@ -44,6 +44,7 @@ class ApiController extends Controller
             $posterAgg->last_update ?? '',
             $beritaAgg->total ?? 0,
             $beritaAgg->last_update ?? '',
+            $beritaAgg->last_published ?? '',
         ]);
 
         return response()->json([
