@@ -57,6 +57,12 @@ class PengaturanController extends Controller
         return view('admin.pengaturan_backup', compact('liga'));
     }
 
+    public function monopoli()
+    {
+        $liga = Liga::current();
+        return view('admin.monopoli', compact('liga'));
+    }
+
     public function analytics()
     {
         $liga = Liga::current();

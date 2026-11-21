@@ -123,6 +123,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::post('/pengaturan/analytics/reset', [PengaturanController::class, 'resetAnalytics'])->name('pengaturan.analytics.reset');
     Route::get('/pengaturan/report', [ReportController::class, 'index'])->name('pengaturan.report');
     Route::get('/pengaturan/report/pdf', [ReportController::class, 'pdf'])->name('pengaturan.report.pdf');
+    Route::get('/pengaturan/monopoli', [PengaturanController::class, 'monopoli'])->name('pengaturan.monopoli');
+    Route::get('/monopoli', fn () => redirect()->route('admin.pengaturan.monopoli'))->name('monopoli');
     Route::post('/pengaturan/liga', [PengaturanController::class, 'updateLiga'])->name('pengaturan.update_liga');
     Route::post('/pengaturan/test-fcm', [PengaturanController::class, 'testFcm'])->name('pengaturan.test_fcm');
     Route::post('/pengaturan/password', [PengaturanController::class, 'gantiPassword'])->name('pengaturan.ganti_password');

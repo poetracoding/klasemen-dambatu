@@ -153,6 +153,8 @@
                         ['divider' => true],
                         ['url' => route('admin.pengaturan.report'), 'label' => 'Laporan Hasil', 'icon' => 'bi-file-earmark-bar-graph', 'active' => request()->routeIs('admin.pengaturan.report*')],
                         ['url' => route('admin.pengaturan.analytics'), 'label' => 'Analytics', 'icon' => 'bi-graph-up-arrow', 'active' => request()->routeIs('admin.pengaturan.analytics')],
+                        ['divider' => true],
+                        ['url' => route('admin.pengaturan.monopoli'), 'label' => 'Game Monopoli', 'icon' => 'bi-buildings', 'active' => request()->routeIs('admin.pengaturan.monopoli')],
                     ];
                 @endphp
                 @foreach ($adminNav as $item)
