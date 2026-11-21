@@ -18,19 +18,36 @@ class FcmService
         return (bool) config('services.fcm.enabled', false);
     }
 
+    public function hasValidVapidKey(): bool
+    {
+        $vapid = trim((string) config('services.fcm.vapid_key', ''));
+        if (strlen($vapid) < 40) {
+            return false;
+        }
+
+        $upper = strtoupper($vapid);
+        foreach (['TEMPEL', 'PLACEHOLDER', 'YOUR_'] as $marker) {
+            if (str_contains($upper, $marker)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function isClientReady(): bool
     {
         if (!$this->isEnabled()) {
             return false;
         }
 
-        foreach (['project_id', 'api_key', 'messaging_sender_id', 'app_id', 'vapid_key'] as $key) {
+        foreach (['project_id', 'api_key', 'messaging_sender_id', 'app_id'] as $key) {
             if (trim((string) config("services.fcm.{$key}")) === '') {
                 return false;
             }
         }
 
-        return true;
+        return $this->hasValidVapidKey();
     }
 
     public function resolveCredentialsPath(): ?string
@@ -183,7 +200,7 @@ class FcmService
         return $this->dispatchToTokens($tokens, $type, $title, $body, $url, $extraData);
     }
 
-    public function sendTestNotification(string $title, string $body, string $url): array
+    public function sendTestNotification(string $title, string $body, string $url = '/'): array
     {
         if (!$this->isServerReady()) {
             return ['sent' => 0, 'failed' => 0, 'removed' => 0, 'skipped' => true];
@@ -191,7 +208,10 @@ class FcmService
 
         $tokens = FcmToken::query()->get(['id', 'token']);
 
-        return $this->dispatchToTokens($tokens, 'test', $title, $body, $url, ['test' => '1']);
+        return $this->dispatchToTokens($tokens, 'test', $title, $body, $url, [
+            'test' => '1',
+            'tag' => 'dambatu-test-' . time(),
+        ]);
     }
 
     private function dispatchToTokens(Collection $tokens, string $type, string $title, string $body, string $url, array $extraData = []): array
@@ -209,16 +229,32 @@ class FcmService
         $projectId = $sa['project_id'];
         $endpoint = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
+        $tag = trim((string) ($extraData['tag'] ?? ''));
+        if ($tag === '') {
+            $tag = 'dambatu-' . $type . '-' . substr(md5($title . '|' . $body), 0, 10);
+        }
+
         $dataPayload = array_merge([
             'type' => $type,
-            'url' => $url,
             'title' => $title,
             'body' => $body,
+            'url' => $url,
+            'icon' => '/favicon.ico',
+            'tag' => $tag,
         ], $extraData);
 
         $stringData = [];
         foreach ($dataPayload as $k => $v) {
             $stringData[(string) $k] = (string) $v;
+        }
+
+        $webpush = [
+            'headers' => [
+                'Urgency' => 'high',
+            ],
+        ];
+        if (str_starts_with($url, 'https://')) {
+            $webpush['fcm_options'] = ['link' => $url];
         }
 
         $sent = 0;
@@ -232,20 +268,7 @@ class FcmService
                     ->post($endpoint, [
                         'message' => [
                             'token' => $row->token,
-                            'notification' => [
-                                'title' => $title,
-                                'body' => $body,
-                            ],
-                            'webpush' => [
-                                'fcm_options' => [
-                                    'link' => $url,
-                                ],
-                                'notification' => [
-                                    'title' => $title,
-                                    'body' => $body,
-                                    'icon' => asset('favicon.ico'),
-                                ],
-                            ],
+                            'webpush' => $webpush,
                             'data' => $stringData,
                         ],
                     ]);
@@ -288,11 +311,12 @@ class FcmService
         $title = $match->status === 'selesai' ? 'Hasil Akhir Liga Dam Batu' : 'Update Skor Live';
         $body = "{$home} {$match->skor_home} - {$match->skor_away} {$away}"
             . ($match->lokasi ? " ({$match->lokasi})" : '');
-        $url = route('pertandingan.detail', $match->id);
+        $url = route('pertandingan.detail', $match->id, false);
 
         return $this->sendToSubscribers('skor', $title, $body, $url, [
             'pertandingan_id' => (string) $match->id,
             'status' => (string) $match->status,
+            'tag' => 'dambatu-skor-' . $match->id . '-' . $match->skor_home . '-' . $match->skor_away . '-' . $match->status,
         ]);
     }
 
@@ -316,10 +340,11 @@ class FcmService
             'berita',
             "Berita Baru: {$berita->kategori}",
             $berita->judul,
-            route('berita.show', $berita->slug),
+            route('berita.show', $berita->slug, false),
             [
                 'berita_id' => (string) $berita->id,
                 'slug' => $berita->slug,
+                'tag' => 'dambatu-berita-' . $berita->id,
             ]
         );
     }

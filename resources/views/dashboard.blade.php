@@ -48,6 +48,8 @@
         </div>
     </div>
 
+    @include('partials.fcm_nudge_card')
+
     @if ($liga->status === 'selesai' && $juara)
         <!-- Juara Liga Showcase Banner -->
         <div

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="manifest" href="{{ route('fcm.manifest') }}">
+    <link rel="manifest" href="{{ route('fcm.manifest', [], false) }}">
     <title>@yield('title', 'Dashboard') — {{ $liga->nama_liga ?? 'Liga Dam Batu' }}</title>
     @php
         $gaId = $liga->google_analytics_id ?? (\App\Models\Liga::current()->google_analytics_id ?? null);
@@ -342,6 +342,7 @@
 
 <script src="{{ asset('assets/js/app.js') }}?v={{ filemtime(public_path('assets/js/app.js')) }}"></script>
 @if ($fcmReady)
+    @include('partials.fcm_prompt_modal')
     @include('partials.fcm_script', ['fcmConfig' => $fcmService->webConfig()])
 @endif
 @yield('scripts')

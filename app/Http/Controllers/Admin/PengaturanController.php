@@ -25,6 +25,7 @@ class PengaturanController extends Controller
         $liga = Liga::current();
         $fcmEnabled = $fcm->isEnabled();
         $fcmClientReady = $fcm->isClientReady();
+        $fcmVapidValid = $fcm->hasValidVapidKey();
         $fcmServerReady = $fcm->isServerReady();
         $fcmCredentialsPath = (string) config('services.fcm.credentials_path', '');
         $fcmTokenCount = FcmToken::count();
@@ -35,6 +36,7 @@ class PengaturanController extends Controller
             'liga',
             'fcmEnabled',
             'fcmClientReady',
+            'fcmVapidValid',
             'fcmServerReady',
             'fcmCredentialsPath',
             'fcmTokenCount',
@@ -167,7 +169,7 @@ class PengaturanController extends Controller
         $title = trim((string) ($validated['judul'] ?? '')) ?: 'Tes Notifikasi Liga Dam Batu';
         $body = trim((string) ($validated['pesan'] ?? '')) ?: 'Jika notifikasi ini muncul, konfigurasi FCM Web Push Anda sudah aktif dan berhasil!';
 
-        $res = $fcm->sendTestNotification($title, $body, route('home'));
+        $res = $fcm->sendTestNotification($title, $body, route('home', [], false));
 
         if ($res['sent'] > 0) {
             $details = [];

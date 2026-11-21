@@ -123,6 +123,12 @@
             </div>
         </div>
 
+        @if ($fcmEnabled && !$fcmVapidValid)
+            <div class="mb-4 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-800 leading-relaxed">
+                <span class="font-bold">FCM_VAPID_KEY</span> di <span class="font-mono">.env</span> masih kosong atau masih berisi placeholder. Ambil Key Pair asli (~87 karakter) dari <strong>Firebase Console &rarr; Cloud Messaging &rarr; Web Push certificates</strong>, lalu jalankan <span class="font-mono">php artisan config:clear</span>.
+            </div>
+        @endif
+
         @if (!$fcmServerReady)
             <div class="mb-4 p-3 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-800 leading-relaxed">
                 Pastikan file Service Account JSON berada di <span class="font-mono font-semibold">{{ $fcmCredentialsPath ?: 'storage/app/private/firebase-service-account.json' }}</span> (perhatikan agar nama file tidak berakhiran ganda <span class="font-mono">.json.json</span>).

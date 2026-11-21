@@ -33,9 +33,6 @@ class FcmController extends Controller
             'appId' => $cfg['appId'],
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        $defaultUrlJson = json_encode(route('home'), JSON_UNESCAPED_SLASHES);
-        $iconUrlJson = json_encode(asset('favicon.ico'), JSON_UNESCAPED_SLASHES);
-
         $js = <<<JS
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
@@ -45,14 +42,20 @@ firebase.initializeApp({$firebaseConfigJson});
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-    const data = payload.data || {};
-    const notification = payload.notification || {};
-    const title = notification.title || data.title || 'Update Liga Dam Batu';
+    // Jika payload masih membawa blok notification bawaan, biarkan SDK menampilkannya sekali saja
+    if (payload && payload.notification) {
+        return;
+    }
+
+    const data = (payload && payload.data) || {};
+    const title = data.title || 'Update Liga Dam Batu';
     const options = {
-        body: notification.body || data.body || 'Ada pembaruan skor atau berita terbaru.',
-        icon: notification.icon || {$iconUrlJson},
+        body: data.body || 'Ada pembaruan skor atau berita terbaru.',
+        icon: data.icon || '/favicon.ico',
+        tag: data.tag || ('dambatu-' + (data.type || 'update')),
+        renotify: true,
         data: {
-            url: data.url || {$defaultUrlJson}
+            url: data.url || '/'
         }
     };
 
@@ -61,7 +64,11 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const targetUrl = (event.notification && event.notification.data && event.notification.data.url) || {$defaultUrlJson};
+    const rawUrl = (event.notification && event.notification.data && event.notification.data.url) || '/';
+    let targetUrl = self.location.origin + '/';
+    try {
+        targetUrl = new URL(rawUrl, self.location.origin).href;
+    } catch (e) {}
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
@@ -99,7 +106,7 @@ JS;
             'background_color' => '#0f172a',
             'icons' => [
                 [
-                    'src' => asset('favicon.ico'),
+                    'src' => '/favicon.ico',
                     'sizes' => '64x64 32x32 24x24 16x16',
                     'type' => 'image/x-icon',
                 ],

@@ -1,7 +1,7 @@
 @php
-    $fcmSubscribeUrl = route('fcm.subscribe');
-    $fcmUnsubscribeUrl = route('fcm.unsubscribe');
-    $fcmSwUrl = route('fcm.sw');
+    $fcmSubscribeUrl = route('fcm.subscribe', [], false);
+    $fcmUnsubscribeUrl = route('fcm.unsubscribe', [], false);
+    $fcmSwUrl = route('fcm.sw', [], false);
     $fcmVapidKey = (string) ($fcmConfig['vapidKey'] ?? '');
     $firebaseClientConfig = [
         'apiKey' => (string) ($fcmConfig['apiKey'] ?? ''),
@@ -20,6 +20,8 @@
     window.__fcmBound = true;
 
     const STORAGE_KEY = 'dambatu_fcm_token';
+    const PROMPT_STATE_KEY = 'dambatu_fcm_prompt_state';
+    const PROMPT_NEXT_AT_KEY = 'dambatu_fcm_prompt_next_at';
     const SUBSCRIBE_URL = @json($fcmSubscribeUrl);
     const UNSUBSCRIBE_URL = @json($fcmUnsubscribeUrl);
     const SW_URL = @json($fcmSwUrl);
@@ -29,6 +31,11 @@
     function getCsrfToken() {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
+    }
+
+    function getTomorrowMidnightMs() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0).getTime();
     }
 
     function syncFcmButtons(active) {
@@ -48,6 +55,68 @@
                 dot.classList.toggle('hidden', !active);
             }
         });
+    }
+
+    function syncNudgeCards(show) {
+        document.querySelectorAll('.fcm-nudge-card').forEach(function (card) {
+            card.classList.toggle('hidden', !show);
+        });
+    }
+
+    function openPromptModal() {
+        const modal = document.getElementById('fcmPromptModal');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closePromptModal() {
+        const modal = document.getElementById('fcmPromptModal');
+        if (!modal) return;
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function evaluatePromptAndNudgeState() {
+        const hasToken = Boolean(localStorage.getItem(STORAGE_KEY));
+        if (Notification.permission === 'granted' && hasToken) {
+            return { subscribed: true, showNudge: false, shouldShowModal: false };
+        }
+
+        const state = localStorage.getItem(PROMPT_STATE_KEY);
+        const nextAt = Number(localStorage.getItem(PROMPT_NEXT_AT_KEY) || 0);
+
+        if (state === 'never' || Notification.permission === 'denied') {
+            return { subscribed: false, showNudge: true, shouldShowModal: false };
+        }
+
+        if (state === 'later' && Date.now() < nextAt) {
+            return { subscribed: false, showNudge: false, shouldShowModal: false };
+        }
+
+        return { subscribed: false, showNudge: false, shouldShowModal: true };
+    }
+
+    function syncUiState() {
+        const evalState = evaluatePromptAndNudgeState();
+        syncFcmButtons(evalState.subscribed);
+        syncNudgeCards(evalState.showNudge);
+        return evalState;
+    }
+
+    function describeFcmError(err) {
+        const msg = String((err && (err.message || err.code)) || '').toLowerCase();
+        const name = String((err && err.name) || '');
+        if (name === 'InvalidAccessError' || msg.includes('applicationserverkey') || msg.includes('vapid')) {
+            return 'VAPID Key Firebase tidak valid. Periksa FCM_VAPID_KEY di .env server.';
+        }
+        if (name === 'SecurityError' || msg.includes('secure origin')) {
+            return 'Notifikasi membutuhkan koneksi HTTPS (atau localhost).';
+        }
+        if (msg.includes('permission-blocked') || Notification.permission === 'denied') {
+            return 'Izin notifikasi diblokir browser. Aktifkan lewat pengaturan situs di browser Anda.';
+        }
+        return 'Pastikan koneksi HTTPS aktif & izin browser diberikan, lalu coba lagi.';
     }
 
     function showFcmToast(title, body, targetUrl) {
@@ -109,7 +178,7 @@
 
     const supported = ('Notification' in window) && ('serviceWorker' in navigator) && ('PushManager' in window);
     if (!supported || typeof firebase === 'undefined') {
-        document.querySelectorAll('.fcm-toggle-btn').forEach(function (btn) {
+        document.querySelectorAll('.fcm-toggle-btn, .fcm-nudge-enable-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 showFcmToast('Browser Tidak Mendukung', 'Gunakan HTTPS (atau tambahkan ke Layar Utama di iOS) untuk mengaktifkan notifikasi.', null);
             });
@@ -137,8 +206,16 @@
             : await Notification.requestPermission();
 
         if (permission !== 'granted') {
-            showFcmToast('Izin Ditolak', 'Aktifkan izin notifikasi di pengaturan browser untuk menerima update skor & berita.', null);
-            return;
+            if (permission === 'denied') {
+                localStorage.setItem(PROMPT_STATE_KEY, 'never');
+                localStorage.removeItem(PROMPT_NEXT_AT_KEY);
+                syncNudgeCards(true);
+            } else {
+                localStorage.setItem(PROMPT_STATE_KEY, 'later');
+                localStorage.setItem(PROMPT_NEXT_AT_KEY, String(getTomorrowMidnightMs()));
+            }
+            showFcmToast('Izin Belum Diberikan', 'Aktifkan izin notifikasi di browser untuk menerima update skor & berita.', null);
+            return false;
         }
 
         const reg = await getSwRegistration();
@@ -172,8 +249,12 @@
         }
 
         localStorage.setItem(STORAGE_KEY, token);
+        localStorage.removeItem(PROMPT_STATE_KEY);
+        localStorage.removeItem(PROMPT_NEXT_AT_KEY);
         syncFcmButtons(true);
+        syncNudgeCards(false);
         showFcmToast('Notifikasi Aktif', 'Anda akan menerima notifikasi saat ada update skor & berita baru.', null);
+        return true;
     }
 
     async function unsubscribeBrowser() {
@@ -196,14 +277,32 @@
         } catch (e) {}
 
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.setItem(PROMPT_STATE_KEY, 'never');
+        localStorage.removeItem(PROMPT_NEXT_AT_KEY);
         syncFcmButtons(false);
+        syncNudgeCards(true);
         showFcmToast('Notifikasi Dinonaktifkan', 'Notifikasi push skor & berita telah dimatikan.', null);
     }
 
+    function snoozePromptTomorrow() {
+        localStorage.setItem(PROMPT_STATE_KEY, 'later');
+        localStorage.setItem(PROMPT_NEXT_AT_KEY, String(getTomorrowMidnightMs()));
+        closePromptModal();
+        syncNudgeCards(false);
+    }
+
+    function declinePromptPermanently() {
+        localStorage.setItem(PROMPT_STATE_KEY, 'never');
+        localStorage.removeItem(PROMPT_NEXT_AT_KEY);
+        closePromptModal();
+        syncNudgeCards(true);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-        const existingToken = localStorage.getItem(STORAGE_KEY);
-        if (Notification.permission === 'granted' && existingToken) {
-            syncFcmButtons(true);
+        const state = syncUiState();
+
+        if (state.subscribed) {
+            const existingToken = localStorage.getItem(STORAGE_KEY);
             getSwRegistration().then(function () {
                 return navigator.serviceWorker.ready;
             }).then(function (reg) {
@@ -229,13 +328,76 @@
                         })
                     }).catch(function () {});
                 }
-            }).catch(function () {});
-        } else {
-            syncFcmButtons(false);
+            }).catch(function (err) {
+                console.error('FCM Refresh Error:', err);
+            });
+        } else if (state.shouldShowModal) {
+            setTimeout(openPromptModal, 1200);
+        }
+
+        // Jaga state card ajakan tetap konsisten setelah auto-refresh DOM
+        const mainEl = document.querySelector('main');
+        if (mainEl && window.MutationObserver) {
+            const observer = new MutationObserver(function () {
+                syncUiState();
+            });
+            observer.observe(mainEl, { childList: true });
+        }
+
+        const yesBtn = document.getElementById('fcmPromptYesBtn');
+        const laterBtn = document.getElementById('fcmPromptLaterBtn');
+        const noBtn = document.getElementById('fcmPromptNoBtn');
+        const closeBtn = document.getElementById('fcmPromptCloseBtn');
+        const modal = document.getElementById('fcmPromptModal');
+
+        if (yesBtn) {
+            yesBtn.addEventListener('click', function () {
+                if (yesBtn.dataset.loading === '1') return;
+                yesBtn.dataset.loading = '1';
+                yesBtn.classList.add('opacity-70');
+
+                subscribeBrowser()
+                    .catch(function (err) {
+                        console.error('FCM Subscribe Error:', err);
+                        showFcmToast('Gagal Mengaktifkan Notifikasi', describeFcmError(err), null);
+                    })
+                    .finally(function () {
+                        yesBtn.dataset.loading = '0';
+                        yesBtn.classList.remove('opacity-70');
+                        closePromptModal();
+                    });
+            });
+        }
+
+        if (laterBtn) laterBtn.addEventListener('click', snoozePromptTomorrow);
+        if (closeBtn) closeBtn.addEventListener('click', snoozePromptTomorrow);
+        if (noBtn) noBtn.addEventListener('click', declinePromptPermanently);
+        if (modal) {
+            modal.addEventListener('click', function (ev) {
+                if (ev.target === modal) {
+                    snoozePromptTomorrow();
+                }
+            });
         }
     });
 
     document.addEventListener('click', function (e) {
+        const nudgeBtn = e.target.closest('.fcm-nudge-enable-btn');
+        if (nudgeBtn && nudgeBtn.dataset.loading !== '1') {
+            nudgeBtn.dataset.loading = '1';
+            nudgeBtn.classList.add('opacity-60');
+            subscribeBrowser()
+                .catch(function (err) {
+                    console.error('FCM Nudge Subscribe Error:', err);
+                    showFcmToast('Gagal Mengaktifkan Notifikasi', describeFcmError(err), null);
+                })
+                .finally(function () {
+                    nudgeBtn.dataset.loading = '0';
+                    nudgeBtn.classList.remove('opacity-60');
+                });
+            return;
+        }
+
         const btn = e.target.closest('.fcm-toggle-btn');
         if (!btn || btn.dataset.loading === '1') return;
 
@@ -245,8 +407,9 @@
         const isSubscribed = Boolean(localStorage.getItem(STORAGE_KEY));
         const action = isSubscribed ? unsubscribeBrowser() : subscribeBrowser();
 
-        action.catch(function () {
-            showFcmToast('Gagal Memproses Notifikasi', 'Pastikan koneksi HTTPS aktif dan coba lagi.', null);
+        action.catch(function (err) {
+            console.error('FCM Toggle Error:', err);
+            showFcmToast('Gagal Memproses Notifikasi', describeFcmError(err), null);
         }).finally(function () {
             btn.dataset.loading = '0';
             btn.classList.remove('opacity-60');
@@ -256,10 +419,16 @@
     messaging.onMessage(function (payload) {
         const notification = (payload && payload.notification) || {};
         const data = (payload && payload.data) || {};
+        let targetUrl = data.url || null;
+        if (targetUrl) {
+            try {
+                targetUrl = new URL(targetUrl, window.location.origin).href;
+            } catch (e) {}
+        }
         showFcmToast(
-            notification.title || data.title || 'Update Liga Dam Batu',
-            notification.body || data.body || '',
-            data.url || null
+            data.title || notification.title || 'Update Liga Dam Batu',
+            data.body || notification.body || '',
+            targetUrl
         );
     });
 })();

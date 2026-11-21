@@ -87,26 +87,42 @@ class FcmPreparationTest extends TestCase
         // Pastikan manifest dan sw tidak tercatat di visitor_logs
         $this->assertEquals(0, VisitorLog::whereIn('path', ['/manifest.json', '/firebase-messaging-sw.js'])->count());
 
-        // Saat client config terisi penuh, SW menyertakan config Firebase dan tidak membocorkan private key
+        // VAPID placeholder harus dianggap belum siap
         config()->set('services.fcm.enabled', true);
         config()->set('services.fcm.project_id', 'dambatu-test');
         config()->set('services.fcm.api_key', 'AIzaFakePublicKey123');
         config()->set('services.fcm.messaging_sender_id', '123456789');
         config()->set('services.fcm.app_id', '1:123456789:web:abcdef');
-        config()->set('services.fcm.vapid_key', 'BPublicVapidKey123');
+        config()->set('services.fcm.vapid_key', 'TEMPEL_VAPID_KEY_DI_SINI');
+        $this->assertFalse(app(FcmService::class)->isClientReady());
+
+        // Saat client config terisi penuh dengan VAPID valid, SW menyertakan guard anti-duplikat & tag
+        config()->set('services.fcm.vapid_key', 'B' . str_repeat('AbCdEfGh1234', 7));
+        $this->assertTrue(app(FcmService::class)->isClientReady());
 
         $swEnabled = $this->get('/firebase-messaging-sw.js');
         $swEnabled->assertStatus(200);
         $this->assertStringContainsString('firebase.initializeApp', $swEnabled->getContent());
         $this->assertStringContainsString('onBackgroundMessage', $swEnabled->getContent());
+        $this->assertStringContainsString('payload.notification', $swEnabled->getContent());
+        $this->assertStringContainsString('self.location.origin', $swEnabled->getContent());
+        $this->assertStringContainsString('tag:', $swEnabled->getContent());
         $this->assertStringContainsString('dambatu-test', $swEnabled->getContent());
         $this->assertStringNotContainsString('private_key', $swEnabled->getContent());
 
-        // Halaman publik merender tombol lonceng FCM & script fcm_script.blade.php tanpa error Blade
-        $homeWithFcm = $this->get('/');
-        $homeWithFcm->assertStatus(200);
-        $homeWithFcm->assertSee('fcm-toggle-btn');
-        $homeWithFcm->assertSee('data-cfasync="false"', false);
+        // Halaman Dashboard, Klasemen, dan Berita merender modal opt-in & card kecil ajakan notifikasi
+        foreach (['/', '/klasemen', '/berita'] as $publicUrl) {
+            $page = $this->get($publicUrl);
+            $page->assertStatus(200);
+            $page->assertSee('fcm-toggle-btn');
+            $page->assertSee('id="fcmPromptModal"', false);
+            $page->assertSee('id="fcmPromptYesBtn"', false);
+            $page->assertSee('id="fcmPromptLaterBtn"', false);
+            $page->assertSee('id="fcmPromptNoBtn"', false);
+            $page->assertSee('fcm-nudge-card');
+            $page->assertSee('fcm-nudge-enable-btn');
+            $page->assertSee('data-cfasync="false"', false);
+        }
     }
 
     public function test_visitor_can_subscribe_and_unsubscribe_fcm_token(): void
@@ -306,13 +322,20 @@ class FcmPreparationTest extends TestCase
             ->assertExitCode(0);
 
         // Total HTTP requests ke FCM send endpoint harus tepat 4 (2 untuk skor + 1 berita langsung + 1 berita terjadwal)
+        // Memastikan payload data-only agar tidak muncul notifikasi ganda di Android/Chrome
         Http::assertSent(function (HttpClientRequest $req) {
             return str_contains($req->url(), 'fcm.googleapis.com/v1/projects/dambatu-test/messages:send')
+                && !isset($req['message']['notification'])
+                && !isset($req['message']['webpush']['notification'])
+                && ($req['message']['webpush']['headers']['Urgency'] ?? '') === 'high'
                 && ($req['message']['data']['type'] ?? '') === 'skor'
-                && str_contains((string) ($req['message']['notification']['body'] ?? ''), '31 - 28');
+                && !empty($req['message']['data']['title'])
+                && !empty($req['message']['data']['tag'])
+                && str_contains((string) ($req['message']['data']['body'] ?? ''), '31 - 28');
         });
         Http::assertSent(function (HttpClientRequest $req) {
             return str_contains($req->url(), 'fcm.googleapis.com/v1/projects/dambatu-test/messages:send')
+                && !isset($req['message']['notification'])
                 && ($req['message']['data']['slug'] ?? '') === 'jadwal-malam-ini-resmi-rilis';
         });
         Http::assertSentCount(5); // 1 OAuth + 4 FCM messages:send
@@ -378,10 +401,15 @@ class FcmPreparationTest extends TestCase
 
         Http::assertSent(function (HttpClientRequest $req) use ($token) {
             return str_contains($req->url(), 'fcm.googleapis.com/v1/projects/dambatu-test/messages:send')
+                && !isset($req['message']['notification'])
+                && !isset($req['message']['webpush']['notification'])
+                && ($req['message']['webpush']['headers']['Urgency'] ?? '') === 'high'
                 && ($req['message']['token'] ?? '') === $token
-                && ($req['message']['notification']['title'] ?? '') === 'Uji Coba Push Liga'
-                && ($req['message']['notification']['body'] ?? '') === 'Notifikasi dari admin berhasil mendarat.'
-                && ($req['message']['data']['type'] ?? '') === 'test';
+                && ($req['message']['data']['title'] ?? '') === 'Uji Coba Push Liga'
+                && ($req['message']['data']['body'] ?? '') === 'Notifikasi dari admin berhasil mendarat.'
+                && ($req['message']['data']['url'] ?? '') === '/'
+                && ($req['message']['data']['type'] ?? '') === 'test'
+                && !empty($req['message']['data']['tag']);
         });
     }
 }

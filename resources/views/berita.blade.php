@@ -13,6 +13,8 @@
     </div>
 </div>
 
+@include('partials.fcm_nudge_card')
+
 <!-- Filter Bar -->
 <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs mb-8">
     <form class="grid grid-cols-1 sm:grid-cols-12 gap-3" method="get" action="{{ route('berita.index') }}">

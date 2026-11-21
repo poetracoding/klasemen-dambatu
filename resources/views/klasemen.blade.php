@@ -25,6 +25,8 @@
     </div>
 </div>
 
+@include('partials.fcm_nudge_card')
+
 @if ($liga->status === 'selesai' && !empty($klasemen))
     @php $winner = $klasemen[0]; @endphp
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 p-6 mb-6 shadow-md shadow-amber-500/20 text-slate-950 flex items-center gap-5">
