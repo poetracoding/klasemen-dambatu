@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\JadwalController;
 use App\Http\Controllers\Admin\PengaturanController;
 use App\Http\Controllers\Admin\PertandinganController;
 use App\Http\Controllers\Admin\PosterController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\TimController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\BeritaController;
@@ -120,6 +121,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/pengaturan/backup-restore', [PengaturanController::class, 'backupRestore'])->name('pengaturan.backup_restore');
     Route::get('/pengaturan/analytics', [PengaturanController::class, 'analytics'])->name('pengaturan.analytics');
     Route::post('/pengaturan/analytics/reset', [PengaturanController::class, 'resetAnalytics'])->name('pengaturan.analytics.reset');
+    Route::get('/pengaturan/report', [ReportController::class, 'index'])->name('pengaturan.report');
+    Route::get('/pengaturan/report/pdf', [ReportController::class, 'pdf'])->name('pengaturan.report.pdf');
     Route::post('/pengaturan/liga', [PengaturanController::class, 'updateLiga'])->name('pengaturan.update_liga');
     Route::post('/pengaturan/test-fcm', [PengaturanController::class, 'testFcm'])->name('pengaturan.test_fcm');
     Route::post('/pengaturan/password', [PengaturanController::class, 'gantiPassword'])->name('pengaturan.ganti_password');

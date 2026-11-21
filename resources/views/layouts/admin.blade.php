@@ -151,6 +151,7 @@
                         ['url' => route('admin.pengaturan.password'), 'label' => 'Ganti Password', 'icon' => 'bi-shield-lock', 'active' => request()->routeIs('admin.pengaturan.password')],
                         ['url' => route('admin.pengaturan.backup_restore'), 'label' => 'Backup & Restore', 'icon' => 'bi-cloud-arrow-down', 'active' => request()->routeIs('admin.pengaturan.backup_restore')],
                         ['divider' => true],
+                        ['url' => route('admin.pengaturan.report'), 'label' => 'Laporan Hasil', 'icon' => 'bi-file-earmark-bar-graph', 'active' => request()->routeIs('admin.pengaturan.report*')],
                         ['url' => route('admin.pengaturan.analytics'), 'label' => 'Analytics', 'icon' => 'bi-graph-up-arrow', 'active' => request()->routeIs('admin.pengaturan.analytics')],
                     ];
                 @endphp
