@@ -63,6 +63,12 @@ class PengaturanController extends Controller
         return view('admin.monopoli', compact('liga'));
     }
 
+    public function flappyBird()
+    {
+        $liga = Liga::current();
+        return view('admin.flappy_bird', compact('liga'));
+    }
+
     public function analytics()
     {
         $liga = Liga::current();

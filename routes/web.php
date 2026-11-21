@@ -125,6 +125,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/pengaturan/report/pdf', [ReportController::class, 'pdf'])->name('pengaturan.report.pdf');
     Route::get('/pengaturan/monopoli', [PengaturanController::class, 'monopoli'])->name('pengaturan.monopoli');
     Route::get('/monopoli', fn () => redirect()->route('admin.pengaturan.monopoli'))->name('monopoli');
+    Route::get('/pengaturan/flappy-bird', [PengaturanController::class, 'flappyBird'])->name('pengaturan.flappy_bird');
+    Route::get('/flappy-bird', fn () => redirect()->route('admin.pengaturan.flappy_bird'))->name('flappy_bird');
     Route::post('/pengaturan/liga', [PengaturanController::class, 'updateLiga'])->name('pengaturan.update_liga');
     Route::post('/pengaturan/test-fcm', [PengaturanController::class, 'testFcm'])->name('pengaturan.test_fcm');
     Route::post('/pengaturan/password', [PengaturanController::class, 'gantiPassword'])->name('pengaturan.ganti_password');
