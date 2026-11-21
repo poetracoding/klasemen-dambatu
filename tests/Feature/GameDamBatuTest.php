@@ -41,6 +41,18 @@ class GameDamBatuTest extends TestCase
         $res->assertSee('shuffleOverlay');
         $res->assertSee('anim-place-left');
 
+        // Cek elemen UI/UX 3D baru pada halaman /game
+        $res->assertSee('dam-batu-3d.css');
+        $res->assertSee('table3dStage');
+        $res->assertSee('btnCycleCamera');
+        $res->assertSee('data-felt-theme="emerald"', false);
+        $res->assertSee('data-felt-theme="royal"', false);
+        $res->assertSee('data-felt-theme="classic"', false);
+        $res->assertSee('hiddenDeckVisual');
+        $res->assertSee('btnZoomIn');
+        $res->assertSee('btnZoomOut');
+        $res->assertSee('btnToggleHistory');
+
         // Tercatat di visitor_logs sebagai 'Game Dam Batu' dengan perangkat mobile
         $this->assertEquals(1, VisitorLog::where('path', '/game')->where('page_title', 'Game Dam Batu')->where('device_type', 'mobile')->count());
 

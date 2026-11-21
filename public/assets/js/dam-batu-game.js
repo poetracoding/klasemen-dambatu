@@ -3,6 +3,8 @@
 
     const STATS_KEY = 'dam_batu_stats_v1';
     const MUTE_KEY = 'dam_batu_muted_v1';
+    const CAMERA_KEY = 'dam_batu_camera_v1';
+    const FELT_KEY = 'dam_batu_felt_v1';
 
     const PIP_POSITIONS = {
         0: [],
@@ -29,20 +31,35 @@
         hard: 'Sulit (Pro)',
     };
 
+    const CAMERA_ORDER = ['3d', 'cinematic', '2d'];
+    const CAMERA_LABELS = {
+        '3d': '3D Standar',
+        cinematic: '3D Sinematik',
+        '2d': '2D Atas',
+    };
+
     const AI_NAMES = ['AI Budi', 'AI Agus', 'AI Rina'];
 
     let state = {
-        aiCount: 3,           // 2 (3 orang, 8 kartu) atau 3 (4 orang, 6 kartu)
-        difficulty: 'normal', // easy | normal | hard
-        players: [],          // [{ id, name, isHuman, hand: [], passed: false }]
-        hiddenTiles: [],      // 4 kartu sisa tertutup
-        board: [],            // [{ id, left, right, isDouble, ownerId }]
+        aiCount: 3,              // 2 (3 orang, 8 kartu) atau 3 (4 orang, 6 kartu)
+        difficulty: 'normal',    // easy | normal | hard
+        camera: '3d',            // 3d | cinematic | 2d
+        felt: 'emerald',         // emerald | royal | classic
+        boardZoom: 1,            // 0.75 .. 1.25
+        autoFitScale: 1,
+        userZoomOverride: false,
+        historyOpen: false,
+        players: [],             // [{ id, name, isHuman, hand: [], passed: false }]
+        hiddenTiles: [],         // 4 kartu sisa tertutup
+        board: [],               // [{ id, left, right, isDouble, ownerId }]
+        anchorTileId: null,
         leftEnd: null,
         rightEnd: null,
         currentTurn: 0,
         openingTileId: null,
         consecutivePasses: 0,
-        passedNumbers: {},    // { playerIdx: Set<number> }
+        passedNumbers: {},       // { playerIdx: Set<number> }
+        lastActionByPlayer: {},  // { playerIdx: { text, kind } }
         selectedTileId: null,
         lastPlacedId: null,
         lastPlacedSide: 'center',
@@ -58,8 +75,10 @@
         muted: false,
     };
 
-    // --- Audio (Web Audio API, tanpa file eksternal) ---
+    // --- Audio (Web Audio API: Ceramic Clack + Noise Burst) ---
     let audioCtx = null;
+    let cachedNoiseBuffer = null;
+
     function getAudioCtx() {
         if (state.muted) return null;
         if (!audioCtx) {
@@ -70,6 +89,20 @@
             audioCtx.resume().catch(() => {});
         }
         return audioCtx;
+    }
+
+    function getNoiseBuffer(ctx) {
+        if (cachedNoiseBuffer && cachedNoiseBuffer.sampleRate === ctx.sampleRate) {
+            return cachedNoiseBuffer;
+        }
+        const length = Math.floor(ctx.sampleRate * 0.08);
+        const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (length * 0.28));
+        }
+        cachedNoiseBuffer = buffer;
+        return buffer;
     }
 
     function playTone(freq, duration, type = 'triangle', volume = 0.12, delay = 0) {
@@ -89,15 +122,43 @@
         } catch (e) {}
     }
 
+    function playCeramicClick(filterFreq = 1600, gainPeak = 0.22, delay = 0) {
+        const ctx = getAudioCtx();
+        if (!ctx) return;
+        try {
+            const src = ctx.createBufferSource();
+            src.buffer = getNoiseBuffer(ctx);
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(filterFreq, ctx.currentTime + delay);
+            filter.Q.setValueAtTime(2.4, ctx.currentTime + delay);
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(gainPeak, ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.055);
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            src.start(ctx.currentTime + delay);
+            src.stop(ctx.currentTime + delay + 0.065);
+        } catch (e) {}
+    }
+
     function playSoundShuffle() {
         for (let i = 0; i < 6; i++) {
-            playTone(180 + (i % 3) * 55, 0.045, 'triangle', 0.08, i * 0.14);
+            playCeramicClick(1250 + (i % 3) * 320, 0.16, i * 0.13);
+            playTone(170 + (i % 3) * 45, 0.04, 'triangle', 0.05, i * 0.13);
         }
     }
 
     function playSoundPlace() {
-        playTone(220, 0.06, 'triangle', 0.16, 0);
-        playTone(480, 0.04, 'sine', 0.08, 0.015);
+        playCeramicClick(1850, 0.25, 0);
+        playTone(210, 0.055, 'triangle', 0.15, 0);
+        playTone(540, 0.035, 'sine', 0.07, 0.012);
+    }
+
+    function playSoundSelect() {
+        playCeramicClick(2300, 0.12, 0);
+        playTone(420, 0.03, 'sine', 0.06, 0);
     }
 
     function playSoundPass() {
@@ -115,6 +176,80 @@
         playTone(262, 0.22, 'sine', 0.1, 0.14);
     }
 
+    // --- 3D Table Preferences & Parallax ---
+    function getEffectiveZoom() {
+        if (state.userZoomOverride) {
+            return state.boardZoom;
+        }
+        return state.autoFitScale || 1;
+    }
+
+    function syncTablePreferences() {
+        const card = document.getElementById('gameTableCard');
+        const surface = document.getElementById('table3dSurface');
+        const camLabel = document.getElementById('cameraLabel');
+        const zoomReset = document.getElementById('btnZoomReset');
+        const zoomOutBtn = document.getElementById('btnZoomOut');
+        const zoomInBtn = document.getElementById('btnZoomIn');
+
+        if (card) {
+            card.setAttribute('data-camera', state.camera);
+            card.setAttribute('data-felt', state.felt);
+        }
+
+        const effectiveZoom = getEffectiveZoom();
+        if (surface) {
+            surface.style.setProperty('--board-zoom', String(effectiveZoom));
+            if (state.camera === '2d') {
+                surface.style.setProperty('--tilt-x', '0deg');
+                surface.style.setProperty('--tilt-y', '0deg');
+            }
+        }
+
+        if (camLabel) {
+            camLabel.textContent = CAMERA_LABELS[state.camera] || '3D Standar';
+        }
+
+        if (zoomReset) {
+            zoomReset.textContent = Math.round(effectiveZoom * 100) + '%';
+        }
+        if (zoomOutBtn) zoomOutBtn.disabled = state.boardZoom <= 0.75;
+        if (zoomInBtn) zoomInBtn.disabled = state.boardZoom >= 1.25;
+
+        document.querySelectorAll('[data-felt-theme]').forEach(btn => {
+            const val = btn.getAttribute('data-felt-theme');
+            const active = val === state.felt;
+            btn.className = 'inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ' +
+                (active
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700');
+        });
+    }
+
+    function bind3dParallax() {
+        const viewport = document.getElementById('boardViewport');
+        const surface = document.getElementById('table3dSurface');
+        if (!viewport || !surface) return;
+
+        const finePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+        if (!finePointer) return;
+
+        viewport.addEventListener('mousemove', (e) => {
+            if (state.camera === '2d') return;
+            const rect = viewport.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            const nx = ((e.clientX - rect.left) / rect.width) - 0.5;
+            const ny = ((e.clientY - rect.top) / rect.height) - 0.5;
+            surface.style.setProperty('--tilt-x', (nx * 4.5).toFixed(2) + 'deg');
+            surface.style.setProperty('--tilt-y', (-ny * 3.5).toFixed(2) + 'deg');
+        });
+
+        viewport.addEventListener('mouseleave', () => {
+            surface.style.setProperty('--tilt-x', '0deg');
+            surface.style.setProperty('--tilt-y', '0deg');
+        });
+    }
+
     // --- Fullscreen ---
     function isFullscreenActive() {
         const wrapper = document.getElementById('gameFullscreenWrapper');
@@ -123,13 +258,17 @@
 
     function syncFullscreenUI() {
         const btn = document.getElementById('btnToggleFullscreen');
-        if (!btn) return;
-        if (isFullscreenActive()) {
-            btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i> <span>Kecilkan Meja</span>';
-            btn.title = 'Keluar Mode Layar Penuh';
-        } else {
-            btn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i> <span>Perluas Meja</span>';
-            btn.title = 'Perluas Meja (Layar Penuh)';
+        if (btn) {
+            if (isFullscreenActive()) {
+                btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i> <span>Kecilkan Meja</span>';
+                btn.title = 'Keluar Mode Layar Penuh';
+            } else {
+                btn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i> <span>Perluas Meja</span>';
+                btn.title = 'Perluas Meja (Layar Penuh)';
+            }
+        }
+        if (state.board.length > 0) {
+            requestAnimationFrame(() => renderBoard());
         }
     }
 
@@ -139,7 +278,6 @@
             return;
         }
 
-        // Jeda sementara giliran AI selama dialog konfirmasi terbuka
         const hadAiTimer = Boolean(state.aiTimer);
         if (state.aiTimer) {
             clearTimeout(state.aiTimer);
@@ -262,6 +400,27 @@
         if (elW) elW.textContent = totalWin;
         if (elL) elL.textContent = totalLose;
         if (elR) elR.textContent = rate + '%';
+    }
+
+    function launchConfetti() {
+        const container = document.getElementById('victoryConfetti');
+        if (!container) return;
+        const colors = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#38bdf8'];
+        container.innerHTML = '';
+
+        for (let i = 0; i < 34; i++) {
+            const piece = document.createElement('span');
+            piece.className = 'confetti-piece';
+            piece.style.left = Math.round(Math.random() * 100) + '%';
+            piece.style.backgroundColor = colors[i % colors.length];
+            piece.style.animationDuration = (1.6 + Math.random() * 1.1).toFixed(2) + 's';
+            piece.style.animationDelay = (Math.random() * 0.45).toFixed(2) + 's';
+            container.appendChild(piece);
+        }
+
+        setTimeout(() => {
+            if (container) container.innerHTML = '';
+        }, 3000);
     }
 
     // --- Deck & Helpers ---
@@ -444,9 +603,22 @@
         }
     }
 
+    function renderMoveHistory() {
+        const listEl = document.getElementById('moveHistoryList');
+        if (!listEl) return;
+        if (state.logs.length === 0) {
+            listEl.innerHTML = '<li class="text-slate-400">Belum ada langkah dimainkan.</li>';
+            return;
+        }
+        listEl.innerHTML = state.logs.map((entry, idx) =>
+            `<li class="${idx === 0 ? 'text-amber-200 font-semibold' : 'text-slate-300/90'}">&bull; ${entry}</li>`
+        ).join('');
+    }
+
     function addLog(text) {
         state.logs.unshift(text);
-        if (state.logs.length > 6) state.logs.pop();
+        if (state.logs.length > 12) state.logs.pop();
+        renderMoveHistory();
     }
 
     function syncStartRestartButtons() {
@@ -504,10 +676,14 @@
         state.isRunning = false;
         state.isFinished = false;
         state.board = [];
+        state.anchorTileId = null;
+        state.autoFitScale = 1;
         state.leftEnd = null;
         state.rightEnd = null;
         state.selectedTileId = null;
         state.lastPlacedId = null;
+        state.lastActionByPlayer = {};
+        state.logs = [];
         state.players = [{ id: 0, name: 'Anda', isHuman: true, hand: [], passed: false }];
         for (let i = 1; i <= state.aiCount; i++) {
             state.players.push({
@@ -521,14 +697,18 @@
 
         updateStartSummaryText();
         syncStartRestartButtons();
+        syncTablePreferences();
+        renderMoveHistory();
         renderOpponents();
         renderBoard();
 
         const handEl = document.getElementById('playerHand');
         const countEl = document.getElementById('playerCardCount');
+        const hintEl = document.getElementById('playableHintBadge');
         if (countEl) countEl.textContent = 'Belum dimulai';
+        if (hintEl) hintEl.classList.add('hidden');
         if (handEl) {
-            handEl.innerHTML = '<div class="text-xs text-slate-400 py-4">Klik <strong>Start Game</strong> untuk mengocok dan membagikan batu.</div>';
+            handEl.innerHTML = '<div class="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">Klik <strong>Start Game</strong> untuk mengocok dan membagikan batu.</div>';
         }
     }
 
@@ -541,13 +721,17 @@
         state.isRunning = false;
         state.isFinished = false;
         state.board = [];
+        state.anchorTileId = null;
+        state.autoFitScale = 1;
         state.leftEnd = null;
         state.rightEnd = null;
         state.selectedTileId = null;
         state.lastPlacedId = null;
+        state.lastActionByPlayer = {};
         state.animateLatest = false;
 
         syncStartRestartButtons();
+        syncTablePreferences();
         playSoundShuffle();
 
         const turnBadge = document.getElementById('turnIndicator');
@@ -557,7 +741,7 @@
 
         const handEl = document.getElementById('playerHand');
         if (handEl) {
-            handEl.innerHTML = '<div class="text-xs text-indigo-500 font-semibold py-4 animate-pulse">Membagikan batu ke tangan Anda...</div>';
+            handEl.innerHTML = '<div class="text-xs text-indigo-500 font-semibold py-4 animate-pulse">Membagikan batu ke rak tangan Anda...</div>';
         }
 
         state.shuffleTimer = setTimeout(() => {
@@ -596,12 +780,15 @@
         state.players = players;
         state.hiddenTiles = hiddenTiles;
         state.board = [];
+        state.anchorTileId = null;
+        state.autoFitScale = 1;
         state.leftEnd = null;
         state.rightEnd = null;
         state.currentTurn = starter.playerIdx;
         state.openingTileId = starter.tile.id;
         state.consecutivePasses = 0;
         state.passedNumbers = {};
+        state.lastActionByPlayer = {};
         players.forEach((_, idx) => { state.passedNumbers[idx] = new Set(); });
         state.selectedTileId = null;
         state.lastPlacedId = null;
@@ -611,9 +798,10 @@
         state.isFinished = false;
         state.logs = [];
 
-        addLog(`${players[starter.playerIdx].name} memulai ronde dengan batu ${starter.tile.a}|${starter.tile.b}.`);
+        addLog(`${players[starter.playerIdx].name} membuka ronde dengan batu ${starter.tile.a}|${starter.tile.b}.`);
 
         syncStartRestartButtons();
+        syncTablePreferences();
         renderAll();
         state.justDealt = false;
         scheduleNextTurnIfAi();
@@ -633,6 +821,7 @@
         if (state.board.length === 0) {
             placed = { id: tile.id, left: tile.a, right: tile.b, isDouble: tile.a === tile.b, ownerId: playerIdx };
             state.board.push(placed);
+            state.anchorTileId = placed.id;
             state.leftEnd = placed.left;
             state.rightEnd = placed.right;
             placedSide = 'center';
@@ -668,10 +857,15 @@
         state.lastPlacedSide = placedSide;
         state.animateLatest = true;
         state.openingTileId = null;
+        state.lastActionByPlayer = {
+            [playerIdx]: { text: `Taruh ${tile.a}|${tile.b}`, kind: 'play' },
+        };
 
         playSoundPlace();
         const sideLabel = placedSide === 'center' ? 'tengah' : (placedSide === 'left' ? 'kiri' : 'kanan');
         addLog(`${player.name} menaruh ${tile.a}|${tile.b} di ${sideLabel}.`);
+
+        syncTablePreferences();
 
         if (player.hand.length === 0) {
             finishRound('empty', [playerIdx]);
@@ -681,6 +875,7 @@
         state.currentTurn = (state.currentTurn + 1) % state.players.length;
         renderAll();
         state.animateLatest = false;
+        scrollViewportToSide(placedSide);
         scheduleNextTurnIfAi();
     }
 
@@ -691,6 +886,9 @@
         player.passed = true;
         state.consecutivePasses++;
         state.selectedTileId = null;
+        state.lastActionByPlayer = {
+            [playerIdx]: { text: 'LEWAT', kind: 'pass' },
+        };
 
         if (state.leftEnd !== null) state.passedNumbers[playerIdx].add(state.leftEnd);
         if (state.rightEnd !== null) state.passedNumbers[playerIdx].add(state.rightEnd);
@@ -746,6 +944,7 @@
         if (humanWon) {
             recordStat('win');
             playSoundWin();
+            launchConfetti();
         } else if (isDraw) {
             recordStat('draw');
             playSoundWin();
@@ -759,64 +958,92 @@
         openRoundModal(reason, winnerIndices);
     }
 
-    // --- Visual Domino HTML Builder ---
-    function buildPipGridHtml(val, small = false) {
+    function scrollViewportToSide(side) {
+        const vp = document.getElementById('boardViewport');
+        if (!vp || vp.scrollWidth <= vp.clientWidth) return;
+        if (side === 'left') {
+            vp.scrollTo({ left: 0, behavior: 'smooth' });
+        } else if (side === 'right') {
+            vp.scrollTo({ left: vp.scrollWidth, behavior: 'smooth' });
+        }
+    }
+
+    // --- Visual Domino 3D HTML Builder ---
+    function buildPipGridHtml(val, sizeMode = 'hand') {
         const positions = PIP_POSITIONS[val] || [];
         const color = PIP_COLORS[val] || '#0f172a';
-        const dotSize = small ? 'w-1.5 h-1.5' : 'w-2 h-2';
+        const dotSize = sizeMode === 'mini'
+            ? 'w-1.5 h-1.5'
+            : (sizeMode === 'snake'
+                ? ''
+                : (sizeMode === 'board' ? 'w-1.5 h-1.5 sm:w-2 sm:h-2' : 'w-2 h-2 sm:w-2.5 sm:h-2.5'));
+        const gridPad = sizeMode === 'snake' ? 'p-[2px]' : 'p-0.5 sm:p-1';
         let cells = '';
         for (let i = 0; i < 9; i++) {
             if (positions.includes(i)) {
-                cells += `<span class="flex items-center justify-center"><span class="${dotSize} rounded-full" style="background-color:${color}"></span></span>`;
+                cells += `<span class="flex items-center justify-center"><span class="domino-pip ${dotSize}" style="background-color:${color}"></span></span>`;
             } else {
                 cells += '<span></span>';
             }
         }
-        return `<div class="grid grid-cols-3 grid-rows-3 w-full h-full p-0.5">${cells}</div>`;
+        return `<div class="grid grid-cols-3 grid-rows-3 w-full h-full ${gridPad}">${cells}</div>`;
     }
 
     function buildDominoHtml(a, b, opts = {}) {
         const {
             vertical = false,
-            small = false,
+            variant = 'hand', // board | hand | mini | snake
             playable = false,
             selected = false,
             dimmed = false,
             isLatest = false,
+            showImpactRing = false,
             clickable = false,
             tileId = null,
             animClass = '',
             animDelayMs = 0,
         } = opts;
 
-        const dims = vertical
-            ? (small ? 'w-7 h-14 sm:w-8 sm:h-16 flex-col' : 'w-11 h-22 sm:w-14 sm:h-28 flex-col')
-            : (small ? 'w-14 h-7 sm:w-16 sm:h-8 flex-row' : 'w-20 h-10 sm:w-24 sm:h-12 flex-row');
+        let dims;
+        if (variant === 'mini') {
+            dims = vertical ? 'w-7 h-14 sm:w-8 sm:h-16 flex-col' : 'w-14 h-7 sm:w-16 sm:h-8 flex-row';
+        } else if (variant === 'snake') {
+            dims = vertical ? 'domino-3d--snake-v flex-col' : 'domino-3d--snake-h flex-row';
+        } else if (variant === 'board') {
+            dims = vertical ? 'w-8 h-16 sm:w-10 sm:h-20 flex-col' : 'w-16 h-8 sm:w-20 sm:h-10 flex-row';
+        } else {
+            dims = vertical ? 'w-12 h-24 sm:w-14 sm:h-28 flex-col' : 'w-24 h-12 sm:w-28 sm:h-14 flex-row';
+        }
 
-        const divider = vertical ? 'w-full h-px bg-slate-300' : 'h-full w-px bg-slate-300';
+        const dividerClass = vertical ? 'domino-3d-divider w-full h-[2px]' : 'domino-3d-divider h-full w-[2px]';
         const halfSize = vertical ? 'w-full h-1/2' : 'w-1/2 h-full';
 
-        let stateClasses = 'bg-white border-slate-300 shadow-xs';
+        let stateClass = variant === 'snake'
+            ? 'domino-3d--board domino-3d--snake'
+            : `domino-3d--${variant}`;
         if (selected) {
-            stateClasses = 'bg-indigo-50 border-indigo-600 ring-2 ring-indigo-500 -translate-y-2 shadow-lg';
+            stateClass += ' domino-3d--selected';
         } else if (playable) {
-            stateClasses = 'bg-white border-indigo-400 ring-2 ring-indigo-400/50 hover:-translate-y-1.5 hover:border-indigo-600 shadow-md cursor-pointer';
+            stateClass += ' domino-3d--playable';
         } else if (dimmed) {
-            stateClasses = 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed';
+            stateClass += ' domino-3d--dimmed';
         } else if (isLatest) {
-            stateClasses = 'bg-amber-50 border-amber-400 ring-2 ring-amber-400/70 shadow-md';
+            stateClass += ' domino-3d--latest';
         }
 
         const tag = clickable ? 'button type="button"' : 'div';
         const closeTag = clickable ? '</button>' : '</div>';
         const dataAttr = tileId !== null ? `data-tile-id="${tileId}"` : '';
-        const delayStyle = animDelayMs > 0 ? `animation-delay:${animDelayMs}ms;` : '';
+        const delayStyle = animDelayMs > 0 ? `style="animation-delay:${animDelayMs}ms;"` : '';
+        const impactRing = (isLatest && showImpactRing) ? '<span class="domino-impact-ring" aria-hidden="true"></span>' : '';
 
+        const snakeHalfPad = variant === 'snake' ? 'p-[1px]' : 'p-0.5';
         return `
-            <${tag} ${dataAttr} class="domino-tile inline-flex ${dims} rounded-lg border-2 ${stateClasses} ${animClass} overflow-hidden transition-all duration-150 select-none touch-manipulation shrink-0" style="background-color:#ffffff;${delayStyle}">
-                <div class="${halfSize} flex items-center justify-center p-0.5">${buildPipGridHtml(a, small)}</div>
-                <div class="${divider} shrink-0"></div>
-                <div class="${halfSize} flex items-center justify-center p-0.5">${buildPipGridHtml(b, small)}</div>
+            <${tag} ${dataAttr} class="domino-tile domino-3d ${stateClass} ${dims} ${animClass} touch-manipulation" ${delayStyle}>
+                ${impactRing}
+                <div class="${halfSize} flex items-center justify-center ${snakeHalfPad}">${buildPipGridHtml(a, variant)}</div>
+                <div class="${dividerClass}"><span class="domino-brass-pin" aria-hidden="true"></span></div>
+                <div class="${halfSize} flex items-center justify-center ${snakeHalfPad}">${buildPipGridHtml(b, variant)}</div>
             ${closeTag}
         `;
     }
@@ -832,14 +1059,21 @@
         wrap.innerHTML = opponents.map(p => {
             const isTurn = state.isRunning && state.currentTurn === p.id;
             const miniCards = Array.from({ length: p.hand.length }).map(() =>
-                '<span class="inline-block w-2 h-3.5 sm:w-2.5 sm:h-4 rounded-[2px] sm:rounded-[3px] bg-indigo-600 border border-indigo-400/60 shadow-2xs"></span>'
+                '<span class="opponent-mini-stone"></span>'
             ).join('');
+
+            const lastAct = state.lastActionByPlayer[p.id];
+            const actionBadge = lastAct
+                ? `<span class="ai-action-bubble px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold border ${lastAct.kind === 'pass' ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}">${lastAct.text}</span>`
+                : '';
 
             const statusText = !state.hasStarted
                 ? '<span class="text-[9px] sm:text-[10px] text-slate-400">Siap</span>'
-                : (p.passed
-                    ? '<span class="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 uppercase">Lewat</span>'
-                    : (isTurn ? '<span class="text-[9px] sm:text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">Jalan...</span>' : ''));
+                : (isTurn
+                    ? '<span class="text-[9px] sm:text-[10px] font-bold text-indigo-600 dark:text-indigo-400 animate-pulse">Berpikir...</span>'
+                    : (p.passed
+                        ? '<span class="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 uppercase">Lewat</span>'
+                        : actionBadge));
 
             return `
                 <div class="rounded-xl sm:rounded-2xl p-2 sm:p-3.5 border transition-all ${isTurn ? 'bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-400 ring-2 ring-indigo-400/40 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-2xs'}">
@@ -857,7 +1091,7 @@
                             ${p.hand.length}
                         </span>
                     </div>
-                    <div class="flex items-center justify-between gap-1 min-h-[16px] sm:min-h-[20px]">
+                    <div class="flex items-center justify-between gap-1 min-h-[18px] sm:min-h-[20px]">
                         <div class="flex flex-wrap items-center gap-0.5">${miniCards || (state.hasStarted ? '<span class="text-[10px] text-emerald-600 font-bold">Habis!</span>' : '<span class="text-[10px] text-slate-400">-</span>')}</div>
                         ${statusText}
                     </div>
@@ -866,8 +1100,195 @@
         }).join('');
     }
 
+    const SNAKE_UNIT = 34;
+    const SNAKE_GAP = 3;
+
+    function computeSnakeMaxHalfW(viewportEl) {
+        const w = viewportEl ? viewportEl.clientWidth : 360;
+        if (w < 460) return 120;
+        if (w < 720) return 185;
+        return 255;
+    }
+
+    function placeNextOnArm(cursor, matchVal, openVal, isDouble, maxHalfW) {
+        if (isDouble) {
+            const w = SNAKE_UNIT;
+            const h = SNAKE_UNIT * 2;
+            const x = cursor.dir === 'right' ? cursor.edgeX : cursor.edgeX - w;
+            const y = cursor.laneY - SNAKE_UNIT;
+            cursor.edgeX = cursor.dir === 'right' ? (x + w + SNAKE_GAP) : (x - SNAKE_GAP);
+            cursor.lastWasDouble = true;
+            return { x, y, w, h, vertical: true, a: matchVal, b: openVal };
+        }
+
+        const reachedEdge = cursor.dir === 'right'
+            ? (cursor.edgeX + SNAKE_UNIT * 2 > maxHalfW)
+            : (cursor.edgeX - SNAKE_UNIT * 2 < -maxHalfW);
+
+        if (reachedEdge && !cursor.lastWasDouble) {
+            const w = SNAKE_UNIT;
+            const h = SNAKE_UNIT * 2;
+            const prevDir = cursor.dir;
+            const x = prevDir === 'right'
+                ? (cursor.edgeX - SNAKE_GAP - SNAKE_UNIT)
+                : (cursor.edgeX + SNAKE_GAP);
+            const y = cursor.turnDir === 1
+                ? (cursor.laneY + (SNAKE_UNIT / 2) + SNAKE_GAP)
+                : (cursor.laneY - (SNAKE_UNIT / 2) - SNAKE_GAP - h);
+
+            // Sudut belok ke bawah (+1): atas menyambung batu sebelumnya (a = matchVal), bawah terbuka (b = openVal).
+            // Sudut belok ke atas (-1): bawah menyambung batu sebelumnya (b = matchVal), atas terbuka (a = openVal).
+            const a = cursor.turnDir === 1 ? matchVal : openVal;
+            const b = cursor.turnDir === 1 ? openVal : matchVal;
+
+            cursor.laneY += cursor.turnDir * (SNAKE_UNIT * 2 + SNAKE_GAP);
+            cursor.dir = prevDir === 'right' ? 'left' : 'right';
+            cursor.edgeX = cursor.dir === 'left' ? (x - SNAKE_GAP) : (x + w + SNAKE_GAP);
+            cursor.lastWasDouble = false;
+
+            return { x, y, w, h, vertical: true, a, b };
+        }
+
+        const w = SNAKE_UNIT * 2;
+        const h = SNAKE_UNIT;
+        const x = cursor.dir === 'right' ? cursor.edgeX : cursor.edgeX - w;
+        const y = cursor.laneY - (SNAKE_UNIT / 2);
+        const a = cursor.dir === 'right' ? matchVal : openVal;
+        const b = cursor.dir === 'right' ? openVal : matchVal;
+
+        cursor.edgeX = cursor.dir === 'right' ? (x + w + SNAKE_GAP) : (x - SNAKE_GAP);
+        cursor.lastWasDouble = false;
+        return { x, y, w, h, vertical: false, a, b };
+    }
+
+    function buildSnakeLayout(board, anchorTileId, maxHalfW, ghostSpec = null) {
+        if (!board || board.length === 0) {
+            return { tiles: [], ghosts: [], leftTip: null, rightTip: null, width: 0, height: 0 };
+        }
+
+        let anchorIdx = anchorTileId ? board.findIndex(t => t.id === anchorTileId) : -1;
+        if (anchorIdx < 0) anchorIdx = Math.floor(board.length / 2);
+
+        const anchorTile = board[anchorIdx];
+        const anchorW = anchorTile.isDouble ? SNAKE_UNIT : SNAKE_UNIT * 2;
+        const anchorH = anchorTile.isDouble ? SNAKE_UNIT * 2 : SNAKE_UNIT;
+        const placed = [{
+            tile: anchorTile,
+            id: anchorTile.id,
+            x: -anchorW / 2,
+            y: -anchorH / 2,
+            w: anchorW,
+            h: anchorH,
+            vertical: anchorTile.isDouble,
+            a: anchorTile.left,
+            b: anchorTile.right,
+            arm: 'center',
+        }];
+
+        const rightCursor = {
+            dir: 'right',
+            turnDir: 1,
+            laneY: 0,
+            edgeX: (anchorW / 2) + SNAKE_GAP,
+            lastWasDouble: anchorTile.isDouble,
+        };
+        const leftCursor = {
+            dir: 'left',
+            turnDir: -1,
+            laneY: 0,
+            edgeX: -(anchorW / 2) - SNAKE_GAP,
+            lastWasDouble: anchorTile.isDouble,
+        };
+
+        for (let i = anchorIdx - 1; i >= 0; i--) {
+            const t = board[i];
+            const pos = placeNextOnArm(leftCursor, t.right, t.left, t.isDouble, maxHalfW);
+            placed.push({ tile: t, id: t.id, arm: 'left', ...pos });
+        }
+
+        for (let i = anchorIdx + 1; i < board.length; i++) {
+            const t = board[i];
+            const pos = placeNextOnArm(rightCursor, t.left, t.right, t.isDouble, maxHalfW);
+            placed.push({ tile: t, id: t.id, arm: 'right', ...pos });
+        }
+
+        const leftTip = {
+            x: leftCursor.dir === 'right' ? (leftCursor.edgeX + 4) : (leftCursor.edgeX - 4),
+            y: leftCursor.laneY,
+            align: leftCursor.dir === 'right' ? 'right' : 'left',
+        };
+        const rightTip = {
+            x: rightCursor.dir === 'right' ? (rightCursor.edgeX + 4) : (rightCursor.edgeX - 4),
+            y: rightCursor.laneY,
+            align: rightCursor.dir === 'right' ? 'right' : 'left',
+        };
+
+        const ghosts = [];
+        if (ghostSpec && ghostSpec.show) {
+            const leftGhost = placeNextOnArm(leftCursor, ghostSpec.leftVal, ghostSpec.leftVal, ghostSpec.isDouble, maxHalfW);
+            ghosts.push({ side: 'left', endValue: ghostSpec.leftVal, ...leftGhost });
+
+            const rightGhost = placeNextOnArm(rightCursor, ghostSpec.rightVal, ghostSpec.rightVal, ghostSpec.isDouble, maxHalfW);
+            ghosts.push({ side: 'right', endValue: ghostSpec.rightVal, ...rightGhost });
+        }
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        placed.forEach(item => {
+            if (item.x < minX) minX = item.x;
+            if (item.y < minY) minY = item.y;
+            if (item.x + item.w > maxX) maxX = item.x + item.w;
+            if (item.y + item.h > maxY) maxY = item.y + item.h;
+        });
+        ghosts.forEach(g => {
+            if (g.x < minX) minX = g.x;
+            if (g.y < minY) minY = g.y;
+            if (g.x + g.w > maxX) maxX = g.x + g.w;
+            if (g.y + g.h > maxY) maxY = g.y + g.h;
+        });
+
+        if (!ghostSpec || !ghostSpec.show) {
+            [leftTip, rightTip].forEach(tip => {
+                if (tip.align === 'left') {
+                    minX = Math.min(minX, tip.x - 54);
+                } else {
+                    maxX = Math.max(maxX, tip.x + 54);
+                }
+                minY = Math.min(minY, tip.y - 16);
+                maxY = Math.max(maxY, tip.y + 16);
+            });
+        }
+
+        const padX = 16;
+        const padY = 16;
+        const offsetX = -minX + padX;
+        const offsetY = -minY + padY;
+
+        placed.forEach(item => {
+            item.x += offsetX;
+            item.y += offsetY;
+        });
+        ghosts.forEach(g => {
+            g.x += offsetX;
+            g.y += offsetY;
+        });
+        leftTip.x += offsetX;
+        leftTip.y += offsetY;
+        rightTip.x += offsetX;
+        rightTip.y += offsetY;
+
+        return {
+            tiles: placed,
+            ghosts,
+            leftTip,
+            rightTip,
+            width: Math.ceil((maxX - minX) + padX * 2),
+            height: Math.ceil((maxY - minY) + padY * 2),
+        };
+    }
+
     function renderBoard() {
         const boardEl = document.getElementById('dominoBoard');
+        const viewportEl = document.getElementById('boardViewport');
         const leftBadge = document.getElementById('boardLeftEnd');
         const rightBadge = document.getElementById('boardRightEnd');
         const turnBadge = document.getElementById('turnIndicator');
@@ -896,11 +1317,52 @@
         if (!boardEl) return;
 
         if (state.board.length === 0) {
+            state.autoFitScale = 1;
+            boardEl.style.width = '';
+            boardEl.style.height = '';
             boardEl.innerHTML = '';
+            syncTablePreferences();
             return;
         }
 
-        boardEl.innerHTML = state.board.map(tile => {
+        const isMyTurn = state.isRunning && !state.isFinished && state.currentTurn === 0;
+        let showGhostSlots = false;
+        let selectedTile = null;
+        if (isMyTurn && state.selectedTileId !== null) {
+            const selectedMoves = getValidMovesForPlayer(0).filter(m => m.tile.id === state.selectedTileId);
+            showGhostSlots = selectedMoves.length === 2;
+            if (selectedMoves.length > 0) {
+                selectedTile = selectedMoves[0].tile;
+            }
+        }
+
+        const maxHalfW = computeSnakeMaxHalfW(viewportEl);
+        const layout = buildSnakeLayout(
+            state.board,
+            state.anchorTileId,
+            maxHalfW,
+            showGhostSlots && selectedTile ? {
+                show: true,
+                isDouble: selectedTile.a === selectedTile.b,
+                leftVal: state.leftEnd,
+                rightVal: state.rightEnd,
+            } : null
+        );
+
+        const availW = Math.max(240, (viewportEl ? viewportEl.clientWidth : 360) - 24);
+        const availH = isFullscreenActive()
+            ? Math.max(240, (viewportEl ? viewportEl.clientHeight : 380) - 24)
+            : Math.max(240, window.innerWidth >= 640 ? 330 : 270);
+        const scaleW = layout.width > availW ? (availW / layout.width) : 1;
+        const scaleH = layout.height > availH ? (availH / layout.height) : 1;
+        state.autoFitScale = Math.max(0.56, Math.round(Math.min(1, scaleW, scaleH) * 100) / 100);
+        syncTablePreferences();
+
+        boardEl.style.width = layout.width + 'px';
+        boardEl.style.height = layout.height + 'px';
+
+        const tilesHtml = layout.tiles.map(item => {
+            const tile = item.tile;
             const isLatest = tile.id === state.lastPlacedId;
             let placeAnim = '';
             if (isLatest && state.animateLatest) {
@@ -908,18 +1370,52 @@
                     ? 'anim-place-left'
                     : (state.lastPlacedSide === 'right' ? 'anim-place-right' : 'anim-place-center');
             }
-            return buildDominoHtml(tile.left, tile.right, {
-                vertical: tile.isDouble,
-                small: true,
+            const stoneHtml = buildDominoHtml(item.a, item.b, {
+                vertical: item.vertical,
+                variant: 'snake',
                 isLatest,
+                showImpactRing: isLatest && state.animateLatest,
                 animClass: placeAnim,
             });
+            return `<div class="domino-snake-item" style="left:${item.x}px;top:${item.y}px;width:${item.w}px;height:${item.h}px;">${stoneHtml}</div>`;
         }).join('');
+
+        let overlayHtml = '';
+        if (showGhostSlots && layout.ghosts.length > 0) {
+            overlayHtml = layout.ghosts.map(g => {
+                const label = g.side === 'left' ? 'Kiri' : 'Kanan';
+                const orientCls = g.vertical ? 'domino-ghost-slot--v' : 'domino-ghost-slot--h';
+                return `<button type="button" class="domino-ghost-slot domino-ghost-slot--snake ${orientCls}" data-place-side="${g.side}" style="left:${g.x}px;top:${g.y}px;" title="Taruh di Ujung ${label} (${g.endValue})">
+                    <span>${label}</span>
+                    <span class="font-mono text-amber-100">(${g.endValue})</span>
+                </button>`;
+            }).join('');
+        } else if (layout.leftTip && layout.rightTip) {
+            overlayHtml = `
+                <div class="domino-end-badge domino-end-badge--${layout.leftTip.align}" style="left:${layout.leftTip.x}px;top:${layout.leftTip.y}px;">Kiri: <span class="font-mono text-white">${state.leftEnd}</span></div>
+                <div class="domino-end-badge domino-end-badge--${layout.rightTip.align}" style="left:${layout.rightTip.x}px;top:${layout.rightTip.y}px;">Kanan: <span class="font-mono text-white">${state.rightEnd}</span></div>
+            `;
+        }
+
+        boardEl.innerHTML = tilesHtml + overlayHtml;
+
+        if (showGhostSlots) {
+            boardEl.querySelectorAll('button.domino-ghost-slot[data-place-side]').forEach(slotBtn => {
+                slotBtn.addEventListener('click', () => {
+                    if (!isMyTurn || state.selectedTileId === null) return;
+                    const side = slotBtn.getAttribute('data-place-side');
+                    if (side === 'left' || side === 'right') {
+                        placeTile(0, state.selectedTileId, side);
+                    }
+                });
+            });
+        }
     }
 
     function renderPlayerHand() {
         const handEl = document.getElementById('playerHand');
         const countEl = document.getElementById('playerCardCount');
+        const hintEl = document.getElementById('playableHintBadge');
         const passBtn = document.getElementById('btnPlayerPass');
         const sidePicker = document.getElementById('sidePickerBar');
         const btnLeft = document.getElementById('btnPlaceLeft');
@@ -933,6 +1429,21 @@
         const isMyTurn = state.isRunning && !state.isFinished && state.currentTurn === 0;
         const validMoves = isMyTurn ? getValidMovesForPlayer(0) : [];
         const playableIds = new Set(validMoves.map(m => m.tile.id));
+
+        if (hintEl) {
+            if (isMyTurn) {
+                hintEl.classList.remove('hidden');
+                if (playableIds.size > 0) {
+                    hintEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+                    hintEl.textContent = `${playableIds.size} batu cocok`;
+                } else {
+                    hintEl.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+                    hintEl.textContent = 'Tidak ada batu cocok';
+                }
+            } else {
+                hintEl.classList.add('hidden');
+            }
+        }
 
         if (passBtn) {
             if (isMyTurn && validMoves.length === 0) {
@@ -966,7 +1477,7 @@
             const isSelected = state.selectedTileId === tile.id;
             return buildDominoHtml(tile.a, tile.b, {
                 vertical: true,
-                small: false,
+                variant: 'hand',
                 playable: canPlay,
                 selected: isSelected,
                 dimmed: isMyTurn && !canPlay,
@@ -987,8 +1498,10 @@
                 if (tileMoves.length === 1) {
                     placeTile(0, tid, tileMoves[0].side);
                 } else {
+                    playSoundSelect();
                     state.selectedTileId = (state.selectedTileId === tid) ? null : tid;
                     renderPlayerHand();
+                    renderBoard();
                 }
             });
         });
@@ -1042,19 +1555,19 @@
             })).sort((a, b) => a.pips - b.pips || a.hand.length - b.hand.length);
 
             summaryEl.innerHTML = ranked.map(p => `
-                <div class="p-3 rounded-2xl border ${p.isWinner ? 'bg-emerald-50/70 border-emerald-200' : 'bg-slate-50/70 border-slate-200/80'}">
+                <div class="p-3 rounded-2xl border ${p.isWinner ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800' : 'bg-slate-50/70 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700'}">
                     <div class="flex items-center justify-between gap-2 mb-2">
-                        <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                             ${p.isWinner ? '<i class="bi bi-trophy-fill text-amber-500"></i>' : ''}
                             <span>${p.name}</span>
                         </div>
-                        <span class="text-xs font-mono font-bold ${p.isWinner ? 'text-emerald-700' : 'text-slate-600'}">
+                        <span class="text-xs font-mono font-bold ${p.isWinner ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-300'}">
                             ${p.hand.length} batu &middot; ${p.pips} mata
                         </span>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
                         ${p.hand.length > 0
-                            ? p.hand.map(t => buildDominoHtml(t.a, t.b, { vertical: false, small: true })).join('')
+                            ? p.hand.map(t => buildDominoHtml(t.a, t.b, { vertical: false, variant: 'mini' })).join('')
                             : '<span class="text-xs font-semibold text-emerald-600">Kartu Habis (0 mata)</span>'}
                     </div>
                 </div>
@@ -1063,7 +1576,7 @@
 
         if (hiddenEl) {
             hiddenEl.innerHTML = state.hiddenTiles.map(t =>
-                buildDominoHtml(t.a, t.b, { vertical: false, small: true })
+                buildDominoHtml(t.a, t.b, { vertical: false, variant: 'mini' })
             ).join('');
         }
 
@@ -1105,11 +1618,17 @@
                 ? '<i class="bi bi-volume-mute-fill"></i> <span class="hidden sm:inline">Senyap</span>'
                 : '<i class="bi bi-volume-up-fill"></i> <span class="hidden sm:inline">Suara</span>';
         }
+
+        syncTablePreferences();
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         try {
             state.muted = localStorage.getItem(MUTE_KEY) === '1';
+            const savedCam = localStorage.getItem(CAMERA_KEY);
+            if (savedCam && CAMERA_ORDER.includes(savedCam)) state.camera = savedCam;
+            const savedFelt = localStorage.getItem(FELT_KEY);
+            if (savedFelt && ['emerald', 'royal', 'classic'].includes(savedFelt)) state.felt = savedFelt;
         } catch (e) {}
 
         document.querySelectorAll('[data-ai-count]').forEach(btn => {
@@ -1160,6 +1679,61 @@
             });
         });
 
+        document.querySelectorAll('[data-felt-theme]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const felt = btn.getAttribute('data-felt-theme');
+                if (['emerald', 'royal', 'classic'].includes(felt)) {
+                    state.felt = felt;
+                    try { localStorage.setItem(FELT_KEY, felt); } catch (e) {}
+                    syncTablePreferences();
+                }
+            });
+        });
+
+        const btnCamera = document.getElementById('btnCycleCamera');
+        if (btnCamera) {
+            btnCamera.addEventListener('click', () => {
+                const idx = CAMERA_ORDER.indexOf(state.camera);
+                state.camera = CAMERA_ORDER[(idx + 1) % CAMERA_ORDER.length];
+                try { localStorage.setItem(CAMERA_KEY, state.camera); } catch (e) {}
+                syncTablePreferences();
+            });
+        }
+
+        const btnZoomOut = document.getElementById('btnZoomOut');
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        const btnZoomReset = document.getElementById('btnZoomReset');
+        if (btnZoomOut) {
+            btnZoomOut.addEventListener('click', () => {
+                state.userZoomOverride = true;
+                state.boardZoom = Math.max(0.75, Math.round((state.boardZoom - 0.1) * 100) / 100);
+                syncTablePreferences();
+            });
+        }
+        if (btnZoomIn) {
+            btnZoomIn.addEventListener('click', () => {
+                state.userZoomOverride = true;
+                state.boardZoom = Math.min(1.25, Math.round((state.boardZoom + 0.1) * 100) / 100);
+                syncTablePreferences();
+            });
+        }
+        if (btnZoomReset) {
+            btnZoomReset.addEventListener('click', () => {
+                state.userZoomOverride = false;
+                state.boardZoom = 1;
+                syncTablePreferences();
+            });
+        }
+
+        const btnHistory = document.getElementById('btnToggleHistory');
+        const historyPanel = document.getElementById('moveHistoryPanel');
+        if (btnHistory && historyPanel) {
+            btnHistory.addEventListener('click', () => {
+                state.historyOpen = !state.historyOpen;
+                historyPanel.classList.toggle('hidden', !state.historyOpen);
+            });
+        }
+
         const btnStart = document.getElementById('btnStartGame');
         if (btnStart) btnStart.addEventListener('click', startNewRoundWithShuffle);
 
@@ -1206,6 +1780,7 @@
             btnCancelSide.addEventListener('click', () => {
                 state.selectedTileId = null;
                 renderPlayerHand();
+                renderBoard();
             });
         }
 
@@ -1223,6 +1798,13 @@
             fsBtn.addEventListener('click', toggleFullscreen);
         }
         document.addEventListener('fullscreenchange', syncFullscreenUI);
+        let resizeRafTimer = null;
+        window.addEventListener('resize', () => {
+            if (resizeRafTimer) clearTimeout(resizeRafTimer);
+            resizeRafTimer = setTimeout(() => {
+                if (state.board.length > 0) renderBoard();
+            }, 120);
+        });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const wrapper = document.getElementById('gameFullscreenWrapper');
@@ -1250,6 +1832,7 @@
             });
         }
 
+        bind3dParallax();
         renderStats();
         syncSettingButtons();
         syncFullscreenUI();
