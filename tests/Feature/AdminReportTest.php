@@ -208,5 +208,18 @@ class AdminReportTest extends TestCase
         $emptyRes = $this->actingAs($admin)->get('/admin/pengaturan/report/pdf?periode=bulanan&bulan=2026-05');
         $emptyRes->assertStatus(200);
         $this->assertEquals('application/pdf', $emptyRes->headers->get('content-type'));
+
+        // Verifikasi isi HTML template PDF laporan harian memuat Update Klasemen Keseluruhan (4 tim, bukan hanya tim periode tsb)
+        $reportPage = $this->actingAs($admin)->get('/admin/pengaturan/report?periode=harian&tanggal=2026-11-20');
+        $klasemen = $reportPage->viewData('klasemen');
+        $this->assertCount(4, $klasemen);
+        $this->assertEquals('BUKAN SRM', $klasemen[0]['nama_tim']);
+        $this->assertEquals(6, $klasemen[0]['pts']);
+
+        $pdfHtml = view('pdf.report', $reportPage->getOriginalContent()->getData())->render();
+        $this->assertStringContainsString('Update Klasemen Keseluruhan', $pdfHtml);
+        $this->assertStringNotContainsString('Rekap Performa Tim Periode', $pdfHtml);
+        $this->assertStringContainsString('Dicky &amp; Maman', $pdfHtml);
+        $this->assertStringContainsString('Josep &amp; Brelly', $pdfHtml);
     }
 }

@@ -295,48 +295,53 @@
                 </table>
             </div>
         @endforeach
+    @endif
 
-        @if (!empty($rekapTim))
-            <div class="section-title">Rekap Performa Tim Periode {{ $periodeLabel }}</div>
-            <table class="data-table">
-                <thead>
+    @if (!empty($klasemen))
+        <div class="section-title">
+            Update Klasemen Keseluruhan
+            <span style="font-size: 8px; font-weight: normal; color: #64748b; text-transform: none; margin-left: 6px;">
+                ({{ count($klasemen) }} Tim &middot; Kondisi terkini per {{ date('d/m/Y H:i') }} WIB &middot; 3 Poin Menang / 0 Kalah)
+            </span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th width="6%">Pos</th>
+                    <th width="38%" class="text-left">Tim &amp; Pemain</th>
+                    <th width="8%">Main</th>
+                    <th width="8%">Menang</th>
+                    <th width="8%">Kalah</th>
+                    <th width="8%">+</th>
+                    <th width="8%">-</th>
+                    <th width="8%">Selisih</th>
+                    <th width="8%">PTS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($klasemen as $row)
+                    @php
+                        $rowPlayers = \App\Services\TournamentService::pemainLabel($row['pemain1'], $row['pemain2'], false);
+                    @endphp
                     <tr>
-                        <th width="6%">No</th>
-                        <th width="38%" class="text-left">Tim &amp; Pemain</th>
-                        <th width="8%">Main</th>
-                        <th width="8%">Menang</th>
-                        <th width="8%">Kalah</th>
-                        <th width="8%">+</th>
-                        <th width="8%">-</th>
-                        <th width="8%">Selisih</th>
-                        <th width="8%">PTS</th>
+                        <td class="text-center font-bold">#{{ $row['pos'] }}</td>
+                        <td>
+                            <div class="font-bold">{{ $row['nama_tim'] }}</div>
+                            @if ($rowPlayers !== '')
+                                <div class="player-sub">{{ $rowPlayers }}</div>
+                            @endif
+                        </td>
+                        <td class="text-center">{{ $row['mp'] }}</td>
+                        <td class="text-center winner">{{ $row['w'] }}</td>
+                        <td class="text-center">{{ $row['l'] }}</td>
+                        <td class="text-center">{{ $row['bm'] }}</td>
+                        <td class="text-center">{{ $row['bk'] }}</td>
+                        <td class="text-center font-bold">{{ $row['sb'] > 0 ? '+' : '' }}{{ $row['sb'] }}</td>
+                        <td class="text-center font-bold">{{ $row['pts'] }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach ($rekapTim as $row)
-                        @php
-                            $rowPlayers = \App\Services\TournamentService::pemainLabel($row['pemain1'], $row['pemain2'], false);
-                        @endphp
-                        <tr>
-                            <td class="text-center font-bold">{{ $row['pos'] }}</td>
-                            <td>
-                                <div class="font-bold">{{ $row['nama_tim'] }}</div>
-                                @if ($rowPlayers !== '')
-                                    <div class="player-sub">{{ $rowPlayers }}</div>
-                                @endif
-                            </td>
-                            <td class="text-center">{{ $row['mp'] }}</td>
-                            <td class="text-center winner">{{ $row['w'] }}</td>
-                            <td class="text-center">{{ $row['l'] }}</td>
-                            <td class="text-center">{{ $row['bm'] }}</td>
-                            <td class="text-center">{{ $row['bk'] }}</td>
-                            <td class="text-center font-bold">{{ $row['sb'] > 0 ? '+' : '' }}{{ $row['sb'] }}</td>
-                            <td class="text-center font-bold">{{ $row['pts'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endif
+                @endforeach
+            </tbody>
+        </table>
     @endif
 
 </body>

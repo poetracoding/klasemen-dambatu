@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Liga;
 use App\Models\Pertandingan;
 use App\Models\Tim;
+use App\Services\TournamentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -231,6 +232,7 @@ class ReportController extends Controller
 
         $rekapTim = $this->buildTeamRecap($matches);
         $uniqueTeamCount = count($rekapTim);
+        $klasemen = TournamentService::hitungKlasemen($liga);
 
         return compact(
             'liga',
@@ -255,7 +257,8 @@ class ReportController extends Controller
             'totalPoin',
             'avgSelisih',
             'uniqueTeamCount',
-            'rekapTim'
+            'rekapTim',
+            'klasemen'
         );
     }
 
