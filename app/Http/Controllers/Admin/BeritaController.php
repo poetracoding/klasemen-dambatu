@@ -9,6 +9,7 @@ use App\Services\FcmService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -203,24 +204,39 @@ class BeritaController extends Controller
     {
         $dir = public_path('uploads/berita');
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            @mkdir($dir, 0777, true);
         }
 
-        $ext = strtolower((string) ($file->guessExtension() ?: $file->getClientOriginalExtension() ?: 'png'));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
-            $ext = 'png';
+        if (is_dir($dir) && is_writable($dir)) {
+            $ext = strtolower((string) ($file->guessExtension() ?: $file->getClientOriginalExtension() ?: 'png'));
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+                $ext = 'png';
+            }
+
+            $filename = 'berita_' . time() . '_' . Str::lower(Str::random(8)) . '.' . $ext;
+            $file->move($dir, $filename);
+
+            return 'uploads/berita/' . $filename;
         }
 
-        $filename = 'berita_' . time() . '_' . Str::lower(Str::random(8)) . '.' . $ext;
-        $file->move($dir, $filename);
-
-        return 'uploads/berita/' . $filename;
+        // Fallback ke Laravel public storage jika direktori public/uploads tidak writable
+        $stored = $file->store('berita', 'public');
+        return 'storage/' . $stored;
     }
 
     private function deletePhysicalImage(?string $path): void
     {
-        if ($path && str_starts_with($path, 'uploads/berita/') && file_exists(public_path($path))) {
+        if (!$path) {
+            return;
+        }
+
+        if (str_starts_with($path, 'uploads/berita/') && file_exists(public_path($path))) {
             @unlink(public_path($path));
+        } elseif (str_starts_with($path, 'storage/berita/')) {
+            $relativePath = str_replace('storage/', '', $path);
+            if (Storage::disk('public')->exists($relativePath)) {
+                Storage::disk('public')->delete($relativePath);
+            }
         }
     }
 }

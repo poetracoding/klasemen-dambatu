@@ -6,6 +6,8 @@
 /storage/*.key
 /storage/pail/
 /public/storage
+/public/uploads/*
+!/public/uploads/**/.gitkeep
 /public/hot
 /public/build/
 /auth.json

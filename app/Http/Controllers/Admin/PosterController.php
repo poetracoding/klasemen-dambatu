@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Liga;
 use App\Models\Poster;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PosterController extends Controller
@@ -32,7 +33,7 @@ class PosterController extends Controller
         $liga = Liga::current();
         $dir = public_path('uploads/posters');
         if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+            @mkdir($dir, 0777, true);
         }
 
         $files = [];
@@ -88,7 +89,7 @@ class PosterController extends Controller
         if ($request->hasFile('poster')) {
             $dir = public_path('uploads/posters');
             if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
+                @mkdir($dir, 0777, true);
             }
 
             if (str_starts_with($poster->file_path, 'uploads/posters/') && file_exists(public_path($poster->file_path))) {
