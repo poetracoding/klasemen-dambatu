@@ -22,29 +22,16 @@ class AdminCaturTest extends TestCase
         ]);
     }
 
-    public function test_guest_cannot_access_admin_catur_and_public_navbar_hides_it(): void
+    public function test_public_can_access_catur_and_navbar_dropdown_includes_it(): void
     {
         Liga::current();
-
-        $this->get('/admin/pengaturan/catur')->assertRedirect('/login');
-        $this->get('/admin/catur')->assertRedirect('/login');
 
         $home = $this->get('/');
         $home->assertStatus(200);
-        $home->assertDontSee('/admin/pengaturan/catur');
-        $home->assertDontSee('Game Catur 3D');
-    }
+        $home->assertSee('Catur 3D');
+        $home->assertSee(route('game.catur'));
 
-    public function test_admin_can_access_catur_via_pengaturan_and_it_is_excluded_from_analytics(): void
-    {
-        Liga::current();
-        $admin = $this->createAdmin();
-
-        $this->actingAs($admin)
-            ->get('/admin/catur')
-            ->assertRedirect(route('admin.pengaturan.catur'));
-
-        $res = $this->actingAs($admin)->get('/admin/pengaturan/catur');
+        $res = $this->get('/game/catur');
         $res->assertStatus(200);
         $res->assertSee('Game Catur 3D');
         $res->assertSee('Santai');
@@ -55,9 +42,21 @@ class AdminCaturTest extends TestCase
         $res->assertSee('3D Meja');
         $res->assertSee('catur-game.js');
         $res->assertSee('DISABLE_LIVE_UPDATE');
-        $res->assertSee(route('admin.pengaturan.catur'));
 
-        // Area admin tidak tercatat ke visitor_logs analitik publik
-        $this->assertEquals(0, VisitorLog::where('path', 'like', '%catur%')->count());
+        $this->assertEquals(1, VisitorLog::where('path', '/game/catur')->count());
+    }
+
+    public function test_old_admin_catur_routes_redirect_to_public(): void
+    {
+        Liga::current();
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin)
+            ->get('/admin/pengaturan/catur')
+            ->assertRedirect(route('game.catur'));
+
+        $this->actingAs($admin)
+            ->get('/admin/catur')
+            ->assertRedirect(route('game.catur'));
     }
 }

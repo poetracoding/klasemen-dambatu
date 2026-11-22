@@ -126,6 +126,18 @@ class TrackPublicVisit
         if ($path === '/game') {
             return 'Game Dam Batu';
         }
+        if ($path === '/game/monopoli') {
+            return 'Game Monopoli Nusantara';
+        }
+        if ($path === '/game/flappy-bird') {
+            return 'Game Flappy Bird';
+        }
+        if ($path === '/game/ludo-queen') {
+            return 'Game Ludo Queen 3D';
+        }
+        if ($path === '/game/catur') {
+            return 'Game Catur 3D';
+        }
         if ($path === '/berita') {
             return 'Berita Turnamen';
         }

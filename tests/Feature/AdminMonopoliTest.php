@@ -22,33 +22,22 @@ class AdminMonopoliTest extends TestCase
         ]);
     }
 
-    public function test_guest_cannot_access_admin_monopoli_and_public_navbar_hides_it(): void
+    public function test_public_can_access_monopoli_and_navbar_dropdown_lists_all_games(): void
     {
         Liga::current();
-
-        $this->get('/admin/pengaturan/monopoli')->assertRedirect('/login');
-        $this->get('/admin/monopoli')->assertRedirect('/login');
 
         $home = $this->get('/');
         $home->assertStatus(200);
-        $home->assertDontSee('/admin/pengaturan/monopoli');
-        $home->assertDontSee('Game Monopoli');
-    }
+        $home->assertSee('publicGameDropdownMenu');
+        $home->assertSee('Game Dam Batu');
+        $home->assertSee('Monopoli Nusantara');
+        $home->assertSee(route('game'));
+        $home->assertSee(route('game.monopoli'));
 
-    public function test_admin_can_access_monopoli_via_pengaturan_and_it_is_excluded_from_analytics(): void
-    {
-        Liga::current();
-        $admin = $this->createAdmin();
-
-        $this->actingAs($admin)
-            ->get('/admin/monopoli')
-            ->assertRedirect(route('admin.pengaturan.monopoli'));
-
-        $res = $this->actingAs($admin)->get('/admin/pengaturan/monopoli');
+        $res = $this->get('/game/monopoli');
         $res->assertStatus(200);
-        $res->assertSee('Game Monopoli');
         $res->assertSee('Monopoli Nusantara');
-        $res->assertSee('Khusus Admin');
+        $res->assertSee('Arena Hiburan Publik');
         $res->assertSee('Santai');
         $res->assertSee('Normal');
         $res->assertSee('Sulit');
@@ -57,9 +46,26 @@ class AdminMonopoliTest extends TestCase
         $res->assertSee('DISABLE_LIVE_UPDATE');
         $res->assertSee('monopoli-3d.css');
         $res->assertSee('monopoli-game.js');
-        $res->assertSee(route('admin.pengaturan.monopoli'));
 
-        // Area admin tidak tercatat ke visitor_logs analitik publik
-        $this->assertEquals(0, VisitorLog::where('path', 'like', '%monopoli%')->count());
+        // Halaman publik tercatat ke visitor_logs analitik
+        $this->assertEquals(1, VisitorLog::where('path', '/game/monopoli')->count());
+    }
+
+    public function test_old_admin_monopoli_routes_redirect_to_public_and_admin_dropdown_excludes_games(): void
+    {
+        Liga::current();
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin)
+            ->get('/admin/pengaturan/monopoli')
+            ->assertRedirect(route('game.monopoli'));
+
+        $this->actingAs($admin)
+            ->get('/admin/monopoli')
+            ->assertRedirect(route('game.monopoli'));
+
+        $adminDash = $this->actingAs($admin)->get('/admin');
+        $adminDash->assertStatus(200);
+        $adminDash->assertDontSee('Mini Games Admin');
     }
 }

@@ -22,29 +22,16 @@ class AdminLudoQueenTest extends TestCase
         ]);
     }
 
-    public function test_guest_cannot_access_admin_ludo_queen_and_public_navbar_hides_it(): void
+    public function test_public_can_access_ludo_queen_and_navbar_dropdown_includes_it(): void
     {
         Liga::current();
-
-        $this->get('/admin/pengaturan/ludo-queen')->assertRedirect('/login');
-        $this->get('/admin/ludo-queen')->assertRedirect('/login');
 
         $home = $this->get('/');
         $home->assertStatus(200);
-        $home->assertDontSee('/admin/pengaturan/ludo-queen');
-        $home->assertDontSee('Game Ludo Queen');
-    }
+        $home->assertSee('Ludo Queen 3D');
+        $home->assertSee(route('game.ludo_queen'));
 
-    public function test_admin_can_access_ludo_queen_via_pengaturan_and_it_is_excluded_from_analytics(): void
-    {
-        Liga::current();
-        $admin = $this->createAdmin();
-
-        $this->actingAs($admin)
-            ->get('/admin/ludo-queen')
-            ->assertRedirect(route('admin.pengaturan.ludo_queen'));
-
-        $res = $this->actingAs($admin)->get('/admin/pengaturan/ludo-queen');
+        $res = $this->get('/game/ludo-queen');
         $res->assertStatus(200);
         $res->assertSee('Game Ludo Queen');
         $res->assertSee('Santai');
@@ -57,9 +44,21 @@ class AdminLudoQueenTest extends TestCase
         $res->assertSee('3D Meja');
         $res->assertSee('ludo-queen-game.js');
         $res->assertSee('DISABLE_LIVE_UPDATE');
-        $res->assertSee(route('admin.pengaturan.ludo_queen'));
 
-        // Area admin tidak tercatat ke visitor_logs analitik publik
-        $this->assertEquals(0, VisitorLog::where('path', 'like', '%ludo-queen%')->count());
+        $this->assertEquals(1, VisitorLog::where('path', '/game/ludo-queen')->count());
+    }
+
+    public function test_old_admin_ludo_queen_routes_redirect_to_public(): void
+    {
+        Liga::current();
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin)
+            ->get('/admin/pengaturan/ludo-queen')
+            ->assertRedirect(route('game.ludo_queen'));
+
+        $this->actingAs($admin)
+            ->get('/admin/ludo-queen')
+            ->assertRedirect(route('game.ludo_queen'));
     }
 }

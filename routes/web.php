@@ -42,6 +42,10 @@ Route::post('/berita/{slug}/like', [BeritaController::class, 'toggleLike'])
     ->middleware('throttle:30,1')
     ->name('berita.like');
 Route::get('/game', [HomeController::class, 'game'])->name('game');
+Route::get('/game/monopoli', [HomeController::class, 'monopoli'])->name('game.monopoli');
+Route::get('/game/flappy-bird', [HomeController::class, 'flappyBird'])->name('game.flappy_bird');
+Route::get('/game/ludo-queen', [HomeController::class, 'ludoQueen'])->name('game.ludo_queen');
+Route::get('/game/catur', [HomeController::class, 'catur'])->name('game.catur');
 Route::get('/tim/{id}', [HomeController::class, 'timDetail'])->name('tim.detail');
 Route::get('/pertandingan/{id}', [HomeController::class, 'pertandinganDetail'])->name('pertandingan.detail');
 
@@ -123,14 +127,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::post('/pengaturan/analytics/reset', [PengaturanController::class, 'resetAnalytics'])->name('pengaturan.analytics.reset');
     Route::get('/pengaturan/report', [ReportController::class, 'index'])->name('pengaturan.report');
     Route::get('/pengaturan/report/pdf', [ReportController::class, 'pdf'])->name('pengaturan.report.pdf');
-    Route::get('/pengaturan/monopoli', [PengaturanController::class, 'monopoli'])->name('pengaturan.monopoli');
-    Route::get('/monopoli', fn () => redirect()->route('admin.pengaturan.monopoli'))->name('monopoli');
-    Route::get('/pengaturan/flappy-bird', [PengaturanController::class, 'flappyBird'])->name('pengaturan.flappy_bird');
-    Route::get('/flappy-bird', fn () => redirect()->route('admin.pengaturan.flappy_bird'))->name('flappy_bird');
-    Route::get('/pengaturan/ludo-queen', [PengaturanController::class, 'ludoQueen'])->name('pengaturan.ludo_queen');
-    Route::get('/ludo-queen', fn () => redirect()->route('admin.pengaturan.ludo_queen'))->name('ludo_queen');
-    Route::get('/pengaturan/catur', [PengaturanController::class, 'catur'])->name('pengaturan.catur');
-    Route::get('/catur', fn () => redirect()->route('admin.pengaturan.catur'))->name('catur');
+    Route::get('/pengaturan/monopoli', fn () => redirect()->route('game.monopoli'))->name('pengaturan.monopoli');
+    Route::get('/monopoli', fn () => redirect()->route('game.monopoli'))->name('monopoli');
+    Route::get('/pengaturan/flappy-bird', fn () => redirect()->route('game.flappy_bird'))->name('pengaturan.flappy_bird');
+    Route::get('/flappy-bird', fn () => redirect()->route('game.flappy_bird'))->name('flappy_bird');
+    Route::get('/pengaturan/ludo-queen', fn () => redirect()->route('game.ludo_queen'))->name('pengaturan.ludo_queen');
+    Route::get('/ludo-queen', fn () => redirect()->route('game.ludo_queen'))->name('ludo_queen');
+    Route::get('/pengaturan/catur', fn () => redirect()->route('game.catur'))->name('pengaturan.catur');
+    Route::get('/catur', fn () => redirect()->route('game.catur'))->name('catur');
     Route::post('/pengaturan/liga', [PengaturanController::class, 'updateLiga'])->name('pengaturan.update_liga');
     Route::post('/pengaturan/test-fcm', [PengaturanController::class, 'testFcm'])->name('pengaturan.test_fcm');
     Route::post('/pengaturan/password', [PengaturanController::class, 'gantiPassword'])->name('pengaturan.ganti_password');

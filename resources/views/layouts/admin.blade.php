@@ -155,12 +155,6 @@
                         ['header' => 'Laporan & Analitik'],
                         ['url' => route('admin.pengaturan.report'), 'label' => 'Laporan Hasil', 'icon' => 'bi-file-earmark-bar-graph', 'active' => request()->routeIs('admin.pengaturan.report*')],
                         ['url' => route('admin.pengaturan.analytics'), 'label' => 'Analytics', 'icon' => 'bi-graph-up-arrow', 'active' => request()->routeIs('admin.pengaturan.analytics')],
-                        ['divider' => true],
-                        ['header' => 'Mini Games Admin'],
-                        ['url' => route('admin.pengaturan.monopoli'), 'label' => 'Game Monopoli', 'icon' => 'bi-buildings', 'active' => request()->routeIs('admin.pengaturan.monopoli')],
-                        ['url' => route('admin.pengaturan.flappy_bird'), 'label' => 'Game Flappy Bird', 'icon' => 'bi-feather', 'active' => request()->routeIs('admin.pengaturan.flappy_bird')],
-                        ['url' => route('admin.pengaturan.ludo_queen'), 'label' => 'Game Ludo Queen', 'icon' => 'bi-dice-5', 'active' => request()->routeIs('admin.pengaturan.ludo_queen')],
-                        ['url' => route('admin.pengaturan.catur'), 'label' => 'Game Catur 3D', 'icon' => 'bi-grid-3x3-gap-fill', 'active' => request()->routeIs('admin.pengaturan.catur')],
                     ];
                 @endphp
                 @foreach ($adminNav as $item)

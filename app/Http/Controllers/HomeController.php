@@ -207,5 +207,29 @@ class HomeController extends Controller
         $liga = Liga::current();
         return view('game', compact('liga'));
     }
+
+    public function monopoli()
+    {
+        $liga = Liga::current();
+        return view('admin.monopoli', compact('liga'));
+    }
+
+    public function flappyBird()
+    {
+        $liga = Liga::current();
+        return view('admin.flappy_bird', compact('liga'));
+    }
+
+    public function ludoQueen()
+    {
+        $liga = Liga::current();
+        return view('admin.ludo_queen', compact('liga'));
+    }
+
+    public function catur()
+    {
+        $liga = Liga::current();
+        return view('admin.catur', compact('liga'));
+    }
 }
 

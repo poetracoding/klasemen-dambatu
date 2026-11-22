@@ -159,7 +159,14 @@
                         ['route' => 'klasemen', 'label' => 'Klasemen', 'icon' => 'bi-list-ol'],
                         ['route' => 'history', 'label' => 'History', 'icon' => 'bi-clock-history'],
                         ['route' => 'berita.index', 'label' => 'Berita', 'icon' => 'bi-newspaper', 'pattern' => 'berita.*'],
-                        ['route' => 'game', 'label' => 'Game', 'icon' => 'bi-dice-6'],
+                    ];
+                    $isGameActive = request()->routeIs('game') || request()->routeIs('game.*');
+                    $gameLinks = [
+                        ['url' => route('game'), 'label' => 'Game Dam Batu', 'icon' => 'bi-dice-6-fill', 'active' => request()->routeIs('game')],
+                        ['url' => route('game.monopoli'), 'label' => 'Monopoli Nusantara', 'icon' => 'bi-buildings-fill', 'active' => request()->routeIs('game.monopoli')],
+                        ['url' => route('game.flappy_bird'), 'label' => 'Flappy Bird', 'icon' => 'bi-feather', 'active' => request()->routeIs('game.flappy_bird')],
+                        ['url' => route('game.ludo_queen'), 'label' => 'Ludo Queen 3D', 'icon' => 'bi-dice-5-fill', 'active' => request()->routeIs('game.ludo_queen')],
+                        ['url' => route('game.catur'), 'label' => 'Catur 3D', 'icon' => 'bi-grid-3x3-gap-fill', 'active' => request()->routeIs('game.catur')],
                     ];
                 @endphp
                 @foreach ($navItems as $item)
@@ -169,6 +176,32 @@
                         <span>{{ $item['label'] }}</span>
                     </a>
                 @endforeach
+
+                <!-- Dropdown Game Publik -->
+                <div class="relative shrink-0" id="publicGameDropdownWrap">
+                    <button type="button" id="publicGameDropdownBtn"
+                        class="flex items-center gap-1.5 px-2.5 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-medium whitespace-nowrap shrink-0 transition-all cursor-pointer {{ $isGameActive ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/60' }}"
+                        aria-expanded="false" aria-haspopup="true">
+                        <i class="bi bi-controller text-base shrink-0"></i>
+                        <span>Game</span>
+                        <i class="bi bi-chevron-down text-xs transition-transform duration-150" id="publicGameDropdownChevron"></i>
+                    </button>
+
+                    <div id="publicGameDropdownMenu"
+                        class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/90 shadow-xl py-2 z-50">
+                        <div class="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Arena Hiburan
+                        </div>
+                        @foreach ($gameLinks as $g)
+                            <a href="{{ $g['url'] }}"
+                                onclick="closePublicGameDropdown()"
+                                class="flex items-center gap-2.5 px-4 py-2 text-xs font-medium transition-colors {{ $g['active'] ? 'bg-indigo-50 dark:bg-slate-800/90 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/70' }}">
+                                <i class="bi {{ $g['icon'] }} text-sm shrink-0"></i>
+                                <span>{{ $g['label'] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
             </div>
 
             <!-- Right Actions -->
@@ -236,6 +269,26 @@
                 <span>{{ $item['label'] }}</span>
             </a>
         @endforeach
+
+        <!-- Mobile Dropdown Game -->
+        <div class="pt-1">
+            <button type="button" id="mobileGameBtn"
+                class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer {{ $isGameActive ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}">
+                <span class="flex items-center gap-2.5">
+                    <i class="bi bi-controller text-lg"></i>
+                    <span>Game</span>
+                </span>
+                <i class="bi bi-chevron-down text-xs transition-transform duration-150 {{ $isGameActive ? 'rotate-180' : '' }}" id="mobileGameChevron"></i>
+            </button>
+            <div id="mobileGameMenu" class="{{ $isGameActive ? '' : 'hidden' }} pl-8 pr-2 py-1 space-y-1">
+                @foreach ($gameLinks as $g)
+                    <a href="{{ $g['url'] }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors {{ $g['active'] ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50/70 dark:bg-slate-800/70 font-semibold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50' }}">
+                        <i class="bi {{ $g['icon'] }} text-sm"></i>
+                        <span>{{ $g['label'] }}</span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
         <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <button type="button" onclick="toggleTheme()" class="theme-toggle-btn flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <i class="theme-toggle-icon bi bi-moon-stars-fill text-indigo-500 dark:text-amber-400"></i>
@@ -341,6 +394,56 @@
 </footer>
 
 <script src="{{ asset('assets/js/app.js') }}?v={{ filemtime(public_path('assets/js/app.js')) }}"></script>
+<script>
+    (function () {
+        const btn = document.getElementById('publicGameDropdownBtn');
+        const menu = document.getElementById('publicGameDropdownMenu');
+        const chevron = document.getElementById('publicGameDropdownChevron');
+        const wrap = document.getElementById('publicGameDropdownWrap');
+
+        window.closePublicGameDropdown = function () {
+            if (menu) menu.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-180');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        };
+
+        if (btn && menu) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                const isHidden = menu.classList.contains('hidden');
+                if (isHidden) {
+                    menu.classList.remove('hidden');
+                    if (chevron) chevron.classList.add('rotate-180');
+                    btn.setAttribute('aria-expanded', 'true');
+                } else {
+                    window.closePublicGameDropdown();
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (wrap && !wrap.contains(e.target)) {
+                    window.closePublicGameDropdown();
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    window.closePublicGameDropdown();
+                }
+            });
+        }
+
+        const mobBtn = document.getElementById('mobileGameBtn');
+        const mobMenu = document.getElementById('mobileGameMenu');
+        const mobChevron = document.getElementById('mobileGameChevron');
+        if (mobBtn && mobMenu) {
+            mobBtn.addEventListener('click', function () {
+                mobMenu.classList.toggle('hidden');
+                if (mobChevron) mobChevron.classList.toggle('rotate-180');
+            });
+        }
+    })();
+</script>
 @if ($fcmReady)
     @include('partials.fcm_prompt_modal')
     @include('partials.fcm_script', ['fcmConfig' => $fcmService->webConfig()])
