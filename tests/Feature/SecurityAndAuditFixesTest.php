@@ -233,4 +233,80 @@ class SecurityAndAuditFixesTest extends TestCase
         $this->assertEquals(1, VisitorLog::count());
         $this->assertEquals('recent-sess', VisitorLog::first()->session_id);
     }
+
+    public function test_json_restore_normalizes_iso8601_berita_datetimes_for_mysql(): void
+    {
+        $admin = $this->createAdmin();
+
+        $payload = json_encode([
+            'liga' => [
+                'nama_liga' => 'Liga Dam Batu',
+                'musim' => '2026/2027',
+            ],
+            'tims' => [
+                ['id' => 1, 'nama_tim' => 'Tim A', 'pemain1' => 'P1', 'pemain2' => 'P2', 'status' => 1],
+                ['id' => 2, 'nama_tim' => 'Tim B', 'pemain1' => 'P3', 'pemain2' => 'P4', 'status' => 1],
+            ],
+            'pertandingans' => [
+                [
+                    'id' => 10,
+                    'ronde' => 1,
+                    'nomor_pertandingan' => 1,
+                    'tanggal' => '2026-11-20',
+                    'waktu' => '17:00:00',
+                    'lokasi' => 'Meja 1',
+                    'tim_home' => 1,
+                    'tim_away' => 2,
+                    'skor_home' => 50,
+                    'skor_away' => 40,
+                    'pemenang_id' => 1,
+                    'status' => 'selesai',
+                    'catatan' => null,
+                    'created_at' => '2026-11-20T10:00:00.000000Z',
+                    'updated_at' => '2026-11-20T10:30:00.000000Z',
+                ],
+            ],
+            'posters' => [],
+            'beritas' => [
+                [
+                    'judul' => 'Berita ISO Backup',
+                    'slug' => 'berita-iso-backup',
+                    'kategori' => 'Berita',
+                    'ringkasan' => 'Ringkasan singkat',
+                    'isi' => 'Isi berita dari backup JSON.',
+                    'status' => 'published',
+                    'published_at' => '2026-11-20T11:58:00.000000Z',
+                    'notified_at' => '2026-11-20T12:00:00.000000Z',
+                    'views_count' => 12,
+                    'likes_count' => 3,
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('backup.json', $payload);
+
+        $response = $this->actingAs($admin)->post('/admin/pengaturan/upload-db', [
+            'db_file' => $file,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $row = \Illuminate\Support\Facades\DB::table('beritas')
+            ->where('slug', 'berita-iso-backup')
+            ->first();
+
+        $this->assertNotNull($row);
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string) $row->published_at);
+        $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', (string) $row->notified_at);
+        $this->assertStringNotContainsString('T', (string) $row->published_at);
+        $this->assertStringNotContainsString('Z', (string) $row->published_at);
+
+        $matchRow = \Illuminate\Support\Facades\DB::table('pertandingans')->where('id', 10)->first();
+        $this->assertNotNull($matchRow);
+        $expectedMatchUpdatedAt = \Carbon\Carbon::parse('2026-11-20T10:30:00.000000Z')
+            ->setTimezone(config('app.timezone', 'UTC'))
+            ->format('Y-m-d H:i:s');
+        $this->assertEquals($expectedMatchUpdatedAt, (string) $matchRow->updated_at);
+    }
 }

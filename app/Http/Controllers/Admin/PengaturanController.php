@@ -277,7 +277,9 @@ class PengaturanController extends Controller
         $isSqlite = strpos($header, 'SQLite format 3') === 0 || in_array($ext, ['sqlite', 'sqlite3', 'db']);
 
         try {
-            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            }
             DB::beginTransaction();
 
             $liga = Liga::current();
@@ -319,8 +321,8 @@ class PengaturanController extends Controller
                         'pemain1' => $t['pemain1'] ?? '',
                         'pemain2' => $t['pemain2'] ?? '',
                         'status' => $t['status'] ?? 1,
-                        'created_at' => $now,
-                        'updated_at' => $now,
+                        'created_at' => $this->normalizeDateTime($t['created_at'] ?? null) ?? $now,
+                        'updated_at' => $this->normalizeDateTime($t['updated_at'] ?? null) ?? $now,
                     ];
                 }
                 if (!empty($timRecords)) {
@@ -349,8 +351,8 @@ class PengaturanController extends Controller
                             'pemenang_id' => $pemenangId,
                             'status' => $p['status'] ?? 'belum_main',
                             'catatan' => $p['catatan'] ?: null,
-                            'created_at' => $now,
-                            'updated_at' => $now,
+                            'created_at' => $this->normalizeDateTime($p['created_at'] ?? null) ?? $now,
+                            'updated_at' => $this->normalizeDateTime($p['updated_at'] ?? null) ?? $now,
                         ];
                     }
                     foreach (array_chunk($matchRecords, 50) as $chunk) {
@@ -372,8 +374,8 @@ class PengaturanController extends Controller
                             'file_path' => $pt['file_path'],
                             'urutan' => (int) ($pt['urutan'] ?? 1),
                             'is_active' => isset($pt['is_active']) ? (bool) $pt['is_active'] : true,
-                            'created_at' => $now,
-                            'updated_at' => $now,
+                            'created_at' => $this->normalizeDateTime($pt['created_at'] ?? null) ?? $now,
+                            'updated_at' => $this->normalizeDateTime($pt['updated_at'] ?? null) ?? $now,
                         ];
                     }
                     if (!empty($posterRecords)) {
@@ -403,12 +405,12 @@ class PengaturanController extends Controller
                             'isi' => $br['isi'] ?? '',
                             'gambar' => $br['gambar'] ?? null,
                             'status' => $br['status'] ?? 'draft',
-                            'published_at' => $br['published_at'] ?? null,
-                            'notified_at' => $br['notified_at'] ?? null,
+                            'published_at' => $this->normalizeDateTime($br['published_at'] ?? null),
+                            'notified_at' => $this->normalizeDateTime($br['notified_at'] ?? null),
                             'views_count' => (int) ($br['views_count'] ?? 0),
                             'likes_count' => (int) ($br['likes_count'] ?? 0),
-                            'created_at' => $now,
-                            'updated_at' => $now,
+                            'created_at' => $this->normalizeDateTime($br['created_at'] ?? null) ?? $now,
+                            'updated_at' => $this->normalizeDateTime($br['updated_at'] ?? null) ?? $now,
                         ];
                     }
                     foreach (array_chunk($beritaRecords, 30) as $chunk) {
@@ -456,8 +458,8 @@ class PengaturanController extends Controller
                         'pemain1' => $t['pemain1'] ?? '',
                         'pemain2' => $t['pemain2'] ?? '',
                         'status' => $t['status'] ?? 1,
-                        'created_at' => $now,
-                        'updated_at' => $now,
+                        'created_at' => $this->normalizeDateTime($t['created_at'] ?? null) ?? $now,
+                        'updated_at' => $this->normalizeDateTime($t['updated_at'] ?? null) ?? $now,
                     ];
                 }
                 if (!empty($timRecords)) {
@@ -507,13 +509,15 @@ class PengaturanController extends Controller
             DB::commit();
 
             // Atur auto-increment setelah transaksi selesai
-            $maxTim = DB::table('tims')->max('id') ?? 0;
-            if ($maxTim > 0) {
-                DB::statement('ALTER TABLE tims AUTO_INCREMENT = ' . ($maxTim + 1));
-            }
-            $maxMatch = DB::table('pertandingans')->max('id') ?? 0;
-            if ($maxMatch > 0) {
-                DB::statement('ALTER TABLE pertandingans AUTO_INCREMENT = ' . ($maxMatch + 1));
+            if (DB::getDriverName() === 'mysql') {
+                $maxTim = DB::table('tims')->max('id') ?? 0;
+                if ($maxTim > 0) {
+                    DB::statement('ALTER TABLE tims AUTO_INCREMENT = ' . ($maxTim + 1));
+                }
+                $maxMatch = DB::table('pertandingans')->max('id') ?? 0;
+                if ($maxMatch > 0) {
+                    DB::statement('ALTER TABLE pertandingans AUTO_INCREMENT = ' . ($maxMatch + 1));
+                }
             }
 
             return back()->with('success', 'Database berhasil dipulihkan dari berkas yang diunggah!');
@@ -523,7 +527,9 @@ class PengaturanController extends Controller
             }
             return back()->with('danger', 'Gagal memulihkan database: ' . $e->getMessage());
         } finally {
-            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            if (DB::getDriverName() === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            }
         }
     }
 
@@ -558,6 +564,29 @@ class PengaturanController extends Controller
 
         try {
             return \Carbon\Carbon::parse($val)->format('H:i:s');
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Normalisasi string tanggal-waktu (termasuk ISO-8601 UTC) ke format MySQL Y-m-d H:i:s.
+     */
+    private function normalizeDateTime($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $val = trim((string) $value);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/', $val)) {
+            return $val;
+        }
+
+        try {
+            return \Carbon\Carbon::parse($val)
+                ->setTimezone(config('app.timezone', 'UTC'))
+                ->format('Y-m-d H:i:s');
         } catch (Throwable $e) {
             return null;
         }
