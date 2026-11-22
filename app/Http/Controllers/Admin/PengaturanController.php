@@ -69,6 +69,12 @@ class PengaturanController extends Controller
         return view('admin.flappy_bird', compact('liga'));
     }
 
+    public function ludoQueen()
+    {
+        $liga = Liga::current();
+        return view('admin.ludo_queen', compact('liga'));
+    }
+
     public function analytics()
     {
         $liga = Liga::current();

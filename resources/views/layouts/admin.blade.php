@@ -156,6 +156,7 @@
                         ['divider' => true],
                         ['url' => route('admin.pengaturan.monopoli'), 'label' => 'Game Monopoli', 'icon' => 'bi-buildings', 'active' => request()->routeIs('admin.pengaturan.monopoli')],
                         ['url' => route('admin.pengaturan.flappy_bird'), 'label' => 'Game Flappy Bird', 'icon' => 'bi-feather', 'active' => request()->routeIs('admin.pengaturan.flappy_bird')],
+                        ['url' => route('admin.pengaturan.ludo_queen'), 'label' => 'Game Ludo Queen', 'icon' => 'bi-dice-5', 'active' => request()->routeIs('admin.pengaturan.ludo_queen')],
                     ];
                 @endphp
                 @foreach ($adminNav as $item)
