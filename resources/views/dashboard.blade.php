@@ -51,6 +51,7 @@
     @include('partials.fcm_nudge_card')
 
     @if ($liga->status === 'selesai' && $juara)
+        @include('partials.champion_confetti')
         <!-- Juara Liga Showcase Banner -->
         <div
             class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 p-8 text-slate-900 mb-8 shadow-lg shadow-amber-500/20">
@@ -131,6 +132,80 @@
             <div class="text-xs text-slate-400 mt-1">Belum dimainkan</div>
         </div>
     </div>
+
+    @if (!empty($mvpData))
+        <!-- Kartu Profil & Statistik MVP + Share WhatsApp -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 mb-8 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+                        <i class="bi bi-stars"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Sorotan MVP &amp; Rekor Turnamen</h2>
+                        <p class="text-xs text-slate-400">Pasangan paling impresif berdasarkan persentase menang, selisih batu, dan tren beruntun.</p>
+                    </div>
+                </div>
+                <a href="https://wa.me/?text={{ urlencode($mvpData['share_text']) }}" target="_blank" rel="noopener"
+                    id="btnShareWaMvp"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors w-fit shrink-0">
+                    <i class="bi bi-whatsapp text-sm"></i>
+                    <span>Bagikan ke WhatsApp</span>
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- MVP Win Rate -->
+                @php $mvp = $mvpData['mvp']; @endphp
+                <a href="{{ route('tim.detail', $mvp['id']) }}" class="group rounded-2xl p-4 bg-gradient-to-br from-amber-50/90 to-yellow-50/60 dark:from-amber-950/40 dark:to-slate-800/60 border border-amber-200/80 dark:border-amber-800/60 hover:shadow-sm transition-all">
+                    <div class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-1.5">
+                        <span>⭐ MVP Win Rate</span>
+                        <span class="font-mono">{{ $mvp['wr'] }}%</span>
+                    </div>
+                    <div class="text-base font-black text-slate-900 dark:text-white group-hover:text-indigo-600 truncate">{{ $mvp['nama_tim'] }}</div>
+                    <div class="text-xs text-slate-600 dark:text-slate-300 mt-0.5 truncate">{{ $mvp['pemain1'] }} &amp; {{ $mvp['pemain2'] }}</div>
+                    <div class="text-[11px] font-mono font-bold text-amber-800 dark:text-amber-300 mt-2">
+                        {{ $mvp['w'] }}M - {{ $mvp['l'] }}K &middot; {{ $mvp['pts'] }} PTS
+                    </div>
+                </a>
+
+                <!-- Selisih Batu Terbaik -->
+                @php $bsb = $mvpData['best_sb']; @endphp
+                <a href="{{ route('tim.detail', $bsb['id']) }}" class="group rounded-2xl p-4 bg-gradient-to-br from-emerald-50/90 to-teal-50/50 dark:from-emerald-950/40 dark:to-slate-800/60 border border-emerald-200/80 dark:border-emerald-800/60 hover:shadow-sm transition-all">
+                    <div class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1.5">
+                        <span>🎯 Selisih Batu Terbaik</span>
+                        <span class="font-mono">{{ $bsb['sb'] > 0 ? '+' : '' }}{{ (int) $bsb['sb'] }}</span>
+                    </div>
+                    <div class="text-base font-black text-slate-900 dark:text-white group-hover:text-indigo-600 truncate">{{ $bsb['nama_tim'] }}</div>
+                    <div class="text-xs text-slate-600 dark:text-slate-300 mt-0.5 truncate">{{ $bsb['pemain1'] }} &amp; {{ $bsb['pemain2'] }}</div>
+                    <div class="text-[11px] font-mono font-bold text-emerald-800 dark:text-emerald-300 mt-2">
+                        BM {{ $bsb['bm'] }} &middot; BK {{ $bsb['bk'] }}
+                    </div>
+                </a>
+
+                <!-- Streak Terpanas -->
+                @php $hs = $mvpData['hot_streak']; @endphp
+                @if ($hs)
+                    <a href="{{ route('tim.detail', $hs['id']) }}" class="group rounded-2xl p-4 bg-gradient-to-br from-rose-50/90 to-orange-50/60 dark:from-rose-950/40 dark:to-slate-800/60 border border-rose-200/80 dark:border-rose-800/60 hover:shadow-sm transition-all">
+                        <div class="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-1.5">
+                            <span>🔥 Rekor Streak Aktif</span>
+                            <span class="font-mono">{{ (int) $hs['streak_count'] }}× Menang</span>
+                        </div>
+                        <div class="text-base font-black text-slate-900 dark:text-white group-hover:text-indigo-600 truncate">{{ $hs['nama_tim'] }}</div>
+                        <div class="text-xs text-slate-600 dark:text-slate-300 mt-0.5 truncate">{{ $hs['pemain1'] }} &amp; {{ $hs['pemain2'] }}</div>
+                        <div class="text-[11px] font-mono font-bold text-rose-800 dark:text-rose-300 mt-2">
+                            Tren: {{ $hs['trend_label'] }}
+                        </div>
+                    </a>
+                @else
+                    <div class="rounded-2xl p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 flex flex-col justify-center">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">🔥 Streak Aktif</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">Belum ada tim dengan kemenangan beruntun aktif saat ini.</div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
 
     <!-- 2 Columns: Today's Matches & Top Standings -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">

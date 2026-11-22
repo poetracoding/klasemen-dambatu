@@ -124,6 +124,87 @@
     </div>
 </div>
 
+<!-- Polling Tebak Pemenang & Sorakan Penonton -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+    <!-- Polling / Tebak Pemenang -->
+    <div class="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-6 space-y-4">
+        <div class="flex items-center justify-between gap-2">
+            <div>
+                <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="bi bi-bar-chart-steps text-indigo-500"></i>
+                    <span>Polling Tebak Pemenang</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                    {{ $m->status === 'selesai' ? 'Polling ditutup karena pertandingan telah selesai.' : 'Pilih tim jagoan Anda dan lihat suara penonton!' }}
+                </p>
+            </div>
+            <span id="voteTotalBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/70">
+                {{ (int) ($voteSummary['total'] ?? 0) }} Suara
+            </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <button type="button" data-vote-choice="home" @disabled($m->status === 'selesai')
+                class="match-vote-btn p-3.5 rounded-2xl border text-left transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed {{ ($voteSummary['user_choice'] ?? null) === 'home' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/70 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-indigo-400' }}">
+                <div class="text-[10px] uppercase tracking-wider font-bold opacity-80">Tim Home</div>
+                <div class="text-sm font-extrabold truncate mt-0.5">{{ $m->homeTeam->nama_tim ?? ('Tim #' . $m->tim_home) }}</div>
+                <div class="mt-2 flex items-center justify-between text-xs font-mono font-bold">
+                    <span id="voteHomePct">{{ (int) ($voteSummary['home_pct'] ?? 50) }}%</span>
+                    <span id="voteHomeCount" class="opacity-80">{{ (int) ($voteSummary['home'] ?? 0) }} suara</span>
+                </div>
+            </button>
+
+            <button type="button" data-vote-choice="away" @disabled($m->status === 'selesai')
+                class="match-vote-btn p-3.5 rounded-2xl border text-left transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed {{ ($voteSummary['user_choice'] ?? null) === 'away' ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/70 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-emerald-400' }}">
+                <div class="text-[10px] uppercase tracking-wider font-bold opacity-80">Tim Away</div>
+                <div class="text-sm font-extrabold truncate mt-0.5">{{ $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away) }}</div>
+                <div class="mt-2 flex items-center justify-between text-xs font-mono font-bold">
+                    <span id="voteAwayPct">{{ (int) ($voteSummary['away_pct'] ?? 50) }}%</span>
+                    <span id="voteAwayCount" class="opacity-80">{{ (int) ($voteSummary['away'] ?? 0) }} suara</span>
+                </div>
+            </button>
+        </div>
+
+        <div class="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
+            <div id="voteHomeBar" class="h-full bg-indigo-600 transition-all duration-300" style="width: {{ (int) ($voteSummary['home_pct'] ?? 50) }}%"></div>
+            <div id="voteAwayBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: {{ (int) ($voteSummary['away_pct'] ?? 50) }}%"></div>
+        </div>
+    </div>
+
+    <!-- Sorakan Penonton (Live Cheer Presets) -->
+    <div class="lg:col-span-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-6 space-y-4 relative overflow-hidden">
+        <div class="flex items-center justify-between gap-2">
+            <div>
+                <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="bi bi-megaphone-fill text-amber-500"></i>
+                    <span>Sorakan Penonton</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">Kirim dukungan cepat ke meja pertandingan!</p>
+            </div>
+            <span id="cheerTotalBadge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/70">
+                {{ (int) ($cheerSummary['total'] ?? 0) }} Sorakan
+            </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+            @foreach (\App\Models\PertandinganCheer::REACTIONS as $rKey => $rInfo)
+                @php
+                    $isChosen = ($cheerSummary['user_reaction'] ?? null) === $rKey;
+                    $cnt = (int) ($cheerSummary['counts'][$rKey] ?? 0);
+                @endphp
+                <button type="button" data-cheer-key="{{ $rKey }}"
+                    class="match-cheer-btn flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer {{ $isChosen ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-amber-400' }}">
+                    <span class="flex items-center gap-1.5">
+                        <span class="text-base leading-none">{{ $rInfo['emoji'] }}</span>
+                        <span>{{ $rInfo['label'] }}</span>
+                    </span>
+                    <span class="font-mono font-extrabold cheer-count">{{ $cnt }}</span>
+                </button>
+            @endforeach
+        </div>
+    </div>
+</div>
+
 @if (!empty($prediksi))
     @php
         $homePct = $prediksi['home_pct'];
@@ -217,4 +298,84 @@
         </div>
     </div>
 @endif
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    var voteUrl = @json(route('pertandingan.vote', $m->id));
+    var cheerUrl = @json(route('pertandingan.cheer', $m->id));
+
+    document.querySelectorAll('.match-vote-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (btn.disabled) return;
+            var choice = btn.getAttribute('data-vote-choice');
+            fetch(voteUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                },
+                body: JSON.stringify({ choice: choice }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.success || !data.summary) return;
+                var s = data.summary;
+                document.getElementById('voteTotalBadge').textContent = s.total + ' Suara';
+                document.getElementById('voteHomePct').textContent = s.home_pct + '%';
+                document.getElementById('voteAwayPct').textContent = s.away_pct + '%';
+                document.getElementById('voteHomeCount').textContent = s.home + ' suara';
+                document.getElementById('voteAwayCount').textContent = s.away + ' suara';
+                document.getElementById('voteHomeBar').style.width = s.home_pct + '%';
+                document.getElementById('voteAwayBar').style.width = s.away_pct + '%';
+
+                document.querySelectorAll('.match-vote-btn').forEach(function (b) {
+                    var c = b.getAttribute('data-vote-choice');
+                    var isSel = s.user_choice === c;
+                    b.className = 'match-vote-btn p-3.5 rounded-2xl border text-left transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ' +
+                        (isSel
+                            ? (c === 'home' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-emerald-600 text-white border-emerald-600 shadow-sm')
+                            : 'bg-slate-50 dark:bg-slate-800/70 text-slate-800 dark:text-slate-100 border-slate-200 dark:border-slate-700 hover:border-indigo-400');
+                });
+            })
+            .catch(function () {});
+        });
+    });
+
+    document.querySelectorAll('.match-cheer-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var reaction = btn.getAttribute('data-cheer-key');
+            fetch(cheerUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                },
+                body: JSON.stringify({ reaction: reaction }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.success || !data.summary) return;
+                var s = data.summary;
+                document.getElementById('cheerTotalBadge').textContent = s.total + ' Sorakan';
+                document.querySelectorAll('.match-cheer-btn').forEach(function (b) {
+                    var k = b.getAttribute('data-cheer-key');
+                    var cntEl = b.querySelector('.cheer-count');
+                    if (cntEl) cntEl.textContent = String((s.counts && s.counts[k]) || 0);
+                    var isSel = s.user_reaction === k;
+                    b.className = 'match-cheer-btn flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl border text-xs font-bold transition-all cursor-pointer ' +
+                        (isSel
+                            ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
+                            : 'bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-amber-400');
+                });
+            })
+            .catch(function () {});
+        });
+    });
+});
+</script>
 @endsection

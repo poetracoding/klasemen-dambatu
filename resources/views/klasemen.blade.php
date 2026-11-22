@@ -28,6 +28,7 @@
 @include('partials.fcm_nudge_card')
 
 @if ($liga->status === 'selesai' && !empty($klasemen))
+    @include('partials.champion_confetti')
     @php $winner = $klasemen[0]; @endphp
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 p-6 mb-6 shadow-md shadow-amber-500/20 text-slate-950 flex items-center gap-5">
         <div class="w-14 h-14 rounded-2xl bg-white/40 flex items-center justify-center text-amber-950 shadow-inner flex-shrink-0">
@@ -87,9 +88,25 @@
                                 @endif
                             </td>
                             <td class="py-4 px-4">
-                                <a class="font-bold text-slate-900 hover:text-indigo-600 transition-colors block" href="{{ route('tim.detail', $k['id']) }}">
-                                    {{ $k['nama_tim'] }}
-                                </a>
+                                @php
+                                    $tr = $trendMap[$k['id']] ?? null;
+                                    $stType = $tr['streak_type'] ?? 'N';
+                                    $stCount = (int) ($tr['streak_count'] ?? 0);
+                                @endphp
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <a class="font-bold text-slate-900 hover:text-indigo-600 transition-colors" href="{{ route('tim.detail', $k['id']) }}">
+                                        {{ $k['nama_tim'] }}
+                                    </a>
+                                    @if ($stType === 'W' && $stCount >= 2)
+                                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Menang {{ $stCount }} kali beruntun">
+                                            ▲ {{ $stCount }}M
+                                        </span>
+                                    @elseif ($stType === 'L' && $stCount >= 2)
+                                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200" title="Kalah {{ $stCount }} kali beruntun">
+                                            ▼ {{ $stCount }}K
+                                        </span>
+                                    @endif
+                                </div>
                                 @include('partials.team_players', [
                                     'p1' => $k['pemain1'] ?? null,
                                     'p2' => $k['pemain2'] ?? null,

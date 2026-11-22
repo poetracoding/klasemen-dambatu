@@ -160,8 +160,9 @@
                         ['route' => 'history', 'label' => 'History', 'icon' => 'bi-clock-history'],
                         ['route' => 'berita.index', 'label' => 'Berita', 'icon' => 'bi-newspaper', 'pattern' => 'berita.*'],
                     ];
-                    $isGameActive = request()->routeIs('game') || request()->routeIs('game.*');
+                    $isGameActive = request()->routeIs('game') || request()->routeIs('game.*') || request()->routeIs('games.*');
                     $gameLinks = [
+                        ['url' => route('games.hub'), 'label' => 'Semua Game (Arena Hub)', 'icon' => 'bi-grid-fill', 'active' => request()->routeIs('games.hub')],
                         ['url' => route('game'), 'label' => 'Game Dam Batu', 'icon' => 'bi-dice-6-fill', 'active' => request()->routeIs('game')],
                         ['url' => route('game.monopoli'), 'label' => 'Monopoli Nusantara', 'icon' => 'bi-buildings-fill', 'active' => request()->routeIs('game.monopoli')],
                         ['url' => route('game.flappy_bird'), 'label' => 'Flappy Bird', 'icon' => 'bi-feather', 'active' => request()->routeIs('game.flappy_bird')],

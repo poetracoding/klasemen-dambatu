@@ -41,6 +41,7 @@ Route::post('/berita/{slug}/like', [BeritaController::class, 'toggleLike'])
     ->where('slug', '[a-z0-9-]+')
     ->middleware('throttle:30,1')
     ->name('berita.like');
+Route::get('/games', [HomeController::class, 'gamesHub'])->name('games.hub');
 Route::get('/game', [HomeController::class, 'game'])->name('game');
 Route::get('/game/monopoli', [HomeController::class, 'monopoli'])->name('game.monopoli');
 Route::get('/game/flappy-bird', [HomeController::class, 'flappyBird'])->name('game.flappy_bird');
@@ -48,6 +49,12 @@ Route::get('/game/ludo-queen', [HomeController::class, 'ludoQueen'])->name('game
 Route::get('/game/catur', [HomeController::class, 'catur'])->name('game.catur');
 Route::get('/tim/{id}', [HomeController::class, 'timDetail'])->name('tim.detail');
 Route::get('/pertandingan/{id}', [HomeController::class, 'pertandinganDetail'])->name('pertandingan.detail');
+Route::post('/pertandingan/{id}/vote', [HomeController::class, 'voteMatch'])
+    ->middleware('throttle:30,1')
+    ->name('pertandingan.vote');
+Route::post('/pertandingan/{id}/cheer', [HomeController::class, 'cheerMatch'])
+    ->middleware('throttle:40,1')
+    ->name('pertandingan.cheer');
 
 // Cetak & Download PDF (DomPDF)
 Route::get('/cetak/klasemen', [PdfController::class, 'klasemen'])->name('klasemen.pdf');
