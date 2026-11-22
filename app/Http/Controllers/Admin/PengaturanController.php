@@ -75,6 +75,12 @@ class PengaturanController extends Controller
         return view('admin.ludo_queen', compact('liga'));
     }
 
+    public function catur()
+    {
+        $liga = Liga::current();
+        return view('admin.catur', compact('liga'));
+    }
+
     public function analytics()
     {
         $liga = Liga::current();

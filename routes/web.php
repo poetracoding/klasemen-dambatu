@@ -129,6 +129,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('/flappy-bird', fn () => redirect()->route('admin.pengaturan.flappy_bird'))->name('flappy_bird');
     Route::get('/pengaturan/ludo-queen', [PengaturanController::class, 'ludoQueen'])->name('pengaturan.ludo_queen');
     Route::get('/ludo-queen', fn () => redirect()->route('admin.pengaturan.ludo_queen'))->name('ludo_queen');
+    Route::get('/pengaturan/catur', [PengaturanController::class, 'catur'])->name('pengaturan.catur');
+    Route::get('/catur', fn () => redirect()->route('admin.pengaturan.catur'))->name('catur');
     Route::post('/pengaturan/liga', [PengaturanController::class, 'updateLiga'])->name('pengaturan.update_liga');
     Route::post('/pengaturan/test-fcm', [PengaturanController::class, 'testFcm'])->name('pengaturan.test_fcm');
     Route::post('/pengaturan/password', [PengaturanController::class, 'gantiPassword'])->name('pengaturan.ganti_password');
