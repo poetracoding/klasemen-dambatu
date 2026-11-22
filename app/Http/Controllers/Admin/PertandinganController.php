@@ -9,6 +9,7 @@ use App\Models\Tim;
 use App\Services\FcmService;
 use App\Services\TournamentService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PertandinganController extends Controller
 {
@@ -71,11 +72,19 @@ class PertandinganController extends Controller
 
         $match = Pertandingan::where('liga_id', $liga->id)->findOrFail($id);
 
-        $status = $request->input('status', 'belum_main');
-        $skorHome = max(0, (int) $request->input('skor_home', 0));
-        $skorAway = max(0, (int) $request->input('skor_away', 0));
-        $pemenang = (int) $request->input('pemenang_id', 0);
-        $catatan = trim($request->input('catatan', ''));
+        $validated = $request->validate([
+            'status' => ['required', 'string', Rule::in(array_keys(TournamentService::STATUS_MATCH))],
+            'skor_home' => 'nullable|integer|min:0|max:9999',
+            'skor_away' => 'nullable|integer|min:0|max:9999',
+            'pemenang_id' => 'nullable|integer',
+            'catatan' => 'nullable|string|max:500',
+        ]);
+
+        $status = $validated['status'];
+        $skorHome = max(0, (int) ($validated['skor_home'] ?? 0));
+        $skorAway = max(0, (int) ($validated['skor_away'] ?? 0));
+        $pemenang = (int) ($validated['pemenang_id'] ?? 0);
+        $catatan = trim((string) ($validated['catatan'] ?? ''));
 
         // Otomatis tentukan pemenang jika skor berbeda dan belum dipilih manual
         if ($status === 'selesai' && !$pemenang) {

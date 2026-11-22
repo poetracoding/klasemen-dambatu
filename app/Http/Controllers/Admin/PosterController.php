@@ -24,9 +24,9 @@ class PosterController extends Controller
         $request->validate([
             'judul' => 'nullable|string|max:120',
             'deskripsi' => 'nullable|string|max:255',
-            'poster' => 'required_without:posters|file|mimes:jpg,jpeg,png,webp,gif|max:10240',
+            'poster' => 'required_without:posters|file|image|mimes:jpg,jpeg,png,webp,gif|max:10240',
             'posters' => 'nullable|array',
-            'posters.*' => 'file|mimes:jpg,jpeg,png,webp,gif|max:10240',
+            'posters.*' => 'file|image|mimes:jpg,jpeg,png,webp,gif|max:10240',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -54,8 +54,8 @@ class PosterController extends Controller
                 continue;
             }
 
-            $ext = $file->getClientOriginalExtension() ?: 'png';
-            $filename = 'poster_' . time() . '_' . Str::random(6) . '.' . strtolower($ext);
+            $ext = $this->resolveSafeExtension($file);
+            $filename = 'poster_' . time() . '_' . Str::lower(Str::random(8)) . '.' . $ext;
             $file->move($dir, $filename);
 
             $maxUrutan++;
@@ -82,7 +82,7 @@ class PosterController extends Controller
             'deskripsi' => 'nullable|string|max:255',
             'urutan' => 'nullable|integer|min:1',
             'is_active' => 'nullable|boolean',
-            'poster' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif|max:10240',
+            'poster' => 'nullable|file|image|mimes:jpg,jpeg,png,webp,gif|max:10240',
         ]);
 
         $filePath = $poster->file_path;
@@ -97,8 +97,8 @@ class PosterController extends Controller
             }
 
             $file = $request->file('poster');
-            $ext = $file->getClientOriginalExtension() ?: 'png';
-            $filename = 'poster_' . time() . '_' . Str::random(6) . '.' . strtolower($ext);
+            $ext = $this->resolveSafeExtension($file);
+            $filename = 'poster_' . time() . '_' . Str::lower(Str::random(8)) . '.' . $ext;
             $file->move($dir, $filename);
             $filePath = 'uploads/posters/' . $filename;
         }
@@ -135,5 +135,15 @@ class PosterController extends Controller
         $poster->delete();
 
         return back()->with('success', 'Poster informasi berhasil dihapus.');
+    }
+
+    private function resolveSafeExtension($file): string
+    {
+        $ext = strtolower((string) ($file->guessExtension() ?: $file->getClientOriginalExtension() ?: 'png'));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+            return 'png';
+        }
+
+        return $ext;
     }
 }

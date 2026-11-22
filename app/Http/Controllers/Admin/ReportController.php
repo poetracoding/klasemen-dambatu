@@ -69,8 +69,8 @@ class ReportController extends Controller
             ->setPaper('a4', 'landscape')
             ->setOption([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'isPhpEnabled' => true,
+                'isRemoteEnabled' => false,
+                'isPhpEnabled' => false,
                 'defaultFont' => 'Helvetica',
             ]);
 

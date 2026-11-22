@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Berita;
 use App\Models\FcmToken;
 use App\Models\Liga;
 use App\Models\Pertandingan;
+use App\Models\Poster;
 use App\Models\Tim;
 use App\Models\User;
 use App\Models\VisitorLog;
@@ -236,6 +238,8 @@ class PengaturanController extends Controller
         $liga = Liga::current();
         $tims = Tim::where('liga_id', $liga->id)->get()->toArray();
         $pertandingans = Pertandingan::where('liga_id', $liga->id)->get()->toArray();
+        $posters = Poster::where('liga_id', $liga->id)->get()->toArray();
+        $beritas = Berita::where('liga_id', $liga->id)->get()->toArray();
 
         $data = [
             'app' => 'LIGA DAM BATU - LARAVEL 12',
@@ -243,6 +247,8 @@ class PengaturanController extends Controller
             'liga' => $liga->toArray(),
             'tims' => $tims,
             'pertandingans' => $pertandingans,
+            'posters' => $posters,
+            'beritas' => $beritas,
         ];
 
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -349,6 +355,64 @@ class PengaturanController extends Controller
                     }
                     foreach (array_chunk($matchRecords, 50) as $chunk) {
                         DB::table('pertandingans')->insert($chunk);
+                    }
+                }
+
+                if (isset($data['posters']) && is_array($data['posters'])) {
+                    DB::table('posters')->where('liga_id', $liga->id)->delete();
+                    $posterRecords = [];
+                    foreach ($data['posters'] as $pt) {
+                        if (empty($pt['file_path'])) {
+                            continue;
+                        }
+                        $posterRecords[] = [
+                            'liga_id' => $liga->id,
+                            'judul' => $pt['judul'] ?? null,
+                            'deskripsi' => $pt['deskripsi'] ?? null,
+                            'file_path' => $pt['file_path'],
+                            'urutan' => (int) ($pt['urutan'] ?? 1),
+                            'is_active' => isset($pt['is_active']) ? (bool) $pt['is_active'] : true,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                    if (!empty($posterRecords)) {
+                        DB::table('posters')->insert($posterRecords);
+                    }
+                }
+
+                if (isset($data['beritas']) && is_array($data['beritas'])) {
+                    DB::table('beritas')->where('liga_id', $liga->id)->delete();
+                    $validUserIds = User::pluck('id')->all();
+                    $fallbackUserId = Auth::id();
+                    $beritaRecords = [];
+                    foreach ($data['beritas'] as $br) {
+                        if (empty($br['judul']) || empty($br['slug'])) {
+                            continue;
+                        }
+                        $uid = (!empty($br['user_id']) && in_array((int) $br['user_id'], $validUserIds, true))
+                            ? (int) $br['user_id']
+                            : $fallbackUserId;
+                        $beritaRecords[] = [
+                            'liga_id' => $liga->id,
+                            'user_id' => $uid,
+                            'judul' => $br['judul'],
+                            'slug' => $br['slug'],
+                            'kategori' => $br['kategori'] ?? 'Berita',
+                            'ringkasan' => $br['ringkasan'] ?? null,
+                            'isi' => $br['isi'] ?? '',
+                            'gambar' => $br['gambar'] ?? null,
+                            'status' => $br['status'] ?? 'draft',
+                            'published_at' => $br['published_at'] ?? null,
+                            'notified_at' => $br['notified_at'] ?? null,
+                            'views_count' => (int) ($br['views_count'] ?? 0),
+                            'likes_count' => (int) ($br['likes_count'] ?? 0),
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                    foreach (array_chunk($beritaRecords, 30) as $chunk) {
+                        DB::table('beritas')->insert($chunk);
                     }
                 }
             } elseif ($isSqlite) {

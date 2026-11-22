@@ -156,17 +156,6 @@
 </head>
 <body>
 
-    <script type="text/php">
-        if (isset($pdf)) {
-            $text = "Dicetak otomatis dari Sistem Turnamen {{ addslashes($liga->nama_liga ?? 'Liga Dam Batu') }} | Halaman {PAGE_NUM} dari {PAGE_COUNT}";
-            $font = $fontMetrics->get_font("Helvetica", "normal");
-            $size = 7.5;
-            $width = $fontMetrics->getTextWidth($text, $font, $size);
-            // A4 Portrait width is 595.28 pt, height is 841.89 pt
-            $pdf->page_text((595 - $width) / 2, 820, $text, $font, $size, [0.58, 0.64, 0.72]);
-        }
-    </script>
-
     <!-- Header Dokumen -->
     <table class="header-table">
         <tr>

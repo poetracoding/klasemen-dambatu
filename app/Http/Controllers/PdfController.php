@@ -24,7 +24,8 @@ class PdfController extends Controller
             ->setPaper('a4', 'portrait')
             ->setOption([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
+                'isRemoteEnabled' => false,
+                'isPhpEnabled' => false,
                 'defaultFont' => 'Helvetica',
             ]);
 
@@ -40,30 +41,36 @@ class PdfController extends Controller
     public function jadwal(Request $request)
     {
         $liga = Liga::current();
-        $query = Pertandingan::where('liga_id', $liga->id)
-            ->with(['homeTeam', 'awayTeam']);
 
-        if ($request->filled('ronde')) {
-            $query->where('ronde', (int) $request->ronde);
+        if ($liga->status === 'draft' && !auth()->check()) {
+            $matches = collect();
+            $jadwalPerRonde = collect();
+        } else {
+            $query = Pertandingan::where('liga_id', $liga->id)
+                ->with(['homeTeam', 'awayTeam']);
+
+            if ($request->filled('ronde')) {
+                $query->where('ronde', (int) $request->ronde);
+            }
+
+            if ($request->filled('tim') && (int) $request->tim > 0) {
+                $timId = (int) $request->tim;
+                $query->where(function ($q) use ($timId) {
+                    $q->where('tim_home', $timId)->orWhere('tim_away', $timId);
+                });
+            }
+
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('tanggal')) {
+                $query->where('tanggal', $request->tanggal);
+            }
+
+            $matches = $query->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')->get();
+            $jadwalPerRonde = $matches->groupBy('ronde');
         }
-
-        if ($request->filled('tim') && (int) $request->tim > 0) {
-            $timId = (int) $request->tim;
-            $query->where(function ($q) use ($timId) {
-                $q->where('tim_home', $timId)->orWhere('tim_away', $timId);
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('tanggal')) {
-            $query->where('tanggal', $request->tanggal);
-        }
-
-        $matches = $query->orderByRaw('tanggal IS NULL, tanggal, waktu, nomor_pertandingan')->get();
-        $jadwalPerRonde = $matches->groupBy('ronde');
 
         // Kelompokkan per tanggal pertandingan (2 hari per halaman)
         $matchesByDate = $matches->groupBy(function ($item) {
@@ -75,8 +82,8 @@ class PdfController extends Controller
             ->setPaper('a4', 'landscape')
             ->setOption([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'isPhpEnabled' => true,
+                'isRemoteEnabled' => false,
+                'isPhpEnabled' => false,
                 'defaultFont' => 'Helvetica',
             ]);
 
@@ -103,8 +110,8 @@ class PdfController extends Controller
             ->setPaper('a4', 'portrait')
             ->setOption([
                 'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled' => true,
-                'isPhpEnabled' => true,
+                'isRemoteEnabled' => false,
+                'isPhpEnabled' => false,
                 'defaultFont' => 'Helvetica',
             ]);
 

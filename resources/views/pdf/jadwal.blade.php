@@ -160,19 +160,24 @@
         .page-break {
             page-break-after: always;
         }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 7.5px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 3px;
+        }
     </style>
 </head>
 <body>
 
-    <script type="text/php">
-        if (isset($pdf)) {
-            $text = "Dicetak otomatis dari Sistem Turnamen {{ addslashes($liga->nama_liga ?? 'Liga Dam Batu') }} | Halaman {PAGE_NUM} dari {PAGE_COUNT}";
-            $font = $fontMetrics->get_font("Helvetica", "normal");
-            $size = 7.5;
-            $width = $fontMetrics->getTextWidth($text, $font, $size);
-            $pdf->page_text((842 - $width) / 2, 576, $text, $font, $size, [0.58, 0.64, 0.72]);
-        }
-    </script>
+    <div class="footer">
+        Dicetak otomatis dari Sistem Turnamen {{ $liga->nama_liga ?? 'Liga Dam Batu' }}
+    </div>
 
     @forelse ($pages as $pageIndex => $daysOnPage)
         <div class="page-container">

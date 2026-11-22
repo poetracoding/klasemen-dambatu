@@ -160,10 +160,16 @@ class JadwalController extends Controller
         $liga = Liga::current();
         $match = Pertandingan::where('liga_id', $liga->id)->findOrFail($id);
 
+        $validated = $request->validate([
+            'tanggal' => 'nullable|date',
+            'waktu' => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+            'lokasi' => 'nullable|string|max:60',
+        ]);
+
         $match->update([
-            'tanggal' => $request->tanggal ?: null,
-            'waktu' => $request->waktu ?: null,
-            'lokasi' => trim($request->lokasi ?? ''),
+            'tanggal' => !empty($validated['tanggal']) ? $validated['tanggal'] : null,
+            'waktu' => !empty($validated['waktu']) ? $validated['waktu'] : null,
+            'lokasi' => trim((string) ($validated['lokasi'] ?? '')),
         ]);
 
         return back()->with('success', 'Jadwal pertandingan #' . $match->nomor_pertandingan . ' diperbarui.');

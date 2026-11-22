@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             '::1',
         ]);
         $middleware->appendToGroup('web', \App\Http\Middleware\TrackPublicVisit::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

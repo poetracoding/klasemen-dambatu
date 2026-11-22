@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var isFetching = false;
 
         function checkLiveUpdate() {
-            if (isFetching) return;
+            if (isFetching || document.hidden) return;
             fetch(checkUrl, { cache: 'no-store' })
                 .then(function (res) {
                     if (!res.ok) throw new Error('API unavailable');
@@ -241,6 +241,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function fetchFreshHTML() {
+            var curMainEl = document.querySelector('main');
+            var activeEl = document.activeElement;
+            if (curMainEl && activeEl && curMainEl.contains(activeEl)) {
+                var tag = (activeEl.tagName || '').toUpperCase();
+                if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
+                    return;
+                }
+            }
+
             isFetching = true;
             fetch(window.location.href, {
                 cache: 'no-store',

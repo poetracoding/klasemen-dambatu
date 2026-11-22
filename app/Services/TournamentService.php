@@ -150,8 +150,20 @@ class TournamentService
 
             $matchesToday = 0;
             $slotIndex = 0;
+            $jamParts = explode(':', (string) $jamMulai);
+            $startMinutes = ((int) ($jamParts[0] ?? 19)) * 60 + ((int) ($jamParts[1] ?? 0));
 
             while (!empty($matchList)) {
+                $slotMinutes = $startMinutes + ($slotIndex * $durasi);
+                if ($slotMinutes >= 1440 && $matchesToday > 0) {
+                    do {
+                        $currentDateTs = strtotime('+1 day', $currentDateTs);
+                    } while (!$isDateAllowed($currentDateTs));
+                    $matchesToday = 0;
+                    $slotIndex = 0;
+                    $slotMinutes = $startMinutes;
+                }
+
                 $matchesInThisSlot = 0;
                 $teamsInSlot = [];
 
@@ -174,7 +186,8 @@ class TournamentService
 
                     $no++;
                     $tanggal = date('Y-m-d', $currentDateTs);
-                    $waktu = date('H:i', strtotime($jamMulai) + $slotIndex * $durasi * 60);
+                    $modMin = $slotMinutes % 1440;
+                    $waktu = sprintf('%02d:%02d', intdiv($modMin, 60), $modMin % 60);
 
                     $mejaIndex = $matchesInThisSlot + 1;
                     $lokasi = $jumlahMeja > 1 ? "$prefixLokasi $mejaIndex" : $prefixLokasi;

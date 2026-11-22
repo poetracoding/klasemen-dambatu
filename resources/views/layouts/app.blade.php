@@ -261,55 +261,55 @@
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
     <!-- Flash Messages -->
     @if (session('success'))
-        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-800 shadow-xs transition-all" role="alert">
+        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800/70 text-emerald-800 dark:text-emerald-200 shadow-xs transition-all" role="alert">
             <div class="flex items-center gap-3 text-sm font-medium">
                 <i class="bi bi-check-circle-fill text-emerald-500 text-lg flex-shrink-0"></i>
                 <div>{{ session('success') }}</div>
             </div>
-            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition-opacity" aria-label="Close">
+            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-opacity" aria-label="Close">
                 <i class="bi bi-x-lg text-xs"></i>
             </button>
         </div>
     @endif
 
     @if (session('danger') || session('error'))
-        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 shadow-xs transition-all" role="alert">
+        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800/70 text-rose-800 dark:text-rose-200 shadow-xs transition-all" role="alert">
             <div class="flex items-center gap-3 text-sm font-medium">
                 <i class="bi bi-x-circle-fill text-rose-500 text-lg flex-shrink-0"></i>
                 <div>{{ session('danger') ?? session('error') }}</div>
             </div>
-            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition-opacity" aria-label="Close">
+            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-opacity" aria-label="Close">
                 <i class="bi bi-x-lg text-xs"></i>
             </button>
         </div>
     @endif
 
     @if (session('warning'))
-        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-amber-50 border-amber-200 text-amber-800 shadow-xs transition-all" role="alert">
+        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800/70 text-amber-800 dark:text-amber-200 shadow-xs transition-all" role="alert">
             <div class="flex items-center gap-3 text-sm font-medium">
                 <i class="bi bi-exclamation-triangle-fill text-amber-500 text-lg flex-shrink-0"></i>
                 <div>{{ session('warning') }}</div>
             </div>
-            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition-opacity" aria-label="Close">
+            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-opacity" aria-label="Close">
                 <i class="bi bi-x-lg text-xs"></i>
             </button>
         </div>
     @endif
 
     @if (session('info'))
-        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-800 shadow-xs transition-all" role="alert">
+        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-800/70 text-indigo-800 dark:text-indigo-200 shadow-xs transition-all" role="alert">
             <div class="flex items-center gap-3 text-sm font-medium">
                 <i class="bi bi-info-circle-fill text-indigo-500 text-lg flex-shrink-0"></i>
                 <div>{{ session('info') }}</div>
             </div>
-            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition-opacity" aria-label="Close">
+            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-opacity" aria-label="Close">
                 <i class="bi bi-x-lg text-xs"></i>
             </button>
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-rose-50 border-rose-200 text-rose-800 shadow-xs transition-all" role="alert">
+        <div class="alert-box flex items-start justify-between p-4 mb-5 rounded-xl border bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800/70 text-rose-800 dark:text-rose-200 shadow-xs transition-all" role="alert">
             <div class="flex items-center gap-3 text-sm font-medium">
                 <i class="bi bi-x-circle-fill text-rose-500 text-lg flex-shrink-0"></i>
                 <div>
@@ -320,7 +320,7 @@
                     </ul>
                 </div>
             </div>
-            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition-opacity" aria-label="Close">
+            <button type="button" class="alert-close-btn -mr-1 -mt-1 p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-opacity" aria-label="Close">
                 <i class="bi bi-x-lg text-xs"></i>
             </button>
         </div>
@@ -329,12 +329,12 @@
     @yield('content')
 </main>
 
-<footer class="border-t border-slate-200/80 bg-white/60 py-6 text-center text-xs text-slate-500 mt-auto">
+<footer class="border-t border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/80 py-6 text-center text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div class="font-medium text-slate-700">
-            {{ $liga->nama_liga ?? 'Liga Dam Batu' }} <span class="text-slate-400 font-normal">&middot; Musim {{ $liga->musim ?? date('Y') }}</span>
+        <div class="font-medium text-slate-700 dark:text-slate-200">
+            {{ $liga->nama_liga ?? 'Liga Dam Batu' }} <span class="text-slate-400 dark:text-slate-500 font-normal">&middot; Musim {{ $liga->musim ?? date('Y') }}</span>
         </div>
-        <div class="text-slate-400">
+        <div class="text-slate-400 dark:text-slate-500">
             Sistem Manajemen Turnamen Dam Batu &middot; Laravel 12
         </div>
     </div>
