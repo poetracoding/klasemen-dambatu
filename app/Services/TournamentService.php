@@ -552,11 +552,13 @@ class TournamentService
                 'won' => $homeWon,
                 'diff' => $diffHome,
                 'opp_id' => $m->tim_away,
+                'updated_at' => $m->updated_at,
             ];
             $historyByTeam[$m->tim_away][] = [
                 'won' => $awayWon,
                 'diff' => -$diffHome,
                 'opp_id' => $m->tim_home,
+                'updated_at' => $m->updated_at,
             ];
         }
 
@@ -596,11 +598,14 @@ class TournamentService
                 $recentRawRate = 0.0;
             }
 
-            // Streak terkini (menang/kalah beruntun dari laga terakhir)
+            // Streak terkini (menang/kalah beruntun berdasarkan updated_at laga terakhir)
             $streakType = 'N';
             $streakCount = 0;
+            $lastUpdatedAt = null;
             if (!empty($teamHistory)) {
-                $lastWon = $teamHistory[count($teamHistory) - 1]['won'];
+                $lastEntry = $teamHistory[count($teamHistory) - 1];
+                $lastWon = $lastEntry['won'];
+                $lastUpdatedAt = $lastEntry['updated_at'] ?? null;
                 $streakType = $lastWon ? 'W' : 'L';
                 for ($i = count($teamHistory) - 1; $i >= 0; $i--) {
                     if ($teamHistory[$i]['won'] === $lastWon) {
@@ -610,6 +615,9 @@ class TournamentService
                     }
                 }
             }
+            $badgeRecent = $lastUpdatedAt
+                ? \Carbon\Carbon::parse($lastUpdatedAt)->greaterThanOrEqualTo(now()->subDay())
+                : false;
 
             // Skor selisih poin (dinormalisasi ke 0..100, rata-rata 0 -> 50)
             $diffScore = 50.0 + max(-50.0, min(50.0, $avgDiff * 2.5));
@@ -637,6 +645,8 @@ class TournamentService
                 'recent_form' => $recentForm,
                 'streak_type' => $streakType,
                 'streak_count' => $streakCount,
+                'last_updated_at' => $lastUpdatedAt,
+                'badge_recent' => $badgeRecent,
                 'strength' => round($strength, 2),
             ];
         }

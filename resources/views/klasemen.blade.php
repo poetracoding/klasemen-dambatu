@@ -92,17 +92,18 @@
                                     $tr = $trendMap[$k['id']] ?? null;
                                     $stType = $tr['streak_type'] ?? 'N';
                                     $stCount = (int) ($tr['streak_count'] ?? 0);
+                                    $showBadge = !empty($tr['badge_recent']) && $stCount >= 2;
                                 @endphp
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <a class="font-bold text-slate-900 hover:text-indigo-600 transition-colors" href="{{ route('tim.detail', $k['id']) }}">
                                         {{ $k['nama_tim'] }}
                                     </a>
-                                    @if ($stType === 'W' && $stCount >= 2)
-                                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Menang {{ $stCount }} kali beruntun">
+                                    @if ($showBadge && $stType === 'W')
+                                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Menang {{ $stCount }} kali beruntun (update terbaru)">
                                             ▲ {{ $stCount }}M
                                         </span>
-                                    @elseif ($stType === 'L' && $stCount >= 2)
-                                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200" title="Kalah {{ $stCount }} kali beruntun">
+                                    @elseif ($showBadge && $stType === 'L')
+                                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200" title="Kalah {{ $stCount }} kali beruntun (update terbaru)">
                                             ▼ {{ $stCount }}K
                                         </span>
                                     @endif

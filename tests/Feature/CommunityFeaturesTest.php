@@ -135,7 +135,77 @@ class CommunityFeaturesTest extends TestCase
 
         $kl = $this->get('/klasemen');
         $kl->assertStatus(200);
-        $kl->assertSee('2M');
+        $kl->assertSee('▲ 2M');
         $kl->assertSee('championConfettiCanvas');
+
+        // Jika seluruh laga terakhir diupdate > 1 hari yang lalu, lencana tidak lagi ditampilkan
+        Pertandingan::where('liga_id', $liga->id)->update(['updated_at' => now()->subDays(2)]);
+        $klOld = $this->get('/klasemen');
+        $klOld->assertStatus(200);
+        $klOld->assertDontSee('▲ 2M');
+    }
+
+    public function test_klasemen_streak_follows_updated_at_even_when_schedule_is_out_of_order(): void
+    {
+        $liga = Liga::create(['nama_liga' => 'Liga Jadwal Acak', 'musim' => '2026', 'status' => 'berjalan']);
+        $t1 = Tim::create(['liga_id' => $liga->id, 'nama_tim' => 'Tim Acak', 'pemain1' => 'A', 'pemain2' => 'B', 'status' => 1]);
+        $t2 = Tim::create(['liga_id' => $liga->id, 'nama_tim' => 'Lawan 1', 'pemain1' => 'C', 'pemain2' => 'D', 'status' => 1]);
+        $t3 = Tim::create(['liga_id' => $liga->id, 'nama_tim' => 'Lawan 2', 'pemain1' => 'E', 'pemain2' => 'F', 'status' => 1]);
+        $t4 = Tim::create(['liga_id' => $liga->id, 'nama_tim' => 'Lawan 3', 'pemain1' => 'G', 'pemain2' => 'H', 'status' => 1]);
+
+        // Laga terjadwal lebih akhir (2026-12-20) tapi diupdate paling awal (kalah)
+        $mLoss = Pertandingan::create([
+            'liga_id' => $liga->id,
+            'ronde' => 3,
+            'nomor_pertandingan' => 3,
+            'tanggal' => '2026-12-20',
+            'waktu' => '19:00:00',
+            'tim_home' => $t1->id,
+            'tim_away' => $t2->id,
+            'skor_home' => 20,
+            'skor_away' => 30,
+            'pemenang_id' => $t2->id,
+            'status' => 'selesai',
+        ]);
+        $mLoss->timestamps = false;
+        $mLoss->update(['updated_at' => now()->subHours(10)]);
+
+        // Dua laga terjadwal lebih awal (2026-11-10 & 2026-11-12) tapi baru dimainkan/diupdate sekarang (menang 2x)
+        $mWin1 = Pertandingan::create([
+            'liga_id' => $liga->id,
+            'ronde' => 1,
+            'nomor_pertandingan' => 1,
+            'tanggal' => '2026-11-10',
+            'waktu' => '19:00:00',
+            'tim_home' => $t1->id,
+            'tim_away' => $t3->id,
+            'skor_home' => 31,
+            'skor_away' => 21,
+            'pemenang_id' => $t1->id,
+            'status' => 'selesai',
+        ]);
+        $mWin1->timestamps = false;
+        $mWin1->update(['updated_at' => now()->subHours(2)]);
+
+        $mWin2 = Pertandingan::create([
+            'liga_id' => $liga->id,
+            'ronde' => 2,
+            'nomor_pertandingan' => 2,
+            'tanggal' => '2026-11-12',
+            'waktu' => '19:00:00',
+            'tim_home' => $t1->id,
+            'tim_away' => $t4->id,
+            'skor_home' => 30,
+            'skor_away' => 18,
+            'pemenang_id' => $t1->id,
+            'status' => 'selesai',
+        ]);
+        $mWin2->timestamps = false;
+        $mWin2->update(['updated_at' => now()->subMinutes(10)]);
+
+        $kl = $this->get('/klasemen');
+        $kl->assertStatus(200);
+        // Karena urutan updated_at: Kalah -> Menang -> Menang, streak aktif adalah ▲ 2M
+        $kl->assertSee('▲ 2M');
     }
 }
