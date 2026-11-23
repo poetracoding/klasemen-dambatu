@@ -31,6 +31,7 @@ Route::get('/jadwal-hari', [HomeController::class, 'jadwalHari'])->name('jadwal.
 Route::get('/jadwal_hari.php', fn() => redirect()->route('jadwal.hari'));
 
 Route::get('/klasemen', [HomeController::class, 'klasemen'])->name('klasemen');
+Route::get('/perbandingan', [HomeController::class, 'perbandingan'])->name('perbandingan');
 Route::get('/klasemen.php', function (\Illuminate\Http\Request $request) {
     return redirect()->to('/klasemen' . ($request->getQueryString() ? '?' . $request->getQueryString() : ''), 301);
 });

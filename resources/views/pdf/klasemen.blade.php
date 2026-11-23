@@ -104,11 +104,16 @@
         .rank-1 { background-color: #fef9c3 !important; font-weight: bold; }
         .rank-2 { background-color: #f1f5f9 !important; }
         .rank-3 { background-color: #ffedd5 !important; }
-        .pts-col {
+        .data-table th.pts-col {
+            background-color: #312e81 !important;
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+        .data-table td.pts-col {
             background-color: #eef2ff !important;
             font-weight: bold;
             font-size: 11px;
-            color: #312e81;
+            color: #312e81 !important;
         }
         .player-names {
             font-size: 8.5px;

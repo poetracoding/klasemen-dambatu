@@ -271,6 +271,13 @@
             </a>
         @endforeach
 
+        <!-- Mobile Menu Perbandingan Tim (H2H) -->
+        @php $isH2hActive = request()->routeIs('perbandingan'); @endphp
+        <a class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $isH2hActive ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('perbandingan') }}">
+            <i class="bi bi-arrows-angle-contract text-lg"></i>
+            <span>Bandingkan Tim (H2H)</span>
+        </a>
+
         <!-- Mobile Dropdown Game -->
         <div class="pt-1">
             <button type="button" id="mobileGameBtn"
@@ -383,7 +390,7 @@
     @yield('content')
 </main>
 
-<footer class="border-t border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/80 py-6 text-center text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors">
+<footer class="border-t border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/80 pt-6 pb-24 md:pb-6 text-center text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
         <div class="font-medium text-slate-700 dark:text-slate-200">
             {{ $liga->nama_liga ?? 'Liga Dam Batu' }} <span class="text-slate-400 dark:text-slate-500 font-normal">&middot; Musim {{ $liga->musim ?? date('Y') }}</span>
@@ -393,6 +400,28 @@
         </div>
     </div>
 </footer>
+
+<!-- Bottom Navigation Bar Khusus Mobile (< 768px) -->
+@php
+    $bottomNavItems = [
+        ['route' => 'home', 'label' => 'Beranda', 'icon' => 'bi-house-fill', 'active' => request()->routeIs('home')],
+        ['route' => 'klasemen', 'label' => 'Klasemen', 'icon' => 'bi-trophy-fill', 'active' => request()->routeIs('klasemen') || request()->routeIs('perbandingan')],
+        ['route' => 'jadwal', 'label' => 'Jadwal', 'icon' => 'bi-calendar3', 'active' => request()->routeIs('jadwal') || request()->routeIs('jadwal.hari') || request()->routeIs('pertandingan.detail')],
+        ['route' => 'games.hub', 'label' => 'Game', 'icon' => 'bi-controller', 'active' => $isGameActive],
+        ['route' => 'berita.index', 'label' => 'Berita', 'icon' => 'bi-newspaper', 'active' => request()->routeIs('berita.*')],
+    ];
+@endphp
+<nav aria-label="Navigasi Mobile" class="mobile-bottom-nav md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] print:hidden">
+    <div class="grid grid-cols-5 h-16 max-w-lg mx-auto px-1">
+        @foreach ($bottomNavItems as $bn)
+            <a href="{{ route($bn['route']) }}"
+               class="flex flex-col items-center justify-center gap-0.5 rounded-xl my-1 transition-colors {{ $bn['active'] ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50/70 dark:bg-indigo-950/60' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200' }}">
+                <i class="bi {{ $bn['icon'] }} text-lg leading-none"></i>
+                <span class="text-[10px] leading-tight tracking-tight">{{ $bn['label'] }}</span>
+            </a>
+        @endforeach
+    </div>
+</nav>
 
 <script src="{{ asset('assets/js/app.js') }}?v={{ filemtime(public_path('assets/js/app.js')) }}"></script>
 <script>

@@ -104,7 +104,8 @@
     }
 </style>
 
-<div id="gameFullscreenWrapper" class="transition-all">
+<div id="gameFullscreenWrapper" class="transition-all game-touch-arena">
+    @include('partials.game_fs_exit', ['btnId' => 'btnFullscreen'])
     <div id="victoryConfetti" aria-hidden="true"></div>
 
     <!-- Header -->

@@ -341,7 +341,8 @@
     </div>
 
     <!-- Arena Permainan -->
-    <div id="ludoFullscreenWrapper" class="space-y-4">
+    <div id="ludoFullscreenWrapper" class="space-y-4 game-touch-arena">
+        @include('partials.game_fs_exit', ['btnId' => 'btnLudoFullscreen'])
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             <!-- Papan Ludo 15x15 (3D Arena) -->
             <div class="lg:col-span-7 xl:col-span-8">

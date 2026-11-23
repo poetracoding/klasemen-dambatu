@@ -8,9 +8,12 @@
     $teamMatches = $matches ?? $riwayat ?? collect();
 @endphp
 
-<div class="mb-6">
-    <a href="{{ route('klasemen') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+<div class="mb-6 flex flex-wrap items-center justify-between gap-2">
+    <a href="{{ route('klasemen') }}" class="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">
         <i class="bi bi-arrow-left"></i> Kembali ke Klasemen
+    </a>
+    <a href="{{ route('perbandingan', ['tim1' => $tim->id]) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-700/70 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 shadow-xs transition-colors">
+        <i class="bi bi-arrows-angle-contract"></i> Bandingkan Tim Ini (H2H)
     </a>
 </div>
 

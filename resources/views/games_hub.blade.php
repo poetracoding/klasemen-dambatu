@@ -24,6 +24,47 @@
         </div>
     </div>
 
+    <!-- Statistik Personal & Lencana Mini-Game -->
+    <div class="ldb-fade-in rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-300 flex items-center justify-center text-lg shrink-0">
+                    <i class="bi bi-award-fill"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">Statistik Personal &amp; Lencana Mini-Game</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Tersimpan otomatis di perangkat Anda. Raih semua lencana dan pamerkan rekornya!</p>
+                </div>
+            </div>
+            <a href="#" id="btnShareArcadeWa" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors w-fit shrink-0">
+                <i class="bi bi-whatsapp text-sm"></i>
+                <span>Bagikan Rekor ke WhatsApp</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 p-3">
+                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Menang Game Papan</div>
+                <div class="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono mt-0.5" id="statBoardWins">0</div>
+            </div>
+            <div class="rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 p-3">
+                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Rekor Flappy Bird</div>
+                <div class="text-xl font-black text-amber-600 dark:text-amber-400 font-mono mt-0.5" id="statFlappyBest">0</div>
+            </div>
+            <div class="rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 p-3">
+                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Game Dimainkan</div>
+                <div class="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5" id="statGamesPlayed">0/5</div>
+            </div>
+            <div class="rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 p-3">
+                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Lencana Diraih</div>
+                <div class="text-xl font-black text-fuchsia-600 dark:text-fuchsia-400 font-mono mt-0.5" id="statBadgeCount">0/5</div>
+            </div>
+        </div>
+
+        <div id="arcadeBadgesContainer" class="flex flex-wrap items-center gap-2 pt-1"></div>
+    </div>
+
     <!-- Grid 5 Game -->
     @php
         $games = [
@@ -131,37 +172,128 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function setCardStat(elId, text, colorClass) {
+        var el = document.getElementById(elId);
+        if (!el) return;
+        el.textContent = '';
+        var span = document.createElement('span');
+        span.className = colorClass + ' font-bold';
+        span.textContent = text;
+        el.appendChild(span);
+    }
+
+    var dam = readJson('dam_batu_stats_v1');
+    var damWins = 0;
+    var damPlayed = false;
+    if (dam) {
+        damWins = (dam.easy?.win || 0) + (dam.normal?.win || 0) + (dam.hard?.win || 0);
+        var damTotal = damWins
+            + (dam.easy?.lose || 0) + (dam.normal?.lose || 0) + (dam.hard?.lose || 0)
+            + (dam.easy?.draw || 0) + (dam.normal?.draw || 0) + (dam.hard?.draw || 0);
+        damPlayed = damTotal > 0;
+        if (damWins > 0) {
+            setCardStat('hubStat-dambatu', '🎲 ' + damWins + ' Kemenangan', 'text-emerald-600 dark:text-emerald-400');
+        }
+    }
+
     var flappy = readJson('flappy_dambatu_stats_v1');
+    var flappyBest = 0;
+    var flappyPlayed = false;
     if (flappy) {
-        var best = Math.max(flappy.easy || 0, flappy.normal || 0, flappy.hard || 0);
-        if (best > 0) {
-            var elF = document.getElementById('hubStat-flappy');
-            if (elF) elF.innerHTML = '<span class="text-amber-600 dark:text-amber-400 font-bold">🏆 Rekor Terbaik: ' + best + '</span>';
+        flappyBest = Math.max(flappy.easy || 0, flappy.normal || 0, flappy.hard || 0);
+        flappyPlayed = flappyBest > 0 || (flappy.played || 0) > 0;
+        if (flappyBest > 0) {
+            setCardStat('hubStat-flappy', '🏆 Rekor Terbaik: ' + flappyBest, 'text-amber-600 dark:text-amber-400');
         }
     }
 
     var ludo = readJson('ludo_queen_dambatu_stats_v1');
+    var ludoWins = 0;
+    var ludoPlayed = false;
     if (ludo) {
-        var lw = (ludo.easy?.wins || 0) + (ludo.normal?.wins || 0) + (ludo.hard?.wins || 0);
-        if (lw > 0) {
-            var elL = document.getElementById('hubStat-ludo');
-            if (elL) elL.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-bold">👑 ' + lw + ' Kemenangan</span>';
+        ludoWins = (ludo.easy?.wins || 0) + (ludo.normal?.wins || 0) + (ludo.hard?.wins || 0);
+        var ludoLosses = (ludo.easy?.losses || 0) + (ludo.normal?.losses || 0) + (ludo.hard?.losses || 0);
+        ludoPlayed = (ludoWins + ludoLosses) > 0;
+        if (ludoWins > 0) {
+            setCardStat('hubStat-ludo', '👑 ' + ludoWins + ' Kemenangan', 'text-emerald-600 dark:text-emerald-400');
         }
     }
 
     var chess = readJson('catur_3d_dambatu_stats_v1');
+    var chessWins = 0;
+    var chessPlayed = false;
     if (chess) {
-        var cw = (chess.easy?.wins || 0) + (chess.normal?.wins || 0) + (chess.hard?.wins || 0);
-        if (cw > 0) {
-            var elC = document.getElementById('hubStat-catur');
-            if (elC) elC.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-bold">♔ ' + cw + ' Kemenangan</span>';
+        chessWins = (chess.easy?.wins || 0) + (chess.normal?.wins || 0) + (chess.hard?.wins || 0);
+        var chessTotal = chessWins
+            + (chess.easy?.losses || 0) + (chess.normal?.losses || 0) + (chess.hard?.losses || 0)
+            + (chess.easy?.draws || 0) + (chess.normal?.draws || 0) + (chess.hard?.draws || 0);
+        chessPlayed = chessTotal > 0;
+        if (chessWins > 0) {
+            setCardStat('hubStat-catur', '♔ ' + chessWins + ' Kemenangan', 'text-emerald-600 dark:text-emerald-400');
         }
     }
 
     var mono = readJson('monopoli_nusantara_stats_v1');
-    if (mono && mono.wins > 0) {
-        var elM = document.getElementById('hubStat-monopoli');
-        if (elM) elM.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-bold">🏢 ' + mono.wins + ' Kemenangan</span>';
+    var monoWins = 0;
+    var monoPlayed = false;
+    if (mono) {
+        monoWins = mono.wins || 0;
+        monoPlayed = monoWins > 0 || (mono.games || 0) > 0 || (mono.played || 0) > 0;
+        if (monoWins > 0) {
+            setCardStat('hubStat-monopoli', '🏢 ' + monoWins + ' Kemenangan', 'text-emerald-600 dark:text-emerald-400');
+        }
+    }
+
+    var totalBoardWins = damWins + ludoWins + chessWins + monoWins;
+    var gamesPlayedCount = [damPlayed, monoPlayed, ludoPlayed, chessPlayed, flappyPlayed].filter(Boolean).length;
+
+    var badges = [
+        { label: 'Pemula Arena', icon: 'bi-controller', unlocked: gamesPlayedCount >= 1, hint: 'Mainkan minimal 1 game' },
+        { label: 'Master Strategi', icon: 'bi-trophy-fill', unlocked: (damWins + chessWins) >= 1, hint: 'Menang di Dam Batu atau Catur' },
+        { label: 'Pilot Ulung', icon: 'bi-feather', unlocked: flappyBest >= 10, hint: 'Raih skor Flappy Bird minimal 10' },
+        { label: 'Raja Papan', icon: 'bi-award-fill', unlocked: totalBoardWins >= 3, hint: 'Raih total 3 kemenangan game papan' },
+        { label: 'Kolektor 5 Game', icon: 'bi-stars', unlocked: gamesPlayedCount >= 5, hint: 'Coba seluruh 5 game di Arena' },
+    ];
+    var unlockedCount = badges.filter(function (b) { return b.unlocked; }).length;
+
+    var elBoard = document.getElementById('statBoardWins');
+    var elFlappy = document.getElementById('statFlappyBest');
+    var elPlayed = document.getElementById('statGamesPlayed');
+    var elBadgeCnt = document.getElementById('statBadgeCount');
+    if (elBoard) elBoard.textContent = String(totalBoardWins);
+    if (elFlappy) elFlappy.textContent = String(flappyBest);
+    if (elPlayed) elPlayed.textContent = gamesPlayedCount + '/5';
+    if (elBadgeCnt) elBadgeCnt.textContent = unlockedCount + '/5';
+
+    var badgeWrap = document.getElementById('arcadeBadgesContainer');
+    if (badgeWrap) {
+        badgeWrap.textContent = '';
+        badges.forEach(function (b) {
+            var pill = document.createElement('span');
+            pill.title = b.hint;
+            pill.className = b.unlocked
+                ? 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 dark:bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-400/40'
+                : 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/70 dark:border-slate-700/70 opacity-75';
+            var ic = document.createElement('i');
+            ic.className = 'bi ' + b.icon;
+            pill.appendChild(ic);
+            var txt = document.createElement('span');
+            txt.textContent = b.label;
+            pill.appendChild(txt);
+            badgeWrap.appendChild(pill);
+        });
+    }
+
+    var shareBtn = document.getElementById('btnShareArcadeWa');
+    if (shareBtn) {
+        var shareMsg = [
+            '🎮 *Rekor Arena Game {{ $liga->nama_liga ?? "Liga Dam Batu" }}*',
+            '🏆 Kemenangan Game Papan: ' + totalBoardWins,
+            '🪶 Rekor Flappy Bird: ' + flappyBest,
+            '🏅 Lencana Diraih: ' + unlockedCount + '/5',
+            'Ayo tantang rekor saya di: {{ route("games.hub") }}'
+        ].join('\n');
+        shareBtn.href = 'https://wa.me/?text=' + encodeURIComponent(shareMsg);
     }
 });
 </script>

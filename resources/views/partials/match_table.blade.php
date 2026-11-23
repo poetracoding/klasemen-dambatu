@@ -4,15 +4,20 @@
 ])
 
 @if (empty($matches) || count($matches) === 0)
-    <div class="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-xs">
-        <i class="bi bi-calendar-x text-2xl text-slate-400 mb-2 block"></i>
-        Tidak ada pertandingan.
+    <div class="ldb-fade-in rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center shadow-xs">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mb-3">
+            <i class="bi bi-calendar-x text-2xl"></i>
+        </div>
+        <div class="text-sm font-bold text-slate-700 dark:text-slate-200">Belum Ada Pertandingan</div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+            Tidak ada data laga pada kategori atau filter yang dipilih saat ini.
+        </p>
     </div>
 @else
-    <div class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+    <div class="ldb-fade-in overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[700px] text-left text-sm text-slate-600 divide-y divide-slate-100">
-                <thead class="bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <table class="w-full min-w-[700px] text-left text-sm text-slate-600 dark:text-slate-300 divide-y divide-slate-100 dark:divide-slate-800">
+                <thead class="bg-slate-50/80 dark:bg-slate-800/80 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     <tr>
                         <th scope="col" class="py-3.5 px-4 text-center w-12">#</th>
                         @if ($tampilTanggal)
@@ -33,6 +38,7 @@
                             $awayName = $m->awayTeam->nama_tim ?? ('Tim #' . $m->tim_away);
                             $pemenangName = $m->pemenang->nama_tim ?? null;
                             $tglStr = $m->tanggal ? \Carbon\Carbon::parse($m->tanggal)->format('Y-m-d') : null;
+                            $isFreshUpdate = ($m->status === 'selesai' && !empty($m->updated_at) && \Carbon\Carbon::parse($m->updated_at)->greaterThanOrEqualTo(now()->subDay()));
                         @endphp
                         <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/80 transition-colors">
                             <td class="py-3.5 px-4 text-center font-medium text-slate-400">
@@ -96,11 +102,19 @@
                                 {{ $m->lokasi ?: '-' }}
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap">
-                                {!! \App\Services\TournamentService::badgeStatus($m->status) !!}
+                                <div class="inline-flex items-center gap-1.5">
+                                    {!! \App\Services\TournamentService::badgeStatus($m->status) !!}
+                                    @if ($isFreshUpdate)
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/40" title="Skor diperbarui dalam 24 jam terakhir">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+                                            Baru
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap">
                                 @if ($m->status === 'selesai' && $pemenangName)
-                                    <span class="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
+                                    <span class="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-500/35">
                                         <i class="bi bi-trophy text-xs"></i> {{ $pemenangName }} Menang
                                     </span>
                                     @include('partials.team_players', [

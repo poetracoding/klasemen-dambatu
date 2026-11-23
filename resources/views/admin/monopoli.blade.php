@@ -149,7 +149,8 @@
     </div>
 
     <!-- Arena Utama (Papan + Panel Samping) -->
-    <div id="monopoliFullscreenWrapper" class="space-y-4">
+    <div id="monopoliFullscreenWrapper" class="space-y-4 game-touch-arena">
+        @include('partials.game_fs_exit', ['btnId' => 'btnMonoFullscreen'])
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             <!-- Papan 11x11 (7/12 - 8/12 Desktop) -->
             <div class="lg:col-span-7 xl:col-span-8">

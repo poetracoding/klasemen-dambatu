@@ -399,5 +399,119 @@ class HomeController extends Controller
         $liga = Liga::current();
         return view('admin.catur', compact('liga'));
     }
+
+    public function perbandingan(Request $request)
+    {
+        $liga = Liga::current();
+        $tims = Tim::where('liga_id', $liga->id)
+            ->orderBy('nama_tim')
+            ->get();
+
+        $klasemen = TournamentService::hitungKlasemen($liga);
+        $klasemenMap = [];
+        foreach ($klasemen as $k) {
+            $klasemenMap[(int) $k['id']] = $k;
+        }
+
+        $trenList = TournamentService::analisisTrenTim($liga);
+        $trendMap = [];
+        foreach ($trenList as $t) {
+            $trendMap[(int) $t['id']] = $t;
+        }
+
+        $validIds = $tims->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $tim1Id = $request->filled('tim1') ? (int) $request->query('tim1') : null;
+        $tim2Id = $request->filled('tim2') ? (int) $request->query('tim2') : null;
+
+        if ($tim1Id !== null && !in_array($tim1Id, $validIds, true)) {
+            $tim1Id = null;
+        }
+        if ($tim2Id !== null && !in_array($tim2Id, $validIds, true)) {
+            $tim2Id = null;
+        }
+
+        // Default otomatis: bandingkan peringkat 1 vs peringkat 2 jika belum dipilih
+        if ($tim1Id === null && $tim2Id === null && count($klasemen) >= 2) {
+            $tim1Id = (int) $klasemen[0]['id'];
+            $tim2Id = (int) $klasemen[1]['id'];
+        }
+
+        $sameTeamWarning = ($tim1Id !== null && $tim2Id !== null && $tim1Id === $tim2Id);
+        $comparison = null;
+
+        if ($tim1Id !== null && $tim2Id !== null && !$sameTeamWarning) {
+            $t1 = $tims->firstWhere('id', $tim1Id);
+            $t2 = $tims->firstWhere('id', $tim2Id);
+
+            if ($t1 && $t2) {
+                $k1 = $klasemenMap[$tim1Id] ?? ['pos' => '-', 'mp' => 0, 'w' => 0, 'l' => 0, 'bm' => 0, 'bk' => 0, 'sb' => 0, 'pts' => 0];
+                $k2 = $klasemenMap[$tim2Id] ?? ['pos' => '-', 'mp' => 0, 'w' => 0, 'l' => 0, 'bm' => 0, 'bk' => 0, 'sb' => 0, 'pts' => 0];
+                $tr1 = $trendMap[$tim1Id] ?? null;
+                $tr2 = $trendMap[$tim2Id] ?? null;
+
+                $h2hMatches = Pertandingan::with(['homeTeam', 'awayTeam', 'pemenang'])
+                    ->where('liga_id', $liga->id)
+                    ->where(function ($q) use ($tim1Id, $tim2Id) {
+                        $q->where(function ($sub) use ($tim1Id, $tim2Id) {
+                            $sub->where('tim_home', $tim1Id)->where('tim_away', $tim2Id);
+                        })->orWhere(function ($sub) use ($tim1Id, $tim2Id) {
+                            $sub->where('tim_home', $tim2Id)->where('tim_away', $tim1Id);
+                        });
+                    })
+                    ->orderByRaw('updated_at IS NULL, updated_at DESC, id DESC')
+                    ->get();
+
+                $h2hW1 = 0;
+                $h2hW2 = 0;
+                $h2hPts1 = 0;
+                $h2hPts2 = 0;
+                foreach ($h2hMatches as $m) {
+                    if ($m->status === 'selesai') {
+                        if ((int) $m->pemenang_id === $tim1Id) {
+                            $h2hW1++;
+                        } elseif ((int) $m->pemenang_id === $tim2Id) {
+                            $h2hW2++;
+                        }
+                        if ((int) $m->tim_home === $tim1Id) {
+                            $h2hPts1 += (int) ($m->skor_home ?? 0);
+                            $h2hPts2 += (int) ($m->skor_away ?? 0);
+                        } else {
+                            $h2hPts1 += (int) ($m->skor_away ?? 0);
+                            $h2hPts2 += (int) ($m->skor_home ?? 0);
+                        }
+                    }
+                }
+
+                $virtualMatch = new Pertandingan([
+                    'liga_id' => $liga->id,
+                    'tim_home' => $tim1Id,
+                    'tim_away' => $tim2Id,
+                ]);
+                $prediksi = TournamentService::prediksiPertandingan($liga, $virtualMatch);
+
+                $wr1 = ($k1['mp'] ?? 0) > 0 ? round(($k1['w'] / $k1['mp']) * 100, 1) : 0;
+                $wr2 = ($k2['mp'] ?? 0) > 0 ? round(($k2['w'] / $k2['mp']) * 100, 1) : 0;
+
+                $comparison = [
+                    'tim1' => $t1,
+                    'tim2' => $t2,
+                    'k1' => $k1,
+                    'k2' => $k2,
+                    'tr1' => $tr1,
+                    'tr2' => $tr2,
+                    'wr1' => $wr1,
+                    'wr2' => $wr2,
+                    'h2h_matches' => $h2hMatches,
+                    'h2h_w1' => $h2hW1,
+                    'h2h_w2' => $h2hW2,
+                    'h2h_pts1' => $h2hPts1,
+                    'h2h_pts2' => $h2hPts2,
+                    'prediksi' => $prediksi,
+                ];
+            }
+        }
+
+        return view('perbandingan', compact('liga', 'tims', 'klasemen', 'tim1Id', 'tim2Id', 'sameTeamWarning', 'comparison'));
+    }
 }
 

@@ -65,7 +65,8 @@
     </div>
 
     <!-- Arena Utama -->
-    <div id="flappyFullscreenWrapper" class="space-y-4">
+    <div id="flappyFullscreenWrapper" class="space-y-4 game-touch-arena">
+        @include('partials.game_fs_exit', ['btnId' => 'btnFlappyFullscreen'])
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             <!-- Kolom Kiri/Utama: Toolbar + Canvas Game -->
             <div class="lg:col-span-7 xl:col-span-8">
