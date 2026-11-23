@@ -92,8 +92,8 @@
                 $tr1 = $comparison['tr1'];
                 $tr2 = $comparison['tr2'];
                 $pred = $comparison['prediksi'];
-                $pHome = (int) ($pred['home_prob'] ?? 50);
-                $pAway = (int) ($pred['away_prob'] ?? 50);
+                $pHome = (int) ($pred['home_pct'] ?? 50);
+                $pAway = (int) ($pred['away_pct'] ?? 50);
             @endphp
 
             <!-- Kartu Duel Utama -->

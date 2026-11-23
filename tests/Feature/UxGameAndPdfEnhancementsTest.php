@@ -99,6 +99,8 @@ class UxGameAndPdfEnhancementsTest extends TestCase
         $res->assertSee('KUDA BINAL');
         $res->assertSee('Perkiraan Peluang Menang');
         $res->assertSee('Riwayat Pertemuan Langsung');
+        // SAYA AKAN LAWAN won against KUDA BINAL, so win probability must not be stuck at 50% - 50%
+        $res->assertDontSee('SAYA AKAN LAWAN 50%');
 
         // Same team shows warning gracefully
         $sameRes = $this->get('/perbandingan?tim1=' . $t1->id . '&tim2=' . $t1->id);
