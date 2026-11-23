@@ -137,4 +137,14 @@ class UxGameAndPdfEnhancementsTest extends TestCase
         $res->assertStatus(200);
         $res->assertSee('Skor diperbarui dalam 24 jam terakhir', false);
     }
+
+    public function test_dark_mode_css_covers_all_alert_cards_and_pills(): void
+    {
+        $css = file_get_contents(public_path('assets/css/style.css'));
+        $this->assertStringContainsString('html.dark .text-amber-900', $css);
+        $this->assertStringContainsString('html.dark .text-indigo-900', $css);
+        $this->assertStringContainsString('html.dark .text-sky-900', $css);
+        $this->assertStringContainsString('html.dark .bg-emerald-100\/60', $css);
+        $this->assertStringContainsString('html.dark .bg-sky-50', $css);
+    }
 }
