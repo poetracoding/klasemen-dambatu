@@ -358,25 +358,32 @@ html.dark .bg-amber-50\/40,
 html.dark .bg-amber-50\/50,
 html.dark .bg-amber-50\/60,
 html.dark .bg-amber-50\/70,
-html.dark .bg-amber-50\/80 {
+html.dark .bg-amber-50\/80,
+html.dark .bg-amber-50\/90,
+html.dark .bg-amber-50\/95 {
     background-color: rgba(245, 158, 11, 0.14) !important;
 }
 html.dark .bg-amber-100,
 html.dark .bg-amber-100\/50,
 html.dark .bg-amber-100\/60,
 html.dark .bg-amber-100\/70,
-html.dark .bg-amber-100\/80 {
+html.dark .bg-amber-100\/80,
+html.dark .bg-amber-100\/90 {
     background-color: rgba(245, 158, 11, 0.24) !important;
     color: #fde68a !important;
 }
 html.dark .bg-orange-50,
 html.dark .bg-orange-50\/50,
 html.dark .bg-orange-50\/60,
-html.dark .bg-orange-50\/70 {
+html.dark .bg-orange-50\/70,
+html.dark .bg-orange-50\/80,
+html.dark .bg-orange-50\/90 {
     background-color: rgba(249, 115, 22, 0.14) !important;
 }
 html.dark .bg-orange-100,
-html.dark .bg-orange-100\/60 {
+html.dark .bg-orange-100\/60,
+html.dark .bg-orange-100\/80,
+html.dark .bg-orange-100\/90 {
     background-color: rgba(249, 115, 22, 0.22) !important;
     color: #fed7aa !important;
 }
@@ -388,13 +395,16 @@ html.dark .bg-emerald-50,
 html.dark .bg-emerald-50\/50,
 html.dark .bg-emerald-50\/60,
 html.dark .bg-emerald-50\/70,
-html.dark .bg-emerald-50\/80 {
+html.dark .bg-emerald-50\/80,
+html.dark .bg-emerald-50\/90,
+html.dark .bg-emerald-50\/95 {
     background-color: rgba(16, 185, 129, 0.14) !important;
 }
 html.dark .bg-emerald-100,
 html.dark .bg-emerald-100\/60,
 html.dark .bg-emerald-100\/70,
-html.dark .bg-emerald-100\/80 {
+html.dark .bg-emerald-100\/80,
+html.dark .bg-emerald-100\/90 {
     background-color: rgba(16, 185, 129, 0.22) !important;
     color: #a7f3d0 !important;
 }
@@ -402,18 +412,23 @@ html.dark .bg-rose-50,
 html.dark .bg-rose-50\/50,
 html.dark .bg-rose-50\/60,
 html.dark .bg-rose-50\/70,
-html.dark .bg-rose-50\/80 {
+html.dark .bg-rose-50\/80,
+html.dark .bg-rose-50\/90 {
     background-color: rgba(244, 63, 94, 0.14) !important;
 }
 html.dark .bg-rose-100,
 html.dark .bg-rose-100\/60,
-html.dark .bg-rose-100\/70 {
+html.dark .bg-rose-100\/70,
+html.dark .bg-rose-100\/80,
+html.dark .bg-rose-100\/90 {
     background-color: rgba(244, 63, 94, 0.22) !important;
     color: #fecdd3 !important;
 }
 html.dark .bg-red-50,
 html.dark .bg-red-50\/60,
-html.dark .bg-red-50\/70 {
+html.dark .bg-red-50\/70,
+html.dark .bg-red-50\/80,
+html.dark .bg-red-50\/90 {
     background-color: rgba(239, 68, 68, 0.14) !important;
 }
 html.dark .bg-red-100 {
@@ -424,12 +439,15 @@ html.dark .bg-indigo-50,
 html.dark .bg-indigo-50\/50,
 html.dark .bg-indigo-50\/60,
 html.dark .bg-indigo-50\/70,
-html.dark .bg-indigo-50\/80 {
+html.dark .bg-indigo-50\/80,
+html.dark .bg-indigo-50\/90 {
     background-color: rgba(99, 102, 241, 0.16) !important;
 }
 html.dark .bg-indigo-100,
 html.dark .bg-indigo-100\/60,
-html.dark .bg-indigo-100\/70 {
+html.dark .bg-indigo-100\/70,
+html.dark .bg-indigo-100\/80,
+html.dark .bg-indigo-100\/90 {
     background-color: rgba(99, 102, 241, 0.24) !important;
     color: #c7d2fe !important;
 }
@@ -437,7 +455,8 @@ html.dark .bg-sky-50,
 html.dark .bg-sky-50\/50,
 html.dark .bg-sky-50\/60,
 html.dark .bg-sky-50\/70,
-html.dark .bg-sky-50\/80 {
+html.dark .bg-sky-50\/80,
+html.dark .bg-sky-50\/90 {
     background-color: rgba(14, 165, 233, 0.15) !important;
 }
 html.dark .bg-sky-100,

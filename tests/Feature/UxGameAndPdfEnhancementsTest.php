@@ -145,6 +145,7 @@ class UxGameAndPdfEnhancementsTest extends TestCase
         $this->assertStringContainsString('html.dark .text-indigo-900', $css);
         $this->assertStringContainsString('html.dark .text-sky-900', $css);
         $this->assertStringContainsString('html.dark .bg-emerald-100\/60', $css);
+        $this->assertStringContainsString('html.dark .bg-amber-50\/90', $css);
         $this->assertStringContainsString('html.dark .bg-sky-50', $css);
     }
 }
