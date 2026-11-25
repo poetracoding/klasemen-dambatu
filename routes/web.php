@@ -36,6 +36,7 @@ Route::get('/klasemen.php', function (\Illuminate\Http\Request $request) {
     return redirect()->to('/klasemen' . ($request->getQueryString() ? '?' . $request->getQueryString() : ''), 301);
 });
 Route::get('/history', [HomeController::class, 'history'])->name('history');
+Route::get('/tentang', [HomeController::class, 'tentang'])->name('tentang');
 Route::get('/berita', [BeritaController::class, 'index'])->name('berita.index');
 Route::get('/berita/{slug}', [BeritaController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('berita.show');
 Route::post('/berita/{slug}/like', [BeritaController::class, 'toggleLike'])

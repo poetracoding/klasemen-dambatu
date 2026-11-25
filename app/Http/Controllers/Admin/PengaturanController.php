@@ -158,19 +158,111 @@ class PengaturanController extends Controller
             'nama_liga' => 'required|string|max:80',
             'musim' => 'nullable|string|max:40',
             'google_analytics_id' => ['nullable', 'string', 'max:40', 'regex:/^(G|GT|UA|AW)-[A-Za-z0-9-]+$/i'],
+            'app_icon' => 'nullable|file|mimes:png,jpg,jpeg,webp,ico|max:1024',
+            'hapus_app_icon' => 'nullable|boolean',
+            'app_tagline' => 'nullable|string|max:160',
+            'footer_text' => 'nullable|string|max:160',
+            'kontak_panitia' => 'nullable|string|max:120',
+            'theme_color' => ['nullable', 'string', 'max:20', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'tentang_aplikasi' => 'nullable|string|max:5000',
         ], [
             'google_analytics_id.regex' => 'Format Google Analytics ID tidak valid (contoh: G-XXXXXXXXXX).',
+            'app_icon.mimes' => 'Icon aplikasi harus berupa file PNG, JPG, WEBP, atau ICO (maks. 1 MB).',
+            'app_icon.max' => 'Ukuran icon aplikasi maksimal 1 MB.',
+            'theme_color.regex' => 'Format warna tema harus berupa kode hex 6 digit (contoh: #4f46e5).',
         ]);
 
         $gaId = trim((string) ($request->google_analytics_id ?? ''));
+        $themeColor = trim((string) ($request->theme_color ?? ''));
+        $appIconPath = $liga->app_icon;
 
-        $liga->update([
+        // Hapus icon lama jika diminta
+        if ($request->boolean('hapus_app_icon') && !$request->hasFile('app_icon')) {
+            $this->deleteAppIconFile($appIconPath);
+            $appIconPath = null;
+        }
+
+        // Upload icon baru dengan verifikasi konten/magic bytes (anti-SVG/PHP/fake upload)
+        if ($request->hasFile('app_icon')) {
+            $file = $request->file('app_icon');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $realPath = $file->getRealPath();
+
+            $isValidIcon = false;
+            if ($ext === 'ico') {
+                $fp = @fopen($realPath, 'rb');
+                $head = $fp ? fread($fp, 4) : '';
+                if ($fp) {
+                    fclose($fp);
+                }
+                // ICO magic bytes: 00 00 01 00
+                $isValidIcon = ($head === "\x00\x00\x01\x00");
+            } else {
+                $imgInfo = @getimagesize($realPath);
+                $isValidIcon = is_array($imgInfo) && in_array($imgInfo[2], [IMAGETYPE_PNG, IMAGETYPE_JPEG, IMAGETYPE_WEBP], true);
+            }
+
+            if (!$isValidIcon) {
+                return back()->withErrors([
+                    'app_icon' => 'File icon tidak valid atau rusak. Gunakan berkas PNG, JPG, WEBP, atau ICO asli.',
+                ])->withInput();
+            }
+
+            $destDir = public_path('uploads/app');
+            if (!is_dir($destDir)) {
+                mkdir($destDir, 0755, true);
+            }
+
+            $safeFilename = 'app-icon-' . time() . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $file->move($destDir, $safeFilename);
+
+            $this->deleteAppIconFile($appIconPath);
+            $appIconPath = 'uploads/app/' . $safeFilename;
+        }
+
+        $updateData = [
             'nama_liga' => trim($request->nama_liga),
             'musim' => trim($request->musim ?? ''),
             'google_analytics_id' => $gaId !== '' ? strtoupper($gaId) : null,
-        ]);
+            'app_icon' => $appIconPath,
+        ];
 
-        return back()->with('success', 'Pengaturan liga berhasil disimpan.');
+        // Hanya timpa field konfigurasi tambahan jika dikirim oleh form agar request parsial tetap aman
+        if ($request->has('app_tagline')) {
+            $val = trim((string) $request->app_tagline);
+            $updateData['app_tagline'] = $val !== '' ? $val : null;
+        }
+        if ($request->has('footer_text')) {
+            $val = trim((string) $request->footer_text);
+            $updateData['footer_text'] = $val !== '' ? $val : null;
+        }
+        if ($request->has('kontak_panitia')) {
+            $val = trim((string) $request->kontak_panitia);
+            $updateData['kontak_panitia'] = $val !== '' ? $val : null;
+        }
+        if ($request->has('theme_color')) {
+            $updateData['theme_color'] = $themeColor !== '' ? strtolower($themeColor) : null;
+        }
+        if ($request->has('tentang_aplikasi')) {
+            $val = trim((string) $request->tentang_aplikasi);
+            $updateData['tentang_aplikasi'] = $val !== '' ? $val : null;
+        }
+
+        $liga->update($updateData);
+
+        return back()->with('success', 'Pengaturan liga & aplikasi berhasil disimpan.');
+    }
+
+    private function deleteAppIconFile(?string $relativePath): void
+    {
+        $path = trim((string) ($relativePath ?? ''));
+        if ($path === '' || str_contains($path, '..') || !str_starts_with($path, 'uploads/app/')) {
+            return;
+        }
+        $full = public_path($path);
+        if (is_file($full)) {
+            @unlink($full);
+        }
     }
 
     public function testFcm(Request $request, FcmService $fcm)

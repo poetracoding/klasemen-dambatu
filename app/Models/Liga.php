@@ -11,6 +11,12 @@ class Liga extends Model
         'nama_liga',
         'musim',
         'google_analytics_id',
+        'app_icon',
+        'app_tagline',
+        'footer_text',
+        'kontak_panitia',
+        'theme_color',
+        'tentang_aplikasi',
         'tanggal_mulai',
         'tanggal_selesai',
         'status',
@@ -44,6 +50,24 @@ class Liga extends Model
             'jumlah_meja' => 2,
             'hari_pertandingan' => '1,2,3,4,5,6,7',
         ]);
+    }
+
+    /**
+     * Kembalikan URL aman untuk icon aplikasi kustom jika berkas valid tersedia di public/uploads/app/.
+     */
+    public function appIconUrl(): ?string
+    {
+        $path = trim((string) ($this->app_icon ?? ''));
+        if ($path === '' || str_contains($path, '..') || !str_starts_with($path, 'uploads/app/')) {
+            return null;
+        }
+
+        $full = public_path($path);
+        if (!is_file($full)) {
+            return null;
+        }
+
+        return asset($path) . '?v=' . filemtime($full);
     }
 }
 

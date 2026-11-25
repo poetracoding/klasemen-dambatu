@@ -20,16 +20,89 @@
             </div>
         </div>
 
-        <form action="{{ route('admin.pengaturan.update_liga') }}" method="POST" class="space-y-4">
+        <form action="{{ route('admin.pengaturan.update_liga') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
             @csrf
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Liga</label>
-                <input type="text" name="nama_liga" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" required maxlength="80" value="{{ old('nama_liga', $liga->nama_liga) }}">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Liga / Aplikasi</label>
+                    <input type="text" name="nama_liga" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" required maxlength="80" value="{{ old('nama_liga', $liga->nama_liga) }}">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Musim / Edisi</label>
+                    <input type="text" name="musim" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" maxlength="40" value="{{ old('musim', $liga->musim) }}">
+                </div>
+            </div>
+
+            <!-- Icon Aplikasi (Favicon pada Title & Brand) -->
+            @php $currentIconUrl = $liga->appIconUrl(); @endphp
+            <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-800">Icon Aplikasi (Favicon Title &amp; Logo Navbar)</label>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Tampil pada tab browser (title), bookmark, manifest PWA, dan logo navbar.</p>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-2xs shrink-0 overflow-hidden">
+                        @if ($currentIconUrl)
+                            <img src="{{ $currentIconUrl }}" alt="Icon Aplikasi" class="w-full h-full object-contain p-1">
+                        @else
+                            <i class="bi bi-grid-3x3-gap-fill text-indigo-500 text-lg"></i>
+                        @endif
+                    </div>
+                </div>
+
+                <input type="file" name="app_icon" accept=".png,.jpg,.jpeg,.webp,.ico"
+                    class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-200 rounded-xl bg-white p-1.5 cursor-pointer">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <span>Format: PNG, JPG, WEBP, atau ICO (disarankan rasio 1:1, maks. 1 MB).</span>
+                    @if ($currentIconUrl)
+                        <label class="inline-flex items-center gap-1.5 font-semibold text-rose-600 cursor-pointer">
+                            <input type="checkbox" name="hapus_app_icon" value="1" class="rounded border-slate-300 text-rose-600">
+                            <span>Hapus icon kustom</span>
+                        </label>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Konfigurasi Aplikasi Lainnya -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Tagline / Deskripsi Singkat (SEO Meta)</label>
+                    <input type="text" name="app_tagline" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" maxlength="160" placeholder="Portal resmi klasemen & jadwal turnamen" value="{{ old('app_tagline', $liga->app_tagline) }}">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Warna Tema Browser / PWA</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="themeColorPicker" value="{{ old('theme_color', $liga->theme_color ?: '#4f46e5') }}" class="h-10 w-12 rounded-xl border border-slate-200 bg-white p-1 cursor-pointer shrink-0">
+                        <input type="text" id="themeColorInput" name="theme_color" class="w-full text-sm font-mono rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" maxlength="20" placeholder="#4f46e5" value="{{ old('theme_color', $liga->theme_color ?: '#4f46e5') }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Teks Footer Kustom</label>
+                    <input type="text" name="footer_text" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" maxlength="160" placeholder="Sistem Manajemen Turnamen Dam Batu · Laravel 12" value="{{ old('footer_text', $liga->footer_text) }}">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kontak Panitia / Penyelenggara</label>
+                    <input type="text" name="kontak_panitia" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" maxlength="120" placeholder="contoh: WhatsApp Panitia / Sekretariat" value="{{ old('kontak_panitia', $liga->kontak_panitia) }}">
+                </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Musim / Edisi</label>
-                <input type="text" name="musim" class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus" maxlength="40" value="{{ old('musim', $liga->musim) }}">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-semibold text-slate-700">Konten Halaman "Tentang Aplikasi"</label>
+                    <a href="{{ route('tentang') }}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:underline">
+                        <span>Lihat Halaman</span>
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+                <textarea name="tentang_aplikasi" rows="4" maxlength="5000"
+                    class="w-full text-sm rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3.5 text-slate-800 form-input-focus"
+                    placeholder="Tulis profil liga, tujuan aplikasi, atau informasi penyelenggara (kosongkan untuk memakai deskripsi bawaan)...">{{ old('tentang_aplikasi', $liga->tentang_aplikasi) }}</textarea>
             </div>
 
             <div>
@@ -160,4 +233,23 @@
         </form>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var picker = document.getElementById('themeColorPicker');
+    var input = document.getElementById('themeColorInput');
+    if (picker && input) {
+        picker.addEventListener('input', function () {
+            input.value = picker.value;
+        });
+        input.addEventListener('input', function () {
+            if (/^#[0-9A-Fa-f]{6}$/.test(input.value.trim())) {
+                picker.value = input.value.trim();
+            }
+        });
+    }
+});
+</script>
 @endsection

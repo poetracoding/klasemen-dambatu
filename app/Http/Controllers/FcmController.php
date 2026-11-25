@@ -95,22 +95,31 @@ JS;
 
     public function manifest(): JsonResponse
     {
-        $ligaName = Liga::first()?->nama_liga ?? 'Liga Dam Batu';
+        $liga = Liga::first();
+        $ligaName = $liga?->nama_liga ?? 'Liga Dam Batu';
+        $themeColor = $liga?->theme_color ?: '#4f46e5';
+        $customIcon = $liga?->appIconUrl();
+
+        $icons = $customIcon
+            ? [[
+                'src' => $customIcon,
+                'sizes' => '192x192 512x512',
+                'type' => 'image/png',
+            ]]
+            : [[
+                'src' => '/favicon.ico',
+                'sizes' => '64x64 32x32 24x24 16x16',
+                'type' => 'image/x-icon',
+            ]];
 
         return response()->json([
             'name' => $ligaName,
             'short_name' => 'Dam Batu',
             'start_url' => '/',
             'display' => 'standalone',
-            'theme_color' => '#4f46e5',
+            'theme_color' => $themeColor,
             'background_color' => '#0f172a',
-            'icons' => [
-                [
-                    'src' => '/favicon.ico',
-                    'sizes' => '64x64 32x32 24x24 16x16',
-                    'type' => 'image/x-icon',
-                ],
-            ],
+            'icons' => $icons,
         ]);
     }
 

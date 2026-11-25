@@ -513,5 +513,15 @@ class HomeController extends Controller
 
         return view('perbandingan', compact('liga', 'tims', 'klasemen', 'tim1Id', 'tim2Id', 'sameTeamWarning', 'comparison'));
     }
+
+    public function tentang()
+    {
+        $liga = Liga::current();
+        $totalTim = Tim::where('liga_id', $liga->id)->where('status', 1)->count();
+        $totalMatch = Pertandingan::where('liga_id', $liga->id)->count();
+        $totalSelesai = Pertandingan::where('liga_id', $liga->id)->where('status', 'selesai')->count();
+
+        return view('tentang', compact('liga', 'totalTim', 'totalMatch', 'totalSelesai'));
+    }
 }
 

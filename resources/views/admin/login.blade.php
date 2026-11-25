@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login Admin — {{ $liga->nama_liga ?? 'Liga Dam Batu' }}</title>
+    @include('partials.app_head_meta')
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>

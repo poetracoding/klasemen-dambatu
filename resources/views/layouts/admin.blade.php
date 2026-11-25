@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin Panel') — {{ $liga->nama_liga ?? 'Liga Dam Batu' }}</title>
+    @include('partials.app_head_meta')
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -155,6 +156,8 @@
                         ['header' => 'Laporan & Analitik'],
                         ['url' => route('admin.pengaturan.report'), 'label' => 'Laporan Hasil', 'icon' => 'bi-file-earmark-bar-graph', 'active' => request()->routeIs('admin.pengaturan.report*')],
                         ['url' => route('admin.pengaturan.analytics'), 'label' => 'Analytics', 'icon' => 'bi-graph-up-arrow', 'active' => request()->routeIs('admin.pengaturan.analytics')],
+                        ['divider' => true],
+                        ['url' => route('tentang'), 'label' => 'Tentang Aplikasi', 'icon' => 'bi-info-circle', 'active' => false],
                     ];
                 @endphp
                 @foreach ($adminNav as $item)

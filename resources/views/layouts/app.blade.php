@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="manifest" href="{{ route('fcm.manifest', [], false) }}">
     <title>@yield('title', 'Dashboard') — {{ $liga->nama_liga ?? 'Liga Dam Batu' }}</title>
+    @include('partials.app_head_meta')
     @php
         $gaId = $liga->google_analytics_id ?? (\App\Models\Liga::current()->google_analytics_id ?? null);
     @endphp
@@ -142,10 +143,17 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between gap-4 h-16">
             <!-- Brand -->
+            @php $_navAppIcon = ($liga ?? \App\Models\Liga::current())->appIconUrl(); @endphp
             <a class="flex items-center gap-2.5 font-bold text-base xl:text-lg text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors whitespace-nowrap shrink-0" href="{{ route('home') }}">
-                <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
-                    <i class="bi bi-grid-3x3-gap-fill text-lg"></i>
-                </span>
+                @if ($_navAppIcon)
+                    <span class="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shadow-sm shrink-0 overflow-hidden">
+                        <img src="{{ $_navAppIcon }}" alt="Icon" class="w-full h-full object-contain p-1">
+                    </span>
+                @else
+                    <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
+                        <i class="bi bi-grid-3x3-gap-fill text-lg"></i>
+                    </span>
+                @endif
                 <span class="tracking-tight">{{ $liga->nama_liga ?? 'Liga Dam Batu' }}</span>
             </a>
 
@@ -271,11 +279,16 @@
             </a>
         @endforeach
 
-        <!-- Mobile Menu Perbandingan Tim (H2H) -->
+        <!-- Mobile Menu Perbandingan Tim (H2H) & Tentang Aplikasi -->
         @php $isH2hActive = request()->routeIs('perbandingan'); @endphp
         <a class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $isH2hActive ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('perbandingan') }}">
             <i class="bi bi-arrows-angle-contract text-lg"></i>
             <span>Bandingkan Tim (H2H)</span>
+        </a>
+        @php $isTentangActive = request()->routeIs('tentang'); @endphp
+        <a class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {{ $isTentangActive ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 font-semibold' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('tentang') }}">
+            <i class="bi bi-info-circle text-lg"></i>
+            <span>Tentang Aplikasi</span>
         </a>
 
         <!-- Mobile Dropdown Game -->
@@ -395,8 +408,10 @@
         <div class="font-medium text-slate-700 dark:text-slate-200">
             {{ $liga->nama_liga ?? 'Liga Dam Batu' }} <span class="text-slate-400 dark:text-slate-500 font-normal">&middot; Musim {{ $liga->musim ?? date('Y') }}</span>
         </div>
-        <div class="text-slate-400 dark:text-slate-500">
-            Sistem Manajemen Turnamen Dam Batu &middot; Laravel 12
+        <div class="flex flex-wrap items-center justify-center gap-3 text-slate-400 dark:text-slate-500">
+            <span>{{ ($liga->footer_text ?? null) ?: 'Sistem Manajemen Turnamen Dam Batu · Laravel 12' }}</span>
+            <span>&middot;</span>
+            <a href="{{ route('tentang') }}" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Tentang Aplikasi</a>
         </div>
     </div>
 </footer>
