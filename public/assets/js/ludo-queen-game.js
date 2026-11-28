@@ -1566,7 +1566,10 @@
         });
 
         document.getElementById('btnLudoRestart')?.addEventListener('click', (e) => {
-            startNewMatch();
+            const restart = () => startNewMatch();
+            if (window.Swal) {
+                window.Swal.fire({ icon: 'warning', title: 'Mulai ulang Ludo?', text: 'Progres pertandingan ini akan dihapus.', showCancelButton: true, confirmButtonText: 'Ya, mulai ulang', cancelButtonText: 'Batal', confirmButtonColor: '#4f46e5' }).then(r => { if (r.isConfirmed) restart(); });
+            } else if (window.confirm('Progres pertandingan Ludo ini akan dihapus. Mulai ulang?')) restart();
             e.currentTarget.blur();
         });
 
@@ -1586,6 +1589,7 @@
         document.getElementById('btnCloseLudoWin')?.addEventListener('click', () => closeModal('ludoWinModal'));
 
         document.getElementById('btnLudoResetStats')?.addEventListener('click', () => {
+            if (!window.confirm('Hapus seluruh rekor Ludo yang tersimpan di perangkat ini?')) return;
             stats = { easy: { wins: 0, losses: 0 }, normal: { wins: 0, losses: 0 }, hard: { wins: 0, losses: 0 } };
             saveStats();
             renderStatsPanel();

@@ -58,9 +58,13 @@
 
 /* Stage & Perspektif 3D */
 #boardViewport {
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: thin;
+}
+
+#boardViewport[data-user-zoomed="true"] {
+    overflow-x: auto;
 }
 
 #table3dStage {

@@ -1777,7 +1777,10 @@
             });
 
             document.getElementById('btnChessRestart')?.addEventListener('click', (e) => {
-                startNewMatch();
+                const restart = () => startNewMatch();
+                if (window.Swal) {
+                    window.Swal.fire({ icon: 'warning', title: 'Mulai pertandingan baru?', text: 'Progres pertandingan catur ini akan dihapus.', showCancelButton: true, confirmButtonText: 'Ya, mulai baru', cancelButtonText: 'Batal', confirmButtonColor: '#4f46e5' }).then(r => { if (r.isConfirmed) restart(); });
+                } else if (window.confirm('Progres pertandingan catur ini akan dihapus. Mulai baru?')) restart();
                 e.currentTarget.blur();
             });
 
@@ -1841,6 +1844,7 @@
             document.getElementById('btnCloseChessResult')?.addEventListener('click', () => closeModal('chessResultModal'));
 
             document.getElementById('btnChessResetStats')?.addEventListener('click', () => {
+                if (!window.confirm('Hapus seluruh rekor catur yang tersimpan di perangkat ini?')) return;
                 stats = {
                     easy: { wins: 0, draws: 0, losses: 0 },
                     normal: { wins: 0, draws: 0, losses: 0 },

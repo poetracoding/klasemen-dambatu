@@ -355,6 +355,7 @@
         </div>
     </div>
 </div>
+@include('partials.game_ux_enhancements')
 @endsection
 
 @section('scripts')

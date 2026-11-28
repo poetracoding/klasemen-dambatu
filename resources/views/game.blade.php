@@ -83,6 +83,10 @@
     #gameFullscreenWrapper.is-pseudo-fullscreen .fs-compact-mb {
         margin-bottom: 0 !important;
     }
+    #gameFullscreenWrapper:fullscreen #gameHeaderActions,
+    #gameFullscreenWrapper.is-pseudo-fullscreen #gameHeaderActions {
+        margin-right: 12.5rem;
+    }
     #gameFullscreenWrapper:fullscreen #gameTableCard,
     #gameFullscreenWrapper.is-pseudo-fullscreen #gameTableCard {
         flex: 1 1 0%;
@@ -102,6 +106,36 @@
         padding: 0.75rem 1rem !important;
         flex-shrink: 0;
     }
+    #turnIndicator[data-turn-state="human"] { color: #fde68a; }
+    #turnIndicator[data-turn-state="human"]::before { content: "GILIRAN ANDA · "; color: #34d399; font-size: .72em; letter-spacing: .08em; }
+    #turnIndicator[data-turn-state="ai"] { color: rgb(226 232 240 / .78); }
+    #playerHandCard { transition: box-shadow .2s ease, border-color .2s ease; }
+    #playerHandCard[data-player-turn="true"] { border-color: rgb(16 185 129 / .55); box-shadow: 0 0 0 2px rgb(16 185 129 / .12), 0 12px 32px rgb(15 23 42 / .08); }
+    #playerHandCard[data-player-turn="true"] #playableHintBadge { font-size: 11px; padding: .25rem .6rem; }
+    @media (max-width: 640px) {
+        #gameFullscreenWrapper:fullscreen #gameHeaderActions,
+        #gameFullscreenWrapper.is-pseudo-fullscreen #gameHeaderActions { margin-right: 0; }
+        #gameFullscreenWrapper:fullscreen .game-fs-exit-btn span,
+        #gameFullscreenWrapper.is-pseudo-fullscreen .game-fs-exit-btn span { display: none; }
+        #gameFullscreenWrapper:fullscreen .game-fs-exit-btn,
+        #gameFullscreenWrapper.is-pseudo-fullscreen .game-fs-exit-btn { width: 2.75rem; height: 2.75rem; justify-content: center; padding: .5rem; }
+        #gameFullscreenWrapper:not(:fullscreen):not(.is-pseudo-fullscreen) #playerHandCard {
+            position: sticky;
+            bottom: max(.35rem, env(safe-area-inset-bottom));
+            z-index: 35;
+            max-height: 48dvh;
+            overflow-y: auto;
+            padding: .75rem !important;
+            background: rgb(255 255 255 / .97);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 -8px 30px rgb(15 23 42 / .18);
+        }
+        html.dark #gameFullscreenWrapper:not(:fullscreen):not(.is-pseudo-fullscreen) #playerHandCard { background: rgb(15 23 42 / .97); }
+        #playerHand { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: .75rem .35rem 1rem; }
+        #playerHand > button { flex: 0 0 auto; scroll-snap-align: center; }
+        #gameTableCard > .bg-black\/35 { gap: .4rem; }
+        #startOverlay h2 { font-size: 1.1rem; }
+    }
 </style>
 
 <div id="gameFullscreenWrapper" class="transition-all game-touch-arena">
@@ -109,7 +143,7 @@
     <div id="victoryConfetti" aria-hidden="true"></div>
 
     <!-- Header -->
-    <div class="fs-compact-mb mb-4 sm:mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 sm:gap-4 shrink-0">
+    <div id="gameHeader" class="fs-compact-mb mb-4 sm:mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 sm:gap-4 shrink-0">
         <div>
             <div class="flex flex-wrap items-center gap-2">
                 <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -127,7 +161,7 @@
             </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div id="gameHeaderActions" class="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <button type="button" id="btnCycleCamera"
                 class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors shadow-xs cursor-pointer touch-manipulation"
                 title="Ganti Sudut Kamera Meja (3D / Sinematik / 2D)">
@@ -148,11 +182,11 @@
             </button>
             <button type="button" id="btnStartGame"
                 class="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs shadow-emerald-600/20 cursor-pointer touch-manipulation">
-                <i class="bi bi-play-fill text-sm"></i> Start Game
+                <i class="bi bi-play-fill text-sm"></i> Mulai Permainan
             </button>
             <button type="button" id="btnRestartGame"
                 class="hidden items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs shadow-indigo-600/20 cursor-pointer touch-manipulation">
-                <i class="bi bi-arrow-clockwise"></i> Restart
+                <i class="bi bi-arrow-clockwise"></i> Mulai Baru
             </button>
         </div>
     </div>
@@ -163,7 +197,7 @@
             <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-5">
                 <!-- Mode Meja -->
                 <div>
-                    <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Jumlah Pemain</div>
+                    <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Pemain (Anda vs AI)</div>
                     <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5">
                         <button type="button" data-ai-count="2">3 Orang (2 AI)</button>
                         <button type="button" data-ai-count="3">4 Orang (3 AI)</button>
@@ -230,7 +264,7 @@
         <div class="px-3 sm:px-5 py-2 sm:py-2.5 bg-black/35 backdrop-blur-xs border-b border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs text-white shrink-0 relative z-20">
             <div class="flex items-center gap-2 min-w-0">
                 <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-                <span id="turnIndicator" class="font-bold tracking-wide truncate">Siap Bermain — Klik Start Game</span>
+                <span id="turnIndicator" class="font-bold tracking-wide truncate" aria-live="polite" aria-atomic="true" data-turn-state="ready">Siap Bermain — Pilih pengaturan, lalu mulai</span>
             </div>
 
             <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 font-mono shrink-0">
@@ -305,7 +339,7 @@
                 </p>
                 <button type="button" id="btnStartOverlay"
                     class="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-900 bg-amber-400 hover:bg-amber-300 shadow-lg shadow-black/35 transition-all hover:scale-105 cursor-pointer touch-manipulation">
-                    <i class="bi bi-play-fill text-base sm:text-lg"></i> Mulai Permainan (Start)
+                    <i class="bi bi-play-fill text-base sm:text-lg"></i> Mulai Permainan
                 </button>
             </div>
 
@@ -339,7 +373,7 @@
         <div class="px-3 sm:px-5 py-1.5 sm:py-2 bg-black/35 border-t border-white/10 text-[11px] sm:text-xs text-emerald-100/90 flex items-center justify-between gap-2 shrink-0 relative z-20">
             <div class="flex items-center gap-2 min-w-0">
                 <i class="bi bi-clock-history text-emerald-300 shrink-0"></i>
-                <span id="lastMoveLog" class="truncate">Pilih jumlah pemain &amp; tingkat kesulitan, lalu klik Start Game.</span>
+                <span id="lastMoveLog" class="truncate">Pilih jumlah pemain dan tingkat kesulitan, lalu mulai permainan.</span>
             </div>
             <span class="sm:hidden text-[10px] font-mono text-amber-300 shrink-0">4 Tertutup</span>
         </div>
@@ -391,7 +425,7 @@
         <!-- Daftar Batu di Rak Kayu Pemain -->
         <div class="domino-rack-tray">
             <div id="playerHand" class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 py-1.5 min-h-[112px] sm:min-h-[128px]">
-                <div class="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">Klik <strong>Start Game</strong> untuk mengocok dan membagikan batu.</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">Tekan <strong>Mulai Permainan</strong> untuk mengocok dan membagikan batu.</div>
             </div>
         </div>
     </div>
@@ -460,6 +494,7 @@
         </div>
     </div>
 </div>
+@include('partials.game_ux_enhancements')
 @endsection
 
 @section('scripts')

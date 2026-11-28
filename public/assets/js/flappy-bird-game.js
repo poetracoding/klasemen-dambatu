@@ -1008,6 +1008,7 @@
         });
 
         document.getElementById('btnFlappyResetStats')?.addEventListener('click', () => {
+            if (!window.confirm('Hapus seluruh rekor dan riwayat Flappy Bird di perangkat ini?')) return;
             stats = { best: { easy: 0, normal: 0, hard: 0 }, recent: [] };
             saveStats();
             renderStatsSidebar();

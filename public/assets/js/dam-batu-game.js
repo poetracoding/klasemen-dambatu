@@ -191,6 +191,7 @@
         const zoomReset = document.getElementById('btnZoomReset');
         const zoomOutBtn = document.getElementById('btnZoomOut');
         const zoomInBtn = document.getElementById('btnZoomIn');
+        const viewport = document.getElementById('boardViewport');
 
         if (card) {
             card.setAttribute('data-camera', state.camera);
@@ -198,6 +199,9 @@
         }
 
         const effectiveZoom = getEffectiveZoom();
+        if (viewport) {
+            viewport.dataset.userZoomed = state.userZoomOverride ? 'true' : 'false';
+        }
         if (surface) {
             surface.style.setProperty('--board-zoom', String(effectiveZoom));
             if (state.camera === '2d') {
@@ -708,7 +712,7 @@
         if (countEl) countEl.textContent = 'Belum dimulai';
         if (hintEl) hintEl.classList.add('hidden');
         if (handEl) {
-            handEl.innerHTML = '<div class="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">Klik <strong>Start Game</strong> untuk mengocok dan membagikan batu.</div>';
+            handEl.innerHTML = '<div class="text-xs text-slate-500 dark:text-slate-400 py-4 text-center">Tekan <strong>Mulai Permainan</strong> untuk mengocok dan membagikan batu.</div>';
         }
     }
 
@@ -1038,8 +1042,11 @@
         const impactRing = (isLatest && showImpactRing) ? '<span class="domino-impact-ring" aria-hidden="true"></span>' : '';
 
         const snakeHalfPad = variant === 'snake' ? 'p-[1px]' : 'p-0.5';
+        const accessibleTile = clickable
+            ? `aria-label="Batu ${a} dan ${b}${playable ? ', bisa dimainkan' : ', belum bisa dimainkan'}" aria-pressed="${selected ? 'true' : 'false'}" aria-disabled="${playable ? 'false' : 'true'}"`
+            : '';
         return `
-            <${tag} ${dataAttr} class="domino-tile domino-3d ${stateClass} ${dims} ${animClass} touch-manipulation" ${delayStyle}>
+            <${tag} ${dataAttr} ${accessibleTile} class="domino-tile domino-3d ${stateClass} ${dims} ${animClass} touch-manipulation" ${delayStyle}>
                 ${impactRing}
                 <div class="${halfSize} flex items-center justify-center ${snakeHalfPad}">${buildPipGridHtml(a, variant)}</div>
                 <div class="${dividerClass}"><span class="domino-brass-pin" aria-hidden="true"></span></div>
@@ -1299,19 +1306,23 @@
 
         if (turnBadge) {
             if (!state.hasStarted) {
-                turnBadge.textContent = 'Siap Bermain — Klik Start Game';
+                turnBadge.textContent = 'Siap Bermain — pilih pengaturan lalu mulai';
+                turnBadge.dataset.turnState = 'ready';
             } else if (state.isShuffling) {
                 turnBadge.textContent = 'Mengocok batu...';
+                turnBadge.dataset.turnState = 'busy';
             } else if (state.isFinished) {
                 turnBadge.textContent = 'Ronde Selesai';
+                turnBadge.dataset.turnState = 'finished';
             } else {
                 const cur = state.players[state.currentTurn];
                 turnBadge.textContent = cur.isHuman ? 'Giliran Anda!' : ('Giliran ' + cur.name + '...');
+                turnBadge.dataset.turnState = cur.isHuman ? 'human' : 'ai';
             }
         }
 
         if (logEl) {
-            logEl.textContent = state.logs[0] || 'Pilih jumlah pemain & tingkat kesulitan, lalu klik Start Game.';
+            logEl.textContent = state.logs[0] || 'Pilih jumlah pemain dan tingkat kesulitan, lalu mulai permainan.';
         }
 
         if (!boardEl) return;
@@ -1427,6 +1438,11 @@
         if (countEl) countEl.textContent = `${human.hand.length} batu (${handPipSum(human.hand)} mata)`;
 
         const isMyTurn = state.isRunning && !state.isFinished && state.currentTurn === 0;
+        const handCard = document.getElementById('playerHandCard');
+        if (handCard) {
+            handCard.dataset.playerTurn = isMyTurn ? 'true' : 'false';
+            handCard.setAttribute('aria-label', isMyTurn ? 'Tangan Anda, giliran Anda' : 'Tangan Anda');
+        }
         const validMoves = isMyTurn ? getValidMovesForPlayer(0) : [];
         const playableIds = new Set(validMoves.map(m => m.tile.id));
 
